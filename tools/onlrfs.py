@@ -189,18 +189,9 @@ class OnlMultistrapConfig(object):
         self.__validate_key(general, 'arch', str, True)
         self.__validate_key(general, 'debootstrap', str, True)
 
-        for entry in [ 'debootstrap', 'aptsources' ]:
-            sectionlist = []
-            for e in general[entry].split():
-                if e not in self.config:
-                    raise OnlRfsError("Section '%s' is specified in the %s option but does not exist in the configuration." % (e, entry))
-
-                if self.config[e].get('arches', None) and general['arch'] not in self.config[e]['arches']:
-                    del self.config[e]
-                else:
-                    sectionlist.append(e)
-
-            general[entry] = " ".join(sectionlist)
+        for e in general['debootstrap'].split():
+            if e not in self.config:
+                raise OnlRfsError("Section '%s' is specified in the debootstrap option but does not exist in the configuration." % e)
 
         self.localrepos = []
 
@@ -302,7 +293,7 @@ class OnlRfsBuilder(object):
 
     DEFAULTS = dict(
         DEBIAN_SUITE='wheezy',
-        DEBIAN_MIRROR='mirrors.kernel.org/debian/',
+        DEBIAN_MIRROR='mirrors.edge.kernel.org/debian/',
         APT_CACHE='127.0.0.1:3142/'
         )
 
@@ -389,7 +380,8 @@ class OnlRfsBuilder(object):
         script = os.path.join(dir_, "tmp/configure.sh")
         with open(script, "w") as f:
             os.chmod(script, 0700)
-            f.write("""#!/bin/bash -ex
+            f.write("""
+#!/bin/bash -ex
 /bin/echo -e "#!/bin/sh\\nexit 101" >/usr/sbin/policy-rc.d
 chmod +x /usr/sbin/policy-rc.d
 export DEBIAN_FRONTEND=noninteractive

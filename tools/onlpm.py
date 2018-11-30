@@ -301,11 +301,8 @@ class OnlPackage(object):
             #
             if dst.endswith('/'):
                 dstpath = os.path.join(root, dst)
-                try:
+                if not os.path.exists(dstpath):
                     os.makedirs(dstpath)
-                except OSError, e:
-                    if e.errno != os.errno.EEXIST:
-                        raise
                 shutil.copy(src, dstpath)
             else:
                 dstpath = os.path.join(root, os.path.dirname(dst))
@@ -362,14 +359,9 @@ class OnlPackage(object):
             if os.path.exists(src):
                 OnlPackage.copyf(src, dst, root)
 
-        for (link, src) in self.pkg.get('links', {}).iteritems():
+        for (link,src) in self.pkg.get('links', {}).iteritems():
             logger.info("Linking %s -> %s..." % (link, src))
-            # The source must be relative to the existing root directory.
-            if link.startswith('/'):
-                link = "%s%s" % (root, link)
-            else:
-                link = "%s/%s" % (root, link)
-            # The link must be relative or absolute to the final filesystem.
+            link = os.path.join(root, link)
             os.symlink(src, link)
 
         #

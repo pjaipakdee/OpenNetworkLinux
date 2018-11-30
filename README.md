@@ -1,4 +1,4 @@
-Open Network Linux
+Open Network Linux - EVT setup is released for Arrcus
 ==================
 
 Check out the main/offical website at http://opennetlinux.org .
