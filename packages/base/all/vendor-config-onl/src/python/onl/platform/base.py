@@ -11,7 +11,7 @@
 
 import pprint
 import json
-import os, sys
+import os
 import re
 import yaml
 import onl.YamlUtils
@@ -386,9 +386,6 @@ class OnlPlatformBase(object):
                             rv[field['name']] = v['data'][field['key']]
             except:
                 pass
-            finally:
-                if 'dmidecodemod' in sys.modules:
-                    sys.modules['dmidecodemod'].clear_warnings()
         return rv
 
     def upgrade_manifest(self, type_, override_dir=None):
@@ -480,10 +477,6 @@ class OnlPlatformPortConfig_48x1_4x10(object):
     PORT_COUNT=52
     PORT_CONFIG="48x1 + 4x10"
 
-class OnlPlatformPortConfig_48x1_2x10(object):
-    PORT_COUNT=50
-    PORT_CONFIG="48x1 + 2x10"
-
 class OnlPlatformPortConfig_48x10_4x40(object):
     PORT_COUNT=52
     PORT_CONFIG="48x10 + 4x40"
@@ -532,10 +525,14 @@ class OnlPlatformPortConfig_48x10_6x100(object):
     PORT_COUNT=54
     PORT_CONFIG="48x10 + 6x100"
 
-class OnlPlatformPortConfig_12x10_3x100(object):
-    PORT_COUNT=15
-    PORT_CONFIG="12x10 + 3x100"
+class OnlPlatformPortConfig_1x10_32x100(object):
+    PORT_COUNT=33
+    PORT_CONFIG="1x10 + 32x100"
 
-class OnlPlatformPortConfig_24x10_2x100(object):
-    PORT_COUNT=26
-    PORT_CONFIG="24x10 + 2x100"
+class OnlPlatformPortConfig_48x10_4x100_2x400(object):
+    PORT_COUNT=54
+    PORT_CONFIG="48x10 + 4x100 + 2x400"
+
+class OnlPlatformPortConfig_48x10_8x100(object):
+    PORT_COUNT=56
+    PORT_CONFIG="48x10 + 8x100"

@@ -1,0 +1,22 @@
+diff --git a/drivers/tty/serial/8250/8250_mid.c b/drivers/tty/serial/8250/8250_mid.c
+index 85011c9ac0ee..ec957cce8c9a 100644
+--- a/drivers/tty/serial/8250/8250_mid.c
++++ b/drivers/tty/serial/8250/8250_mid.c
+@@ -164,6 +164,8 @@ static int dnv_setup(struct mid8250 *mid, struct uart_port *p)
+ 	unsigned int bar = FL_GET_BASE(mid->board->flags);
+ 	int ret;
+ 
++	pci_set_master(pdev);
++
+ 	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
+ 	if (ret < 0)
+ 		return ret;
+@@ -289,8 +291,6 @@ static int mid8250_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+ 	if (ret)
+ 		return ret;
+ 
+-	pci_set_master(pdev);
+-
+ 	mid = devm_kzalloc(&pdev->dev, sizeof(*mid), GFP_KERNEL);
+ 	if (!mid)
+ 		return -ENOMEM;

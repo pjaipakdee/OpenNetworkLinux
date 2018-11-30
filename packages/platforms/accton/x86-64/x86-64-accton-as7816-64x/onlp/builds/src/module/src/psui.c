@@ -37,6 +37,21 @@
         }                                       \
     } while(0)
 
+static int 
+psu_status_info_get(int id, char *node, int *value)
+{
+	char *prefix = NULL;
+    *value = 0;
+
+	prefix = (id == PSU1_ID) ? PSU1_AC_EEPROM_PREFIX : PSU2_AC_EEPROM_PREFIX;
+    if (onlp_file_read_int(value, "%s%s", prefix, node) < 0) {
+        AIM_LOG_ERROR("Unable to read status from file(%s%s)\r\n", prefix, node);
+        return ONLP_STATUS_E_INTERNAL;
+    }
+
+    return 0;
+}
+
 int
 onlp_psui_init(void)
 {
@@ -82,59 +97,6 @@ psu_ym2651y_info_get(onlp_psu_info_t* info)
     return ONLP_STATUS_OK;
 }
 
-static int
-psu_dps850_info_get(onlp_psu_info_t* info)
-{
-    int val   = 0;
-    int index = ONLP_OID_ID_GET(info->hdr.id);
-    
-    /* Set capability
-     */
-    info->caps = ONLP_PSU_CAPS_AC;   
-	if (info->status & ONLP_PSU_STATUS_FAILED) {
-	    return ONLP_STATUS_OK;
-	}
-
-    /* Set the associated oid_table */
-    info->hdr.coids[0] = ONLP_FAN_ID_CREATE(index + CHASSIS_FAN_COUNT);
-    info->hdr.coids[1] = ONLP_THERMAL_ID_CREATE(index + CHASSIS_THERMAL_COUNT);
-
-    /* Read voltage, current and power */
-    if (psu_dps850_pmbus_info_get(index, "psu_v_out", &val) == 0) {
-        info->mvout = val;
-        info->caps |= ONLP_PSU_CAPS_VOUT;
-    }
-
-    if (psu_dps850_pmbus_info_get(index, "psu_v_in", &val) == 0) {
-        info->mvin  = val;
-        info->caps |= ONLP_PSU_CAPS_VIN;
-    }
-
-    if (psu_dps850_pmbus_info_get(index, "psu_i_out", &val) == 0) {
-        info->miout = val;
-        info->caps |= ONLP_PSU_CAPS_IOUT;
-    }
-
-    if (psu_dps850_pmbus_info_get(index, "psu_i_in", &val) == 0) {
-        info->caps |= ONLP_PSU_CAPS_IIN;
-    }
-
-    if (psu_dps850_pmbus_info_get(index, "psu_p_out", &val) == 0) {
-        info->mpout = val;
-        info->caps |= ONLP_PSU_CAPS_POUT;
-    }
-
-    if (psu_dps850_pmbus_info_get(index, "psu_p_in", &val) == 0) {
-        info->mpin  = val;
-        info->caps |= ONLP_PSU_CAPS_PIN;
-    }
-
-	psu_serial_number_get(index, info->serial, sizeof(info->serial));
-
-    return ONLP_STATUS_OK;
-}
-
-
 /*
  * Get all information about the given PSU oid.
  */
@@ -162,9 +124,9 @@ onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t* info)
     memset(info, 0, sizeof(onlp_psu_info_t));
     *info = pinfo[index]; /* Set the onlp_oid_hdr_t */
 
-    if (onlp_file_read_int(&val, PSU_PRESENT_FORMAT, index) < 0) {
-        AIM_LOG_ERROR("Unable to read present status from PSU(%d)\r\n", index);
-        return ONLP_STATUS_E_INTERNAL;
+    /* Get the present state */
+    if (psu_status_info_get(index, "psu_present", &val) != 0) {
+        printf("Unable to read PSU(%d) node(psu_present)\r\n", index);
     }
 
     if (val != PSU_STATUS_PRESENT) {
@@ -175,9 +137,8 @@ onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t* info)
 
 
     /* Get power good status */
-    if (onlp_file_read_int(&val, PSU_POWERGOOD_FORMAT, index) < 0) {
-        AIM_LOG_ERROR("Unable to read power status from PSU(%d)\r\n", index);
-        return ONLP_STATUS_E_INTERNAL;
+    if (psu_status_info_get(index, "psu_power_good", &val) != 0) {
+        printf("Unable to read PSU(%d) node(psu_power_good)\r\n", index);
     }
 
     if (val != PSU_STATUS_POWER_GOOD) {
@@ -188,11 +149,8 @@ onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t* info)
     /* Get PSU type
      */
     psu_type = psu_type_get(index, info->model, sizeof(info->model));
+
     switch (psu_type) {
-        case PSU_TYPE_AC_DPS850_F2B:
-        case PSU_TYPE_AC_DPS850_B2F:
-            ret = psu_dps850_info_get(info);      
-            break;
         case PSU_TYPE_AC_YM2851_F2B:
         case PSU_TYPE_AC_YM2851_B2F:
             ret = psu_ym2651y_info_get(info);

@@ -1,0 +1,5 @@
+driver-i2c-busses-i2c-ismt-unmap.patch
+v3-1-3-serial-8250_mid-handle-interrupt-correctly-in-DMA-case.patch
+v3-2-3-serial-8250_mid-enable-MSI-on-Denverton.patch
+v3-3-3-serial-8250_mid-set-PCI-master-only-for-DMA-capable-device.patch
+

@@ -42,8 +42,11 @@
 #define PSU1_AC_PMBUS_NODE(node) PSU1_AC_PMBUS_PREFIX#node
 #define PSU2_AC_PMBUS_NODE(node) PSU2_AC_PMBUS_PREFIX#node
 
-#define PSU_PRESENT_FORMAT		"/sys/bus/i2c/devices/19-0060/psu%d_present"
-#define PSU_POWERGOOD_FORMAT	"/sys/bus/i2c/devices/19-0060/psu%d_power_good"
+#define PSU1_AC_EEPROM_PREFIX "/sys/bus/i2c/devices/10-0053/"
+#define PSU2_AC_EEPROM_PREFIX "/sys/bus/i2c/devices/9-0050/"
+
+#define PSU1_AC_EEPROM_NODE(node) PSU1_AC_EEPROM_PREFIX#node
+#define PSU2_AC_EEPROM_NODE(node) PSU2_AC_EEPROM_PREFIX#node
 
 #define FAN_BOARD_PATH	"/sys/bus/i2c/devices/17-0068/"
 #define FAN_NODE(node)	FAN_BOARD_PATH#node
@@ -77,17 +80,13 @@ enum onlp_thermal_id
 typedef enum psu_type {
     PSU_TYPE_UNKNOWN,
     PSU_TYPE_AC_YM2851_F2B,
-    PSU_TYPE_AC_YM2851_B2F,
-    PSU_TYPE_AC_DPS850_F2B,
-    PSU_TYPE_AC_DPS850_B2F
+    PSU_TYPE_AC_YM2851_B2F
 } psu_type_t;
 
 psu_type_t psu_type_get(int id, char* modelname, int modelname_len);
 int psu_serial_number_get(int id, char *serial, int serial_len);
 int psu_ym2651y_pmbus_info_get(int id, char *node, int *value);
 int psu_ym2651y_pmbus_info_set(int id, char *node, int value);
-int psu_dps850_pmbus_info_get(int id, char *node, int *value);
-
 
 #define DEBUG_MODE 0
 

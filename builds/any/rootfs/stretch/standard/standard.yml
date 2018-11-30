@@ -11,7 +11,6 @@ variables:
   !include $ONL/make/versions/version-onl.yml
 
 Packages: &Packages
-  - !script  $ONL/tools/onl-init-pkgs.py ${INIT}
   - !include $ONL/builds/any/rootfs/$ONL_DEBIAN_SUITE/common/all-base-packages.yml
   - !include $ONL/builds/any/rootfs/$ONL_DEBIAN_SUITE/common/${ARCH}-base-packages.yml
   - !include $ONL/builds/any/rootfs/$ONL_DEBIAN_SUITE/common/${ARCH}-onl-packages.yml
@@ -24,7 +23,7 @@ Multistrap:
     noauth: true
     explicitsuite: false
     unpack: true
-    debootstrap: Debian-Local Local-All Local-Arch ONL-Local
+    debootstrap: Debian-Local Local-All Local-Arch ONL
     aptsources: Debian ONL
 
   Debian:
@@ -42,12 +41,6 @@ Multistrap:
     omitdebsrc: true
 
   ONL:
-    packages: *Packages
-    source: http://apt.opennetlinux.org/debian
-    suite: unstable
-    omitdebsrc: true
-
-  ONL-Local:
     packages: *Packages
     source: http://${APT_CACHE}apt.opennetlinux.org/debian
     suite: unstable
@@ -67,9 +60,9 @@ Configure:
 
   update-rc.d:
     - 'faultd defaults'
-    - 'onlpd defaults'
+    - 'onlpd remove'
     - 'snmpd defaults'
-    - 'onlp-snmpd defaults'
+    - 'onlp-snmpd remove'
     - 'ssh defaults'
     - 'openbsd-inetd remove'
     - 'ntp remove'
