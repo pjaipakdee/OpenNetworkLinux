@@ -4,7 +4,7 @@ class OnlVersionImplementation(object):
 
     PRODUCTS = [
         {
-            "id" : "ONL",
+            "id" : "ONL-DVT",
 #            "version": "20YY-MM"
         }
     ]
