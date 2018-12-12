@@ -11,12 +11,15 @@
 #include <stdint.h>
 #include <sys/io.h>
 #include <time.h>
+#include <sys/stat.h>
 #include "platform.h"
 
 char command[256];
 FILE *fp;
 static char *sdr_value = NULL;
 static char *temp_sdr_value = NULL;
+const char *sdr_cache_path="/tmp/onlp-sensor-cache.txt";
+const char *fru_cache_path="/tmp/onlp-fru-cache.txt";
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
     {"unknown", "unknown"}, //check
@@ -390,6 +393,45 @@ int led_mask(int start, uint8_t value)
 
     return cal;
 }
+
+static int is_cache_exist(){
+    const char *path="/tmp/onlp-sensor-cache.txt";
+    time_t current_time;
+    double diff_time;
+    struct stat fst;
+    bzero(&fst,sizeof(fst));
+
+    if (access(path, F_OK) == -1){ //Cache not exist
+        return -1;
+    }else{ //Cache exist
+        current_time = time(NULL);
+        if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+
+        diff_time = difftime(current_time,fst.st_mtime);
+
+        if(diff_time > 60){
+            return -1;
+        }
+        return 1;
+    }
+}
+
+static int create_cache(){
+    //const char *path="/tmp/onlp-sensor-cache.txt";
+    
+    //  if (access(path, F_OK) == -1){ //Cache not exist
+    //     printf("rm and create new file at %s\n",path);
+    //     system("rm /tmp/onlp-sensor-cache.txt");
+    // }else{ //Cache exist
+    //     printf("just create new file at %s\n",path);
+    //     system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    //     system("ipmitool fru > /tmp/onlp-sensor-cache.txt");
+    // }
+    system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    system("ipmitool fru > /tmp/onlp-fru-cache.txt");
+    return 1;
+}
+
 char *read_fru(int fru_id)
 {
     FILE *pFd = NULL;
@@ -435,7 +477,8 @@ char *read_psu_sdr(int id)
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    sprintf(command,"ipmitool  sdr | grep PSU");
+    if(is_cache_exist()<1){         create_cache();     }
+    sprintf(command,"cat %s | grep PSU",sdr_cache_path);
     pFd = popen(command, "r");
     if (pFd != NULL)
     {
@@ -576,7 +619,8 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     if (0 == strcasecmp(psu_information[0].model, "unknown")) {
         
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_PSU");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep -A 10 FRU_PSU",fru_cache_path);
         fp = popen(command, "r");
         if (fp == 0)
         {
@@ -659,7 +703,10 @@ char* read_fans_fru(){
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    sprintf(command, "ipmitool fru print | grep -A 4 FRU_FAN");
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    sprintf(command, "cat %s | grep -A 4 FRU_FAN",fru_cache_path);
     pFd = popen(command, "r");
     if (pFd != NULL)
     {
@@ -692,7 +739,8 @@ int getFaninfo(int id, char *model, char *serial)
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
         
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_FAN");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep -A 10 FRU_FAN",fru_cache_path);
         fp = popen(command, "r");
         if (fp == 0)
         {
@@ -739,7 +787,8 @@ int getThermalStatus_Ipmi(int id, int *tempc)
     char ctemp[18] = "\0";
     float ftemp = 0.0;
     if(temp_sdr_value == NULL){
-        sprintf(command, "ipmitool sdr list | grep Temp");
+        if(is_cache_exist()<1){         create_cache();     }
+        sprintf(command, "cat %s | grep Temp",sdr_cache_path);
         temp_sdr_value = read_ipmi(command);
     }
     position = keyword_match(temp_sdr_value, Thermal_sensor_name[id - 1]);

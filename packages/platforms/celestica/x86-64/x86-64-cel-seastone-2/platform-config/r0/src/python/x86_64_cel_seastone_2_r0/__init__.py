@@ -22,7 +22,10 @@ class OnlPlatform_x86_64_cel_seastone_2_r0(OnlPlatformCelestica,
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_devintf.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_si.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/drivers/char/ipmi/ipmi_ssif.ko")
-
+        # os.system("rm /etc/rc*.d/S02onlpd 2> /dev/null")
+        # os.system("rm /etc/rc*.d/K02onlpd 2> /dev/null")
+        # os.system("rm /etc/rc*.d/S02onlp-snmpd 2> /dev/null")
+        # os.system("rm /etc/rc*.d/K02onlp-snmpd 2> /dev/null")
         #eeprom driver
         self.new_i2c_device('24lc64t', 0x56, 1)
         #initialize SFP devices
