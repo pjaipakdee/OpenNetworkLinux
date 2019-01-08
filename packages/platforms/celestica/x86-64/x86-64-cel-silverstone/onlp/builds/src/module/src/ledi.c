@@ -88,12 +88,12 @@ static onlp_led_info_t led_info[] =
     {
         { ONLP_LED_ID_CREATE(LED_LEFT_PSU), "Left PSU LED", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW,
+        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE,
     },
     {
         { ONLP_LED_ID_CREATE(LED_RIGHT_PSU), "Right PSU LED", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW,
+        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE,
     },
 };
 
@@ -199,12 +199,13 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             break;
         case LED_LEFT_PSU:
             psu_id = 1;
+            //printf("psu led Left val = %x\n",psu_led_result);
             present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
-            led_color = result & 0x1;
+            led_color = psu_led_result & 0x1;
             if(!present_status)
             {
                 if(led_color == 1){
-                    info_p->mode |= ONLP_LED_MODE_YELLOW;
+                    info_p->mode |= ONLP_LED_MODE_ORANGE;
                 }else{
                     info_p->mode |= ONLP_LED_MODE_AUTO;
                 }
@@ -214,12 +215,13 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             break;
         case LED_RIGHT_PSU:
             psu_id = 2;
+            //printf("psu led right val = %x\n",psu_led_result);
             present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
-            led_color = (result >>1) & 0x1;
+            led_color = (psu_led_result >>1) & 0x1;
             if(!present_status)
             {
                 if(led_color == 1){
-                    info_p->mode |= ONLP_LED_MODE_YELLOW;
+                    info_p->mode |= ONLP_LED_MODE_ORANGE;
                 }else{
                     info_p->mode |= ONLP_LED_MODE_AUTO;
                 }

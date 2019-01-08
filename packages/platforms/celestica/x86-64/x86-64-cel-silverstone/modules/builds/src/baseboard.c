@@ -29,7 +29,7 @@
 #include <uapi/linux/stat.h>
 #include <linux/string.h>
 
-#define DRIVER_NAME "AS58128.baseboard"
+#define DRIVER_NAME "sys_cpld"
 /**
  * CPLD register address for read and write.
  */

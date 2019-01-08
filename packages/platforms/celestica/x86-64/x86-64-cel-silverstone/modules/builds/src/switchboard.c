@@ -56,7 +56,7 @@
 static int  majorNumber;
 
 #define CLASS_NAME "silverstone_fpga"
-#define DRIVER_NAME "AS58128.switchboard"
+#define DRIVER_NAME "silverstone"
 #define FPGA_PCI_NAME "Silverstone_fpga_pci"
 #define DEVICE_NAME "fwupgrade"
 
@@ -596,14 +596,14 @@ static struct attribute_group fpga_attr_grp = {
 };
 
 /* SW CPLDs attributes */
-static ssize_t cpld1_dump_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t cpld1_getreg_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     // CPLD register is one byte
     uint8_t data;
     fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, fpga_data->cpld1_read_addr, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&data);
     return sprintf(buf, "0x%2.2x\n", data);
 }
-static ssize_t cpld1_dump_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t cpld1_getreg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     uint8_t addr;
     char *last;
@@ -614,7 +614,7 @@ static ssize_t cpld1_dump_store(struct device *dev, struct device_attribute *att
     fpga_data->cpld1_read_addr = addr;
     return size;
 }
-struct device_attribute dev_attr_cpld1_dump = __ATTR(dump, 0600, cpld1_dump_show, cpld1_dump_store);
+struct device_attribute dev_attr_cpld1_getreg = __ATTR(getreg, 0600, cpld1_getreg_show, cpld1_getreg_store);
 
 static ssize_t cpld1_scratch_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -681,7 +681,7 @@ static ssize_t cpld1_setreg_store(struct device *dev, struct device_attribute *a
 struct device_attribute dev_attr_cpld1_setreg = __ATTR(setreg, 0200, NULL, cpld1_setreg_store);
 
 static struct attribute *cpld1_attrs[] = {
-    &dev_attr_cpld1_dump.attr,
+    &dev_attr_cpld1_getreg.attr,
     &dev_attr_cpld1_scratch.attr,
     &dev_attr_cpld1_setreg.attr,
     NULL,
@@ -691,7 +691,7 @@ static struct attribute_group cpld1_attr_grp = {
     .attrs = cpld1_attrs,
 };
 
-static ssize_t cpld2_dump_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t cpld2_getreg_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     // CPLD register is one byte
     uint8_t data;
@@ -699,7 +699,7 @@ static ssize_t cpld2_dump_show(struct device *dev, struct device_attribute *attr
     return sprintf(buf, "0x%2.2x\n", data);
 }
 
-static ssize_t cpld2_dump_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t cpld2_getreg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     // CPLD register is one byte
     uint32_t addr;
@@ -711,7 +711,7 @@ static ssize_t cpld2_dump_store(struct device *dev, struct device_attribute *att
     fpga_data->cpld2_read_addr = addr;
     return size;
 }
-struct device_attribute dev_attr_cpld2_dump = __ATTR(dump, 0600, cpld2_dump_show, cpld2_dump_store);
+struct device_attribute dev_attr_cpld2_getreg = __ATTR(getreg, 0600, cpld2_getreg_show, cpld2_getreg_store);
 
 static ssize_t cpld2_scratch_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -779,7 +779,7 @@ static ssize_t cpld2_setreg_store(struct device *dev, struct device_attribute *a
 struct device_attribute dev_attr_cpld2_setreg = __ATTR(setreg, 0200, NULL, cpld2_setreg_store);
 
 static struct attribute *cpld2_attrs[] = {
-    &dev_attr_cpld2_dump.attr,
+    &dev_attr_cpld2_getreg.attr,
     &dev_attr_cpld2_scratch.attr,
     &dev_attr_cpld2_setreg.attr,
     NULL,
@@ -1037,17 +1037,17 @@ static ssize_t port_led_color_show(struct device *dev, struct device_attribute *
     // value can be R/G/B/C/M/Y/W/OFF
     __u8 led_color1, led_color2;
     int err;
-    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x09, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color1);
+    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x0A, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color1);
     if (err < 0)
         return err;
-    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD2_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x09, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color2);
+    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD2_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x0A, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color2);
     if (err < 0)
         return err;
     return sprintf(buf, "%s %s\n",
                    led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "green" : led_color1 == 0x05 ?  "red" : led_color1 == 0x04 ? 
                     "yellow" : led_color1 == 0x03 ? "blue" : led_color1 == 0x02 ?  "cyan" : led_color1 == 0x01 ?  "magenta" : "white",
-                   led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "green" : led_color1 == 0x05 ?  "red" : led_color1 == 0x04 ? 
-                    "yellow" : led_color1 == 0x03 ? "blue" : led_color1 == 0x02 ?  "cyan" : led_color1 == 0x01 ?  "magenta" : "white");
+                   led_color2 == 0x07 ? "off" : led_color2 == 0x06 ? "green" : led_color2 == 0x05 ?  "red" : led_color2 == 0x04 ? 
+                    "yellow" : led_color2 == 0x03 ? "blue" : led_color2 == 0x02 ?  "cyan" : led_color2 == 0x01 ?  "magenta" : "white");
 }
 
 static ssize_t port_led_color_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)

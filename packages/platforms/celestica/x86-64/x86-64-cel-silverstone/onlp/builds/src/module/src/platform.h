@@ -105,8 +105,8 @@ typedef struct psuInfo_p
 	unsigned int rtemp;
 }psuInfo_p;
 
-#define SYS_CPLD_PATH "/sys/devices/platform/AS58128.baseboard/"
-#define PLATFORM_PATH "/sys/devices/platform/AS58128.switchboard/"
+#define SYS_CPLD_PATH "/sys/devices/platform/sys_cpld/"
+#define PLATFORM_PATH "/sys/devices/platform/silverstone/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 
 int write_to_dump(uint8_t dev_reg);

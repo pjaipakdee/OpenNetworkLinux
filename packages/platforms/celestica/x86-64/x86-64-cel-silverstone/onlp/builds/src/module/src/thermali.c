@@ -65,6 +65,9 @@ onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info_p)
     thermal_id = ONLP_OID_ID_GET(id);
     *info_p = thermal_info[thermal_id];
     int thermal_status = getThermalStatus_Ipmi(thermal_id,&(info_p->mcelsius));
+    info_p->thresholds.warning = 0;
+    info_p->thresholds.error = 0;
+    info_p->thresholds.shutdown = 0;
     if(!(thermal_status))
         info_p->status = ONLP_THERMAL_STATUS_FAILED;
 
