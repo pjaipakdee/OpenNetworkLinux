@@ -18,10 +18,31 @@
 
 static int is_cache_exist(){
     const char *path="/tmp/onlp-sensor-cache.txt";
+    const char *time_setting_path="/var/opt/interval_time.txt";
     time_t current_time;
     double diff_time;
+    int interval_time = 30; //set default to 30 sec
     struct stat fst;
     bzero(&fst,sizeof(fst));
+
+    //Read setting
+    if(access(time_setting_path, F_OK) == -1){ //Setting not exist
+        return -1;
+    }else{
+        FILE *fp;
+        
+        fp = fopen(time_setting_path, "r"); // read setting
+        
+        if (fp == NULL)
+        {
+            perror("Error while opening the file.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fscanf(fp,"%d", &interval_time);
+
+        fclose(fp);
+    }
 
     if (access(path, F_OK) == -1){ //Cache not exist
         return -1;
@@ -31,7 +52,7 @@ static int is_cache_exist(){
 
         diff_time = difftime(current_time,fst.st_mtime);
 
-        if(diff_time > 60){
+        if(diff_time > interval_time){
             return -1;
         }
         return 1;

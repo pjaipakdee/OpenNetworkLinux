@@ -8,7 +8,9 @@ class OnlPlatform_x86_64_cel_seastone_2_r0(OnlPlatformCelestica,
     SYS_OBJECT_ID=".2060.1"
 
     def baseconfig(self):
-        print "Initialize and Install the driver here"
+        onlp_interval_time = 30 #second
+        file_path = "/var/opt/interval_time.txt"
+        print("Initialize and Install the driver here")
         #for m in [ 'cpld', 'fan', 'psu', 'leds', 'sfp' ]:
         #for m in [ 'cpld' ]:
         #   self.insmod("x86-64-celestica-seastone-2-%s.ko" % m)
@@ -70,5 +72,12 @@ class OnlPlatform_x86_64_cel_seastone_2_r0(OnlPlatformCelestica,
         # initialize QSFP devices
         # for port in range(49, 55):
         #     self.new_i2c_device('as5912_54x_sfp%d' % port, 0x50, port+25)
+        
+        if os.path.exists(file_path):
+            pass
+        else:
+            with open(file_path, 'w') as f:  
+                f.write("{0}\r\n".format(onlp_interval_time))
+            f.close()
         
         return True
