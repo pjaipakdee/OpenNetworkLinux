@@ -46,12 +46,6 @@ onlp_api_lock_init(void)
 }
 
 void
-onlp_api_lock_denit(void)
-{
-    os_sem_destroy(api_sem__);
-}
-
-void
 onlp_api_lock(const char* api)
 {
     if(os_sem_take_timeout(api_sem__, ONLP_CONFIG_API_LOCK_TIMEOUT) != 0) {
@@ -75,12 +69,6 @@ void
 onlp_api_lock_init(void)
 {
     onlp_shlock_global_init();
-}
-
-void
-onlp_api_lock_denit(void)
-{
-    /* TODO */
 }
 
 void
@@ -131,3 +119,5 @@ onlp_api_lock_test(void)
 }
 
 #endif /* ONLP_CONFIG_INCLUDE_API_LOCK */
+
+

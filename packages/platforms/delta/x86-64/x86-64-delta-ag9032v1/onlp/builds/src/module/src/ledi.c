@@ -48,22 +48,22 @@ static onlp_led_info_t linfo[] =
     {
         { ONLP_LED_ID_CREATE(LED_FRONT_FAN), "FRONT LED (FAN LED)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_AUTO,
     },
     {
         { ONLP_LED_ID_CREATE(LED_FRONT_SYS), "FRONT LED  (SYS LED)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_GREEN_BLINKING | ONLP_LED_CAPS_RED,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_GREEN | ONLP_LED_CAPS_GREEN_BLINKING | ONLP_LED_CAPS_AUTO,
     },
     {
         { ONLP_LED_ID_CREATE(LED_FRONT_PWR1), "FRONT LED  (PWR1 LED)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE_BLINKING | ONLP_LED_CAPS_GREEN,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_ORANGE_BLINKING | ONLP_LED_CAPS_GREEN,
     },
     {
         { ONLP_LED_ID_CREATE(LED_FRONT_PWR2), "FRONT LED (PWR2 LED)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE_BLINKING | ONLP_LED_CAPS_GREEN,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_ORANGE_BLINKING | ONLP_LED_CAPS_GREEN,
     },
     {
         { ONLP_LED_ID_CREATE(LED_REAR_FAN_TRAY_1), "FAN TRAY 1 LED", 0 },
@@ -92,6 +92,34 @@ static onlp_led_info_t linfo[] =
     },
 };
 
+/* Function to check fan 1-10 speed normally*/
+static int dni_fan_speed_good()
+{
+    int rpm = 0, rpm1 = 0, speed_good = 0;
+
+    rpm = dni_i2c_lock_read_attribute(NULL, FAN1_FRONT);
+    rpm1 = dni_i2c_lock_read_attribute(NULL, FAN1_REAR);
+    if(rpm != 0 && rpm != 960 && rpm1 != 0 && rpm1 != 960)
+        speed_good++;
+    rpm = dni_i2c_lock_read_attribute(NULL, FAN2_FRONT);
+    rpm1 = dni_i2c_lock_read_attribute(NULL, FAN2_REAR);
+    if(rpm != 0 && rpm != 960 && rpm1 != 0 && rpm1 != 960)
+        speed_good++;
+    rpm = dni_i2c_lock_read_attribute(NULL, FAN3_FRONT);
+    rpm1 = dni_i2c_lock_read_attribute(NULL, FAN3_REAR);
+    if(rpm != 0 && rpm != 960 && rpm1 != 0 && rpm1 != 960)
+        speed_good++;
+    rpm = dni_i2c_lock_read_attribute(NULL, FAN4_FRONT);
+    rpm1 = dni_i2c_lock_read_attribute(NULL, FAN4_REAR);
+    if(rpm != 0 && rpm != 960 && rpm1 != 0 && rpm1 != 960)
+        speed_good++;
+    rpm = dni_i2c_lock_read_attribute(NULL, FAN5_FRONT);
+    rpm1 = dni_i2c_lock_read_attribute(NULL, FAN5_REAR);
+    if(rpm != 0 && rpm != 960 && rpm1 != 0 && rpm1 != 960)
+        speed_good++;
+    return speed_good;
+}
+
 
 /*
  * This function will be called prior to any other onlp_ledi_* functions.
@@ -113,7 +141,6 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
     /* Set front panel's  mode of leds */
     r_data = dni_lock_swpld_read_attribute(LED_REG);
     int local_id = ONLP_OID_ID_GET(id);
-    
     dev_info_t dev_info;
     dev_info.bus = I2C_BUS_3;
     dev_info.offset = 0x00;
@@ -122,29 +149,22 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
     mux_info_t mux_info;
     mux_info.offset = SWPLD_PSU_FAN_I2C_MUX_REG;
     mux_info.flags = DEFAULT_FLAG;
-
     switch(local_id)
     {
         case LED_FRONT_FAN:
-            if((r_data & 0x03) == 0x01)
+            if((r_data & 0x01) == 0x01)
 	        info->mode = ONLP_LED_MODE_GREEN;
-	    else if((r_data & 0x03) == 0x02)
+	    else if((r_data & 0x02) == 0x02)
 	        info->mode = ONLP_LED_MODE_ORANGE;
-            else if((r_data & 0x03) == 0x03 || (r_data & 0x03) == 0x00)
-                info->mode = ONLP_LED_MODE_OFF;
-            else
-                return ONLP_STATUS_E_INTERNAL;
             break;
         case LED_FRONT_SYS:
-            if((r_data & 0x0C) == 0x04)
+            if((r_data & 0x04) == 0x04)
 	        info->mode = ONLP_LED_MODE_GREEN;
             else if((r_data & 0x0C) == 0x0C)
-	        info->mode = ONLP_LED_MODE_RED;
-	    else if((r_data & 0x0C) == 0x08)
+	        info->mode = ONLP_LED_MODE_ORANGE;
+	    else if((r_data & 0x08) == 0x08)
 		info->mode = ONLP_LED_MODE_GREEN_BLINKING;
-	    else if((r_data & 0x0C) == 0x00)
-                info->mode = ONLP_LED_MODE_OFF;
-            else
+	    else
 		return ONLP_STATUS_E_INTERNAL;
             break;
         case LED_FRONT_PWR1:
@@ -173,13 +193,11 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
            {
                if((r_data & 0x40) == 0x40)
                   info->mode = ONLP_LED_MODE_GREEN;
-               else if((r_data & 0x80) == 0x80)
-                  info->mode = ONLP_LED_MODE_RED;
                else
-                  info->mode = ONLP_LED_MODE_OFF;
+                  info->mode = ONLP_LED_MODE_RED;
            }
            else
-               info->status = ONLP_LED_STATUS_FAILED;
+                info->mode = ONLP_LED_MODE_OFF;
            break;
         case LED_REAR_FAN_TRAY_2:
            /* Select fan tray 2 */
@@ -191,13 +209,11 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
            {
                if((r_data & 0x10) == 0x10)
                   info->mode = ONLP_LED_MODE_GREEN;
-               else if((r_data & 0x20) == 0x20)
-                  info->mode = ONLP_LED_MODE_RED;
                else
-                  info->mode = ONLP_LED_MODE_OFF;
+                  info->mode = ONLP_LED_MODE_RED;
            }
            else
-               info->status = ONLP_LED_STATUS_FAILED;
+                info->mode = ONLP_LED_MODE_OFF;
            break;
         case LED_REAR_FAN_TRAY_3:
            /* Select fan tray 3 */
@@ -209,13 +225,11 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
            {
                if((r_data & 0x04) == 0x04)
                   info->mode = ONLP_LED_MODE_GREEN;
-               else if((r_data & 0x08) == 0x08)
-                  info->mode = ONLP_LED_MODE_RED;
                else
-                  info->mode = ONLP_LED_MODE_OFF;
+                  info->mode = ONLP_LED_MODE_RED;
            }
            else
-               info->status = ONLP_LED_STATUS_FAILED;
+                info->mode = ONLP_LED_MODE_OFF;
            break;
         case LED_REAR_FAN_TRAY_4:
            /* Select fan tray 4 */
@@ -227,13 +241,11 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
            {
                if((r_data & 0x01) == 0x01)
                   info->mode = ONLP_LED_MODE_GREEN;
-               else if((r_data & 0x02) == 0x02)
-                  info->mode = ONLP_LED_MODE_RED;
                else
-                  info->mode = ONLP_LED_MODE_OFF;
+                  info->mode = ONLP_LED_MODE_RED;
            }
            else
-               info->status = ONLP_LED_STATUS_FAILED;
+                info->mode = ONLP_LED_MODE_OFF;
            break;
         case LED_REAR_FAN_TRAY_5:
            /* Select fan tray 5 */
@@ -245,13 +257,11 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
            {
                if((r_data & 0x40) == 0x40)
                   info->mode = ONLP_LED_MODE_GREEN;
-               else if((r_data & 0x80) == 0x80)
-                  info->mode = ONLP_LED_MODE_RED;
                else
-                  info->mode = ONLP_LED_MODE_OFF;
+                  info->mode = ONLP_LED_MODE_RED;
            }
            else
-               info->status = ONLP_LED_STATUS_FAILED;
+                info->mode = ONLP_LED_MODE_OFF;
 	   break; 
         default:
             break;
@@ -279,12 +289,14 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
 int
 onlp_ledi_set(onlp_oid_t id, int on_or_off)
 {
-    if (!on_or_off)
-    {
-        return onlp_ledi_mode_set(id, ONLP_LED_MODE_OFF);
-    }
+    VALIDATE(id);
+//    int local_id = ONLP_OID_ID_GET(id);
+    if(on_or_off == 0)
+        onlp_ledi_mode_set(id, ONLP_LED_MODE_OFF);
+    else
+        onlp_ledi_mode_set(id,ONLP_LED_MODE_AUTO);
 
-    return ONLP_STATUS_E_UNSUPPORTED;
+    return ONLP_STATUS_OK;
 }
 
 /*
@@ -298,175 +310,210 @@ onlp_ledi_mode_set(onlp_oid_t id, onlp_led_mode_t mode)
 {
     VALIDATE(id);
     int local_id = ONLP_OID_ID_GET(id);
-    uint8_t front_panel_led_value, fan_tray_led_reg_value,fan_tray_led_reg_2_value;
+    int i = 0, count = 0;
+    int state = 0, fantray_present = -1, rpm = 0, rpm1 = 0;
+    uint8_t front_panel_led_value, power_state,fan_tray_led_reg_value,fan_tray_led_reg_2_value;
 
+    mux_info_t mux_info;
+    mux_info.offset = SWPLD_PSU_FAN_I2C_MUX_REG;
+    mux_info.flags = DEFAULT_FLAG;
+
+    dev_info_t dev_info;
+    dev_info.bus = I2C_BUS_3;
+    dev_info.offset = 0x00;
+    dev_info.flags = DEFAULT_FLAG;
+    
+    front_panel_led_value = dni_lock_swpld_read_attribute(LED_REG);
     fan_tray_led_reg_value = dni_lock_swpld_read_attribute(FAN_TRAY_LED_REG);
-    fan_tray_led_reg_2_value = dni_lock_swpld_read_attribute(FAN_TRAY_LED_REG_2);      
-    switch(local_id)
-    {   
-        case LED_FRONT_FAN:
+    fan_tray_led_reg_2_value = dni_lock_swpld_read_attribute(FAN_TRAY_LED_REG_2);
+    switch(local_id)    
+        {   
+        case LED_FRONT_FAN: 
             /* Clean the bit 1,0 */
-            front_panel_led_value = dni_lock_swpld_read_attribute(LED_REG);
             front_panel_led_value &= ~0x3;
-            if(mode == ONLP_LED_MODE_GREEN)
+            /* Read fan eeprom to check present. Fan tray 1-5 */
+            for(i = 0; i < 5; i++)
             {
-               front_panel_led_value |= 0x01;
-               dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                mux_info.channel = i;
+                dev_info.addr = FAN_TRAY_1 + i;
+                fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
+                if( fantray_present >= 0)
+                    count++;
             }
-            else if(mode == ONLP_LED_MODE_ORANGE)
+            /* Set front light of FAN */
+            if(count == ALL_FAN_TRAY_EXIST && dni_fan_speed_good() == FAN_SPEED_NORMALLY)
+            {
+                front_panel_led_value |= 0x01;
+                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+            }
+            else
             {
                 front_panel_led_value |= 0x02;
                 dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
             }
-            else
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+            
             break;
-         case LED_FRONT_PWR1: 
+        case LED_FRONT_PWR1: 
             /* Clean bit 7,6 */
-            front_panel_led_value = dni_lock_swpld_read_attribute(LED_REG);
             front_panel_led_value &= ~0xC0;
-            if(mode == ONLP_LED_MODE_GREEN)
+            /* switch CPLD to PSU 1 */
+            dev_info.bus = I2C_BUS_4;
+            dev_info.addr = PSU_EEPROM;
+            mux_info.channel = 0x00;  
+            state = dni_i2c_lock_read(&mux_info, &dev_info);
+    
+            /* Check the state of PSU 1, "state = 1, PSU exists' */
+            if(state == 1)
             {
-                /* Green */
-                front_panel_led_value |= 0x40;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if(mode == ONLP_LED_MODE_ORANGE_BLINKING)
-            {
-                /* BLINKING ORANGE */
-                front_panel_led_value |= 0x80;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if(mode == ONLP_LED_MODE_OFF)
-            {
-                front_panel_led_value &= ~0xC0;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                power_state = dni_lock_swpld_read_attribute(CTL_REG);
+                /* Set the light of PSU */
+                if((power_state&0x80) != 0x80)
+                {
+                    /* Red */
+                    front_panel_led_value |= 0x80;
+                    dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                }
+                else if((power_state & 0x80) == 0x80)
+                {
+                    /* Green */
+                    front_panel_led_value |= 0x40;
+                    dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                }
             }
             else
-                return ONLP_STATUS_E_UNSUPPORTED;
+                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
             break;
         case LED_FRONT_PWR2:
+            /* Set front light of PSU 2 */
             /* Clean bit 5,4 */
-            front_panel_led_value = dni_lock_swpld_read_attribute(LED_REG);
             front_panel_led_value &= ~0x30;
-            if(mode == ONLP_LED_MODE_GREEN)
+            /* switch CPLD to PSU 2 */
+            dev_info.bus = I2C_BUS_4;
+            dev_info.addr = PSU_EEPROM;
+            mux_info.channel = 0x20;
+            state = dni_i2c_lock_read(&mux_info, &dev_info);
+        
+            /* Check the state of PSU 2, "state = 1, PSU exists' */
+            if(state == 1)
             {
-                /* Green */
-                front_panel_led_value |= 0x10;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if(mode == ONLP_LED_MODE_ORANGE_BLINKING)
-            { 
-                /* BLINKING ORANGE */
-                front_panel_led_value |= 0x20;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if(mode == ONLP_LED_MODE_OFF)
-            {
-                front_panel_led_value &= ~0x30;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else
-                return ONLP_STATUS_E_UNSUPPORTED;
-            break;
- 
-        case LED_FRONT_SYS:
-            front_panel_led_value = dni_lock_swpld_read_attribute(LED_REG);
-            front_panel_led_value &= ~0x0C;
-            if(mode == ONLP_LED_MODE_GREEN_BLINKING)
-            {
-                front_panel_led_value |= 0x08;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if (mode == ONLP_LED_MODE_GREEN)
-            {
-                front_panel_led_value |= 0x04;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
-            }
-            else if (mode == ONLP_LED_MODE_RED) 
-            {
-                front_panel_led_value |= 0x0c;
-                dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                power_state = dni_lock_swpld_read_attribute(CTL_REG);
+                if((power_state & 0x40) != 0x40)
+                {
+                    /* Red */
+                    front_panel_led_value |= 0x20;
+                    dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                }
+                else if((power_state & 0x40) == 0x40)
+                {
+                    /* Green */
+                    front_panel_led_value |= 0x10;
+                    dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
+                }
             }
             else
                 dni_lock_swpld_write_attribute(LED_REG, front_panel_led_value);
             break;
- 
         case LED_REAR_FAN_TRAY_1:
-             fan_tray_led_reg_value &= ~0xC0;
-             if(mode == ONLP_LED_MODE_GREEN)
-             {/* Green light */
-                 fan_tray_led_reg_value |= 0x40;
-                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-             }
-             else if(mode == ONLP_LED_MODE_RED)
-             {/* Red light */
+            /* Select fan tray 1 */
+            mux_info.channel = 0x00;
+            dev_info.addr = FAN_TRAY_1;
+            fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
+            /* Clean bit 7,6 */
+            fan_tray_led_reg_value &= ~0xC0;
+            rpm = dni_i2c_lock_read_attribute(NULL, FAN5_FRONT);
+            rpm1 = dni_i2c_lock_read_attribute(NULL, FAN5_REAR);
+            if(fantray_present >= 0 && rpm != 960 && rpm != 0 && rpm1 != 960 && rpm1 != 0 )
+            {/* Green light */
+                fan_tray_led_reg_value |= 0x40;
+                dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
+            }
+            else
+            {/* Red light */
                 fan_tray_led_reg_value |= 0x80;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-             }
-             else
-                dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-             break;
+            }
+            break;
         case LED_REAR_FAN_TRAY_2:
+            /* Select fan tray 2 */
+            mux_info.channel = 0x01;
+            dev_info.addr = FAN_TRAY_2;
+            fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
+            /* Clean bit 5,4 */
             fan_tray_led_reg_value &= ~0x30;
-            if(mode == ONLP_LED_MODE_GREEN)
-            {/* Green light */
+            rpm = dni_i2c_lock_read_attribute(NULL, FAN4_FRONT);
+            rpm1 = dni_i2c_lock_read_attribute(NULL, FAN4_REAR);
+           
+            if(fantray_present >= 0 && rpm != 960 && rpm != 0 && rpm1 != 960 && rpm1 != 0 )
+            {
                 fan_tray_led_reg_value |= 0x10;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
             }
-            else if(mode == ONLP_LED_MODE_RED)
-            {/* Red light */
-               fan_tray_led_reg_value |= 0x20;
-               dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-            }
             else
+            {
+                fan_tray_led_reg_value |= 0x20;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
+            }
             break;
         case LED_REAR_FAN_TRAY_3:
+            /* Select fan tray 3 */
+            mux_info.channel = 0x02;
+            dev_info.addr = FAN_TRAY_3;
+            fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
             fan_tray_led_reg_value &= ~0x0c;
-            if(mode == ONLP_LED_MODE_GREEN)
-            {/* Green light */
+            /* Clean bit 3,2 */
+            rpm = dni_i2c_lock_read_attribute(NULL, FAN3_FRONT);
+            rpm1 = dni_i2c_lock_read_attribute(NULL, FAN3_REAR);
+            if(fantray_present >= 0 && rpm != 960 && rpm != 0 && rpm1 != 960 && rpm1 != 0 )
+            {
                 fan_tray_led_reg_value |= 0x04;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
             }
-            else if(mode == ONLP_LED_MODE_RED)
-            {/* Red light */
-               fan_tray_led_reg_value |= 0x08;
-               dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-            }
             else
+            {
+                fan_tray_led_reg_value |= 0x08;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
+            }
             break;
         case LED_REAR_FAN_TRAY_4:
+            /* Select fan tray 4 */
+            mux_info.channel = 0x03;
+            dev_info.addr = FAN_TRAY_4;
+            fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
+            /* Clean bit 1,0 */
             fan_tray_led_reg_value &= ~0x03;
-            if(mode == ONLP_LED_MODE_GREEN)
-            {/* Green light */
+            rpm = dni_i2c_lock_read_attribute(NULL, FAN2_FRONT);
+            rpm1 = dni_i2c_lock_read_attribute(NULL, FAN2_REAR);
+            if(fantray_present >= 0 && rpm != 960 && rpm !=0 && rpm1 != 960 && rpm1 != 0 )
+            {
                 fan_tray_led_reg_value |= 0x01;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
             }
-            else if(mode == ONLP_LED_MODE_RED)
-            {/* Red light */
+            else
+            {
                 fan_tray_led_reg_value |= 0x02;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
             }
-            else
-                dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
             break;
-         case LED_REAR_FAN_TRAY_5:
-             fan_tray_led_reg_2_value &= ~0xC0;
-             if(mode == ONLP_LED_MODE_GREEN)
-             {/* Green light */
+        case LED_REAR_FAN_TRAY_5:
+            /* Select fan tray 5 */
+            mux_info.channel = 0x04;
+            dev_info.addr = FAN_TRAY_5;
+            fantray_present = dni_i2c_lock_read(&mux_info, &dev_info);
+            /* Clean bit 7,6 */
+            fan_tray_led_reg_2_value &= ~0xC0;
+            rpm = dni_i2c_lock_read_attribute(NULL, FAN1_FRONT);
+            rpm1 = dni_i2c_lock_read_attribute(NULL, FAN1_REAR);
+            if(fantray_present >= 0 && rpm != 960 && rpm != 0 && rpm1 != 960 && rpm1 !=0 )
+            {
                 fan_tray_led_reg_2_value |= 0x40;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG_2, fan_tray_led_reg_2_value);
-             }
-             else if(mode == ONLP_LED_MODE_RED)
-             {/* Red light */
+            }
+            else
+            {
                 fan_tray_led_reg_2_value |= 0x80;
                 dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG_2, fan_tray_led_reg_2_value);
-             }
-             else
-                dni_lock_swpld_write_attribute(FAN_TRAY_LED_REG, fan_tray_led_reg_value);
-             break;
+            }
+            break;
     }
     return ONLP_STATUS_OK;
 }
@@ -479,3 +526,6 @@ onlp_ledi_ioctl(onlp_oid_t id, va_list vargs)
 {
     return ONLP_STATUS_E_UNSUPPORTED;
 }
+
+
+

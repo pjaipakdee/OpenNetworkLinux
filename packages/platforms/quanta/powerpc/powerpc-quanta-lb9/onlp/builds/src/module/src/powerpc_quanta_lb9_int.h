@@ -223,10 +223,10 @@ extern aim_map_si_t thermal_oid_desc_map[];
  * PSU1 and PSU2 sys paths
  */
 #define SYS_PSU1_PREFIX \
-    "/sys/bus/i2c/devices/7-0058"
+    "/sys/bus/i2c/devices/7-0058/hwmon/hwmon1"
 
 #define SYS_PSU2_PREFIX \
-    "/sys/bus/i2c/devices/8-0059"
+    "/sys/bus/i2c/devices/8-0059/hwmon/hwmon2"
 
 
 #include "system.h"

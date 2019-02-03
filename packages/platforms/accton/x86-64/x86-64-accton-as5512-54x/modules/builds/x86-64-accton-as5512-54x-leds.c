@@ -29,8 +29,13 @@
 #include <linux/leds.h>
 #include <linux/slab.h>
 
-extern int as5512_54x_cpld_read(unsigned short cpld_addr, u8 reg);
-extern int as5512_54x_cpld_write(unsigned short cpld_addr, u8 reg, u8 value);
+extern int accton_i2c_cpld_read(unsigned short cpld_addr, u8 reg);
+extern int accton_i2c_cpld_write(unsigned short cpld_addr, u8 reg, u8 value);
+
+extern void led_classdev_unregister(struct led_classdev *led_cdev);
+extern int led_classdev_register(struct device *parent, struct led_classdev *led_cdev);
+extern void led_classdev_resume(struct led_classdev *led_cdev);
+extern void led_classdev_suspend(struct led_classdev *led_cdev);
 
 #define DRVNAME "as5512_54x_led"
 
@@ -168,12 +173,12 @@ static u8 led_light_mode_to_reg_val(enum led_type type,
 
 static int accton_as5512_54x_led_read_value(u8 reg)
 {
-    return as5512_54x_cpld_read(0x60, reg);
+    return accton_i2c_cpld_read(0x60, reg);
 }
 
 static int accton_as5512_54x_led_write_value(u8 reg, u8 value)
 {
-    return as5512_54x_cpld_write(0x60, reg, value);
+    return accton_i2c_cpld_write(0x60, reg, value);
 }
 
 static void accton_as5512_54x_led_update(void)
@@ -410,6 +415,11 @@ static struct platform_driver accton_as5512_54x_led_driver = {
 static int __init accton_as5512_54x_led_init(void)
 {
     int ret;
+
+    extern int platform_accton_as5512_54x(void);
+    if(!platform_accton_as5512_54x()) {
+        return -ENODEV;
+    }
 
     ret = platform_driver_register(&accton_as5512_54x_led_driver);
     if (ret < 0) {

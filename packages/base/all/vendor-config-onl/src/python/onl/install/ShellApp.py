@@ -15,6 +15,9 @@ from InstallUtils import ProcMountsParser, ProcMtdParser
 from InstallUtils import BlkidParser
 from InstallUtils import UbootInitrdContext
 
+import onl.platform.current
+from onl.sysconfig import sysconfig
+
 class AppBase(SubprocessMixin, object):
 
     @property
@@ -85,7 +88,7 @@ class AppBase(SubprocessMixin, object):
         sys.exit(code)
 
 class OnieBootContext:
-    """Find the ONIE initrd and unpack/mount it."""
+    """Find the ONIE initrd and umpack/mount it."""
 
     def __init__(self, log=None):
         self.log = log or logging.getLogger(self.__class__.__name__)
@@ -125,7 +128,6 @@ class OnieBootContext:
                 initrd = _g(parts[0].dir)
                 if initrd is None:
                     raise ValueError("cannot find ONIE initrd on %s" % parts[0].dir)
-                self.onieDir = parts[0].dir
                 self.log.debug("found ONIE initrd at %s", initrd)
                 with InitrdContext(initrd=initrd, log=self.log) as self.ictx:
                     self.initrd = initrd
@@ -224,106 +226,6 @@ class Onie(AppBase):
     def run(self):
         with OnieBootContext(log=self.log) as ctx:
             return self._runInitrdShell(ctx.initrd)
-
-class OnieSysinfoApp(SubprocessMixin, object):
-
-    PROG = "onie-sysinfo"
-
-    def __init__(self, args=[], log=None):
-
-        if log is not None:
-            self.log = log
-        else:
-            self.log = logging.getLogger(self.__class__.__name__)
-        self.args = args or ['-p',]
-        self.output = None
-
-    def _runInitrdShell(self, initrd):
-        with InitrdContext(initrd=initrd, log=self.log) as ctx:
-            cmd = ['onie-sysinfo',]
-            cmd.extend(self.args)
-            cmd = 'IFS=;' + " ".join(cmd)
-            cmd = ('chroot', ctx.dir,
-                   '/bin/sh', '-c', cmd,)
-            try:
-                self.output = self.check_output(cmd)
-                ret = 0
-            except subprocess.CalledProcessError, what:
-                self.log.error("failed command: %s", " ".join(what.cmd))
-                for line in (what.output or "").splitlines():
-                    self.log.error(">>> %s", line)
-                ret = what.returncode
-        return ret
-
-    def run(self):
-        with OnieBootContext(log=self.log) as ctx:
-            ret = self._runInitrdShell(ctx.initrd)
-            if self.output is not None:
-                sys.stdout.write(self.output)
-            return ret
-
-    def shutdown(self):
-        pass
-
-    @classmethod
-    def main(cls):
-
-        logging.basicConfig()
-        logger = logging.getLogger(cls.PROG)
-        logger.setLevel(logging.INFO)
-
-        args = list(sys.argv[1:])
-        sysinfoArgs = []
-        while args:
-
-            if args[0] in ('-v', '--verbose',):
-                logger.setLevel(logging.DEBUG)
-                args.pop(0)
-                continue
-
-            if args[0] in ('-q', '--quiet',):
-                logger.setLevel(logging.ERROR)
-                args.pop(0)
-                continue
-
-            sysinfoArgs.append(args.pop(0))
-
-        app = cls(args=sysinfoArgs, log=logger)
-        try:
-            code = app.run()
-        except:
-            logger.exception("runner failed")
-            code = 1
-        app.shutdown()
-        sys.exit(code)
-
-class OnieSysinfo(OnieSysinfoApp):
-
-    def _runArgs(self, *args):
-        self.args = args
-        with OnieBootContext(log=self.log) as ctx:
-            ret = self._runInitrdShell(ctx.initrd)
-            if self.output is not None:
-                return self.output.rstrip()
-            raise AttributeError("cannot retrieve onie-sysinfo attribute via %s" % str(args))
-
-    @property
-    def help(self):
-        return self._runArgs('-h')
-
-    @property
-    def onie_platform(self):
-        return self._runArgs('-p')
-
-    @property
-    def onie_arch(self):
-        return self._runArgs('-c')
-
-    @property
-    def onie_version(self):
-        return self._runArgs('-v')
-
-    # XXX roth other switches too
 
 class Loader(AppBase):
     """Application shell that uses the (installed) loader runtime."""
@@ -428,7 +330,6 @@ class Loader(AppBase):
 
     def run(self):
 
-        import onl.platform.current
         self.platform = onl.platform.current.OnlPlatform()
         self.pc = self.platform.platform_config
 
@@ -451,7 +352,6 @@ class Upgrader(AppBase):
 
     def runGrub(self):
 
-        from onl.sysconfig import sysconfig
         d = sysconfig.upgrade.loader.package.dir
         for b in sysconfig.upgrade.loader.package.grub:
             p = os.path.join(d, b)
@@ -464,7 +364,6 @@ class Upgrader(AppBase):
 
     def runUboot(self):
 
-        from onl.sysconfig import sysconfig
         d = sysconfig.upgrade.loader.package.dir
         for b in sysconfig.upgrade.loader.package.fit:
             p = os.path.join(d, b)
@@ -477,7 +376,6 @@ class Upgrader(AppBase):
 
     def run(self):
 
-        import onl.platform.current
         self.platform = onl.platform.current.OnlPlatform()
         self.pc = self.platform.platform_config
 
