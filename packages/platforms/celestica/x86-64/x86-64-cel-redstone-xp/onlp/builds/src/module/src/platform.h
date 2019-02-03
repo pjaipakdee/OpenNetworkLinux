@@ -4,6 +4,7 @@
 #define FAN_COUNT       10
 #define PSU_FAN         8
 #define THERMAL_COUNT   6
+#define CHASSIS_THERMAL_COUNT 5
 #define LED_COUNT       11
 
 #define THERMAL_MAIN_BOARD_REAR     0

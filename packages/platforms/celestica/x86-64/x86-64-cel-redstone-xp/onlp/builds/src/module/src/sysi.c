@@ -110,12 +110,12 @@ _onlp_sysi_calc_speed(int atemp)
 int
 onlp_sysi_platform_manage_fans(void)
 {
-    int i, atemp = 0, count = 0;
+    int i, atemp = 0, count = 0,ret;
     int fan_speed = 0;
     static int o_speed = 0, o_psu_speed[2] = {0,0};
     onlp_thermal_info_t t_info;
 
-    for (i = 1; i < PSU_FAN; i++) {
+    for (i = 1; i < CHASSIS_THERMAL_COUNT; i++) {
         onlp_thermali_info_get(ONLP_THERMAL_ID_CREATE(i), &t_info);
         if (t_info.mcelsius) {
             count++;
@@ -133,8 +133,8 @@ onlp_sysi_platform_manage_fans(void)
 
     /* Control PSU FAN */
     for (i = 0; i < 2  ; i++) {
-        onlp_thermali_info_get(ONLP_THERMAL_ID_CREATE(i), &t_info);
-        if (t_info.mcelsius) {
+        ret = onlp_thermali_info_get(ONLP_THERMAL_ID_CREATE(CHASSIS_THERMAL_COUNT+i), &t_info);
+        if (ret == ONLP_STATUS_OK) {
             atemp = t_info.mcelsius;
             fan_speed = _onlp_sysi_calc_speed(atemp);
             if (fan_speed != o_psu_speed[i]) {

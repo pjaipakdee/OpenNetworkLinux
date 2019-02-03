@@ -43,7 +43,7 @@ onlp_thermali_init(void)
 int
 onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info)
 {
-    int sensor_id;
+    int sensor_id,ret;
     struct psuInfo psu;
     short temp;
 
@@ -60,13 +60,23 @@ onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info)
         info->mcelsius = temp;
         break;
       case THERMAL_PSU1:
-        getPsuInfo(0, &psu);
-        info->mcelsius = psu.temp;
-        break;
+        ret = getPsuInfo(0, &psu);
+        if(ret == 0){
+            info->mcelsius = psu.temp;
+            break;
+        }else{
+            return ONLP_STATUS_E_INTERNAL;
+        }
+        
       case THERMAL_PSU2:
-        getPsuInfo(1, &psu);
-        info->mcelsius = psu.temp;
-        break;
+        ret = getPsuInfo(1, &psu);
+        if(ret == 0){
+            info->mcelsius = psu.temp;
+            break;
+        }else{
+            return ONLP_STATUS_E_INTERNAL;
+        }
+        
     }
     return ONLP_STATUS_OK;
 }

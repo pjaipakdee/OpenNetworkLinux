@@ -37,11 +37,11 @@ onlp_fan_info_t f_info[FAN_COUNT + 1] = {
         0x0,
     },
     {
-        { ONLP_FAN_ID_CREATE(8), "PSU Fan 1", 0 },
+        { ONLP_FAN_ID_CREATE(9), "PSU Fan 1", 0 },
         0x0,
     },
     {
-        { ONLP_FAN_ID_CREATE(8), "PSU Fan 2", 0 },
+        { ONLP_FAN_ID_CREATE(10), "PSU Fan 2", 0 },
         0x0,
     },
 };
