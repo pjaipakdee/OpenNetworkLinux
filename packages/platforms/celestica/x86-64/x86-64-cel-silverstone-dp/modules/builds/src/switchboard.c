@@ -1,5 +1,5 @@
 /*
- * switchboard.c - driver for Silverstone Switch board FPGA/CPLD.
+ * switchboard.c - driver for Silverstone DP Switch board FPGA/CPLD.
  *
  * Author: Pradchaya Phucharoen
  *
@@ -25,7 +25,7 @@
  */
 
 #ifndef TEST_MODE
-#define MOD_VERSION "1.0.1"
+#define MOD_VERSION "1.0.0"
 #else
 #define MOD_VERSION "TEST"
 #endif
@@ -56,7 +56,7 @@
 static int  majorNumber;
 
 #define CLASS_NAME "silverstone_fpga"
-#define DRIVER_NAME "AS58128.switchboard"
+#define DRIVER_NAME "silverstone_dp"
 #define FPGA_PCI_NAME "Silverstone_fpga_pci"
 #define DEVICE_NAME "fwupgrade"
 
@@ -249,8 +249,8 @@ enum {
  *
  */
 
-#define VIRTUAL_I2C_QSFP_PORT           32
-#define VIRTUAL_I2C_SFP_PORT            2
+#define VIRTUAL_I2C_QSFP_PORT           30
+#define VIRTUAL_I2C_SFP_PORT            0
 
 #define SFF_PORT_TOTAL    VIRTUAL_I2C_QSFP_PORT + VIRTUAL_I2C_SFP_PORT
 
@@ -311,29 +311,31 @@ struct i2c_dev_data {
 /* PREDEFINED I2C SWITCH DEVICE TOPOLOGY */
 static struct i2c_switch fpga_i2c_bus_dev[] = {
     /* BUS3 QSFP Exported as virtual bus */
-    {I2C_MASTER_CH_3, 0x71, 2, QSFP, "QSFP1"}, {I2C_MASTER_CH_3, 0x71, 3, QSFP, "QSFP2"},
-    {I2C_MASTER_CH_3, 0x71, 0, QSFP, "QSFP3"}, {I2C_MASTER_CH_3, 0x71, 1, QSFP, "QSFP4"},
-    {I2C_MASTER_CH_3, 0x71, 6, QSFP, "QSFP5"}, {I2C_MASTER_CH_3, 0x71, 5, QSFP, "QSFP6"},
-    {I2C_MASTER_CH_3, 0x73, 7, QSFP, "QSFP7"}, {I2C_MASTER_CH_3, 0x71, 4, QSFP, "QSFP8"},
+    // Implement switch_addr and channel following Switch design spec //
+    // shacomm01\shared\Design Repository\Silverstone-DP\2.Electrical\SWITCH\20190108-1\silverstone DP switch_0108-2.pdf //
+    {I2C_MASTER_CH_3, 0x70, 0, QSFP, "QSFP1"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP2"},
+    {I2C_MASTER_CH_3, 0x70, 2, QSFP, "QSFP3"}, {I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP4"},
+    {I2C_MASTER_CH_3, 0x70, 4, QSFP, "QSFP5"}, {I2C_MASTER_CH_3, 0x70, 5, QSFP, "QSFP6"},
+    {I2C_MASTER_CH_3, 0x70, 6, QSFP, "QSFP7"}, {I2C_MASTER_CH_3, 0x70, 7, QSFP, "QSFP8"},
 
-    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFP9"},  {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFP10"},
-    {I2C_MASTER_CH_3, 0x73, 6, QSFP, "QSFP11"}, {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFP12"},
-    {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFP13"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFP14"},
-    {I2C_MASTER_CH_3, 0x71, 7, QSFP, "QSFP15"}, {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFP16"},
+    {I2C_MASTER_CH_3, 0x71, 0, QSFP, "QSFP9"},  {I2C_MASTER_CH_3, 0x71, 1, QSFP, "QSFP10"},
+    {I2C_MASTER_CH_3, 0x71, 2, QSFP, "QSFP11"}, {I2C_MASTER_CH_3, 0x71, 3, QSFP, "QSFP12"},
+    {I2C_MASTER_CH_3, 0x71, 4, QSFP, "QSFP13"}, {I2C_MASTER_CH_3, 0x71, 5, QSFP, "QSFP14"},
+    {I2C_MASTER_CH_3, 0x71, 6, QSFP, "QSFP15"}, {I2C_MASTER_CH_3, 0x71, 7, QSFP, "QSFP16"},
 
-    {I2C_MASTER_CH_3, 0x72, 1, QSFP, "QSFP17"}, {I2C_MASTER_CH_3, 0x72, 7, QSFP, "QSFP18"},
-    {I2C_MASTER_CH_3, 0x72, 4, QSFP, "QSFP19"}, {I2C_MASTER_CH_3, 0x72, 0, QSFP, "QSFP20"},
-    {I2C_MASTER_CH_3, 0x72, 5, QSFP, "QSFP21"}, {I2C_MASTER_CH_3, 0x72, 2, QSFP, "QSFP22"},
-    {I2C_MASTER_CH_3, 0x70, 5, QSFP, "QSFP23"}, {I2C_MASTER_CH_3, 0x72, 6, QSFP, "QSFP24"},
+    {I2C_MASTER_CH_3, 0x72, 0, QSFP, "QSFP17"}, {I2C_MASTER_CH_3, 0x72, 1, QSFP, "QSFP18"},
+    {I2C_MASTER_CH_3, 0x72, 2, QSFP, "QSFP19"}, {I2C_MASTER_CH_3, 0x72, 3, QSFP, "QSFP20"},
+    {I2C_MASTER_CH_3, 0x72, 4, QSFP, "QSFP21"}, {I2C_MASTER_CH_3, 0x72, 5, QSFP, "QSFP22"},
+    {I2C_MASTER_CH_3, 0x72, 6, QSFP, "QSFP23"}, {I2C_MASTER_CH_3, 0x72, 7, QSFP, "QSFP24"},
 
-    {I2C_MASTER_CH_3, 0x72, 3, QSFP, "QSFP25"}, {I2C_MASTER_CH_3, 0x70, 6, QSFP, "QSFP26"},
-    {I2C_MASTER_CH_3, 0x70, 0, QSFP, "QSFP27"}, {I2C_MASTER_CH_3, 0x70, 7, QSFP, "QSFP28"},
-    {I2C_MASTER_CH_3, 0x70, 2, QSFP, "QSFP29"}, {I2C_MASTER_CH_3, 0x70, 4, QSFP, "QSFP30"},
-    {I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP31"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP32"},
+    {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFPDD1"}, {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFPDD2"},
+    {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFPDD3"}, {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFPDD4"},
+    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD_81725"},
+    //{I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP31"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP32"},
     /* BUS1 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
+    //{I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
     /* BUS2 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP2"},
+    //{I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP2"},
     /* BUS4 CPLD Access via I2C */
     {I2C_MASTER_CH_4, 0xFF, 0, NONE, "CPLD_S"},
     /* BUS5 CPLD_B */
@@ -596,14 +598,14 @@ static struct attribute_group fpga_attr_grp = {
 };
 
 /* SW CPLDs attributes */
-static ssize_t cpld1_dump_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t cpld1_getreg_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     // CPLD register is one byte
     uint8_t data;
     fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, fpga_data->cpld1_read_addr, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&data);
     return sprintf(buf, "0x%2.2x\n", data);
 }
-static ssize_t cpld1_dump_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t cpld1_getreg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     uint8_t addr;
     char *last;
@@ -614,7 +616,7 @@ static ssize_t cpld1_dump_store(struct device *dev, struct device_attribute *att
     fpga_data->cpld1_read_addr = addr;
     return size;
 }
-struct device_attribute dev_attr_cpld1_dump = __ATTR(dump, 0600, cpld1_dump_show, cpld1_dump_store);
+struct device_attribute dev_attr_cpld1_getreg = __ATTR(getreg, 0600, cpld1_getreg_show, cpld1_getreg_store);
 
 static ssize_t cpld1_scratch_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -681,7 +683,7 @@ static ssize_t cpld1_setreg_store(struct device *dev, struct device_attribute *a
 struct device_attribute dev_attr_cpld1_setreg = __ATTR(setreg, 0200, NULL, cpld1_setreg_store);
 
 static struct attribute *cpld1_attrs[] = {
-    &dev_attr_cpld1_dump.attr,
+    &dev_attr_cpld1_getreg.attr,
     &dev_attr_cpld1_scratch.attr,
     &dev_attr_cpld1_setreg.attr,
     NULL,
@@ -691,7 +693,7 @@ static struct attribute_group cpld1_attr_grp = {
     .attrs = cpld1_attrs,
 };
 
-static ssize_t cpld2_dump_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t cpld2_getreg_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     // CPLD register is one byte
     uint8_t data;
@@ -699,7 +701,7 @@ static ssize_t cpld2_dump_show(struct device *dev, struct device_attribute *attr
     return sprintf(buf, "0x%2.2x\n", data);
 }
 
-static ssize_t cpld2_dump_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t cpld2_getreg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     // CPLD register is one byte
     uint32_t addr;
@@ -711,7 +713,7 @@ static ssize_t cpld2_dump_store(struct device *dev, struct device_attribute *att
     fpga_data->cpld2_read_addr = addr;
     return size;
 }
-struct device_attribute dev_attr_cpld2_dump = __ATTR(dump, 0600, cpld2_dump_show, cpld2_dump_store);
+struct device_attribute dev_attr_cpld2_getreg = __ATTR(getreg, 0600, cpld2_getreg_show, cpld2_getreg_store);
 
 static ssize_t cpld2_scratch_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -779,7 +781,7 @@ static ssize_t cpld2_setreg_store(struct device *dev, struct device_attribute *a
 struct device_attribute dev_attr_cpld2_setreg = __ATTR(setreg, 0200, NULL, cpld2_setreg_store);
 
 static struct attribute *cpld2_attrs[] = {
-    &dev_attr_cpld2_dump.attr,
+    &dev_attr_cpld2_getreg.attr,
     &dev_attr_cpld2_scratch.attr,
     &dev_attr_cpld2_setreg.attr,
     NULL,
@@ -1037,17 +1039,17 @@ static ssize_t port_led_color_show(struct device *dev, struct device_attribute *
     // value can be R/G/B/C/M/Y/W/OFF
     __u8 led_color1, led_color2;
     int err;
-    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x09, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color1);
+    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD1_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x0A, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color1);
     if (err < 0)
         return err;
-    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD2_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x09, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color2);
+    err = fpga_i2c_access(fpga_data->i2c_adapter[VIRTUAL_I2C_CPLD_INDEX], CPLD2_SLAVE_ADDR, 0x00, I2C_SMBUS_READ, 0x0A, I2C_SMBUS_BYTE_DATA, (union i2c_smbus_data*)&led_color2);
     if (err < 0)
         return err;
     return sprintf(buf, "%s %s\n",
                    led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "green" : led_color1 == 0x05 ?  "red" : led_color1 == 0x04 ? 
                     "yellow" : led_color1 == 0x03 ? "blue" : led_color1 == 0x02 ?  "cyan" : led_color1 == 0x01 ?  "magenta" : "white",
-                   led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "green" : led_color1 == 0x05 ?  "red" : led_color1 == 0x04 ? 
-                    "yellow" : led_color1 == 0x03 ? "blue" : led_color1 == 0x02 ?  "cyan" : led_color1 == 0x01 ?  "magenta" : "white");
+                   led_color2 == 0x07 ? "off" : led_color2 == 0x06 ? "green" : led_color2 == 0x05 ?  "red" : led_color2 == 0x04 ? 
+                    "yellow" : led_color2 == 0x03 ? "blue" : led_color2 == 0x02 ?  "cyan" : led_color2 == 0x01 ?  "magenta" : "white");
 }
 
 static ssize_t port_led_color_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
