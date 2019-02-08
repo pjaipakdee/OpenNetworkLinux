@@ -23,7 +23,7 @@ onlp_psui_init(void)
 int
 onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t* info)
 {
-    int psu_id;
+    int psu_id,ret;
     struct psuInfo psu;
 
     psu_id = ONLP_OID_ID_GET(id) - 1;
@@ -34,14 +34,22 @@ onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t* info)
     else
         return ONLP_STATUS_E_MISSING;
 
-    getPsuInfo(psu_id, &psu);
-
-    info->mvin = psu.vin;
-    info->mvout = psu.vout;
-    info->miin  = psu.iin;
-    info->miout = psu.iout;
-    info->mpin = psu.pin;
-    info->mpout = psu.pout;
+    ret = getPsuInfo(psu_id, &psu);
+    if(ret==0){
+        info->mvin = psu.vin;
+        info->mvout = psu.vout;
+        info->miin  = psu.iin;
+        info->miout = psu.iout;
+        info->mpin = psu.pin;
+        info->mpout = psu.pout;
+    }else{
+        info->mvin = 0;
+        info->mvout = 0;
+        info->miin  = 0;
+        info->miout = 0;
+        info->mpin = 0;
+        info->mpout = 0;
+    }
 
     if (!(info->mpin))
         info->status |= ONLP_PSU_STATUS_UNPLUGGED;

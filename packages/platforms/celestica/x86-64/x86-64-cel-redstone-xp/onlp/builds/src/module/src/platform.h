@@ -6,6 +6,8 @@
 #define THERMAL_COUNT   6
 #define CHASSIS_THERMAL_COUNT 5
 #define LED_COUNT       11
+#define NUM_OF_PSU_ON_MAIN_BROAD      2
+#define NUM_OF_CHASSIS_FAN 8
 
 #define THERMAL_MAIN_BOARD_REAR     0
 #define THERMAL_BCM                 1

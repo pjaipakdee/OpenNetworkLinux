@@ -93,10 +93,14 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info)
 int
 onlp_ledi_set(onlp_oid_t id, int on_or_off)
 {
-    if (!on_or_off)
+    int dev_id = 0;
+    dev_id = ONLP_OID_ID_GET(id) - 1;
+    printf("onlp_ledi_set %d on_or_off %d\n",dev_id,on_or_off);
+    if(!on_or_off){
         return onlp_ledi_mode_set(id, ONLP_LED_MODE_OFF);
-   else
+    }else{
         return onlp_ledi_mode_set(id, ONLP_LED_MODE_ON);
+    }
 }
 
 int
@@ -129,9 +133,9 @@ onlp_ledi_mode_set(onlp_oid_t id, onlp_led_mode_t mode)
       case LED_PSU_2:
         psu = led_id - LED_PSU_1;
         if (mode == ONLP_LED_MODE_OFF)
-            setPsuLedOn(psu);
-        else
             setPsuLedOff(psu);
+        else
+            setPsuLedOn(psu);
         break;
       default:
         return ONLP_STATUS_E_INTERNAL;

@@ -1952,5 +1952,3 @@ int fanSpeedSet(int id, unsigned short speed)
 	}
 	return ret;
 }
-
-
