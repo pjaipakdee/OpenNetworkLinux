@@ -62,14 +62,25 @@ int
 onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info_p)
 {
     int thermal_id;
+	int thermal_status = 0;
+	int temp, warn, err, shutdown;
+	
     thermal_id = ONLP_OID_ID_GET(id);
-    *info_p = thermal_info[thermal_id];
-    int thermal_status = getThermalStatus_Ipmi(thermal_id,&(info_p->mcelsius));
-    info_p->thresholds.warning = 0;
-    info_p->thresholds.error = 0;
-    info_p->thresholds.shutdown = 0;
-    if(!(thermal_status))
-        info_p->status = ONLP_THERMAL_STATUS_FAILED;
+	memcpy(info_p, &thermal_info[thermal_id], sizeof(onlp_thermal_info_t));
+
+	/* Get thermal temperature. */
+    thermal_status = getSensorInfo(thermal_id, &temp, &warn, &err, &shutdown);
+	if(-1 == thermal_status)
+	{
+        info_p->status = ONLP_THERMAL_STATUS_FAILED;	
+	} else 
+    {
+        info_p->status = ONLP_THERMAL_STATUS_PRESENT;
+        info_p->mcelsius = temp;
+        info_p->thresholds.warning = warn;
+	    info_p->thresholds.error = err;
+	    info_p->thresholds.shutdown = shutdown;        
+    }	
 
     return ONLP_STATUS_OK;
 }

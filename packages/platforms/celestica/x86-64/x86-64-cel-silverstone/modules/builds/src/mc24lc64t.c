@@ -87,7 +87,7 @@ static ssize_t mc24lc64t_write (struct file *filp, struct kobject *kobj,
 begin:
     if (i < count){
         timeout = jiffies + msecs_to_jiffies(25); /* 25 mS timeout*/
-        value = (buf[i] << 8)| off;
+        value = (buf[i] << 8 | ( off &0xff));
         do {
                 write_time = jiffies;
                 status = i2c_smbus_write_word_data(client, off>>8, value);

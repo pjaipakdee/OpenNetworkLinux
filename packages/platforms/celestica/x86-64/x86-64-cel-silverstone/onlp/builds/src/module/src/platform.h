@@ -136,6 +136,7 @@ char* trim (char *s);
 void append(char* s, char c);
 int getFaninfo(int id,char* model,char* serial);
 int getThermalStatus_Ipmi(int id,int *tempc);
+int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
 uint8_t getFanPresent(int id);

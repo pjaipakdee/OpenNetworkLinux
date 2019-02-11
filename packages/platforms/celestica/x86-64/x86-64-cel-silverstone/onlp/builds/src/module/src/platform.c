@@ -804,6 +804,80 @@ int getThermalStatus_Ipmi(int id, int *tempc)
     return 1;
 }
 
+void __trim(char *strIn, char *strOut)
+{
+    int i, j;
+
+    i = 0;
+    j = strlen(strIn) - 1;
+
+    while(strIn[i] == ' ') ++i;
+    while(strIn[j] == ' ') --j;
+
+    strncpy(strOut, strIn + i , j - i + 1);
+    strOut[j - i + 1] = '\0';
+}
+
+int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
+{
+	int i = 0;
+	int ret = 0;
+	char ipmi_ret[1024] = {'\0'};
+	char ipmi_cmd[512] = {'\0'};
+    char strTmp[10][128] = {{0}, {0}};
+    char *token = NULL;
+	
+	if((NULL == temp) || (NULL == warn) || (NULL == error) || (NULL == shutdown))
+	{
+		printf("%s null pointer!\n", __FUNCTION__);
+		return -1;
+	}
+
+    /*
+        String example:			  
+        ipmitool sensor list | grep TEMP_FAN_U52
+        Temp_CPU     | 1.000      | degrees C  | ok  | 5.000  | 9.000  | 16.000  | 65.000  | 73.000  | 75.606
+        TEMP_FAN_U52 | 32.000	  | degrees C  | ok  | na  |  na  | na  | na  | 70.000  | 75.000
+        PSUR_Temp1   | na         | degrees C  | na  | na  | na   | na   | na  | na  | na
+    */
+    sprintf(
+        ipmi_cmd, 
+        "ipmitool sensor list | grep %s",  
+        Thermal_sensor_name[id - 1]
+        ); 
+
+    ret = exec_ipmitool_cmd(ipmi_cmd, ipmi_ret);
+    if(ret != 0)
+    {
+        printf("exec_ipmitool_cmd: %s failed!\n", ipmi_cmd);
+        return -1;
+    }   
+
+    i = 0;
+    token = strtok(ipmi_ret, "|");
+    while( token != NULL ) 
+    {
+        __trim(token, &strTmp[i][0]);
+        i++;
+        if(i > 10) break;
+        token = strtok(NULL, "|");
+    }
+
+    if(0 == strcmp(&strTmp[1][0], "na")) return -1;
+    else *temp = atof(&strTmp[1][0]) * 1000.0;
+
+    if(0 == strcmp(&strTmp[7][0], "na")) *warn = 0;	
+    else *warn = atof(&strTmp[7][0]) * 1000.0;
+
+    if(0 == strcmp(&strTmp[8][0], "na")) *error = 0;	
+    else *error = atof(&strTmp[8][0]) * 1000.0;
+
+    if(0 == strcmp(&strTmp[9][0], "na")) *shutdown = 0;	
+    else *shutdown = atof(&strTmp[9][0]) * 1000.0;
+
+    return 0;
+}
+
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
 {
     int fd;
