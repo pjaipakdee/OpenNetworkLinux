@@ -1,0 +1,1 @@
+!include $ONL_TEMPLATES/platform-config-platform.yml ARCH=amd64 VENDOR=celestica BASENAME=x86-64-dellemc-z9332f-d1508 REVISION=r0
