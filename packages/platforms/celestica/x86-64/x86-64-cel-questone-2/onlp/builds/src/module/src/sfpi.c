@@ -27,7 +27,7 @@
 #include "platform.h"
 #include <inttypes.h>
 
-static int qsfp_count__ = 8;
+static int qsfp_count__ = 6;
 static int sfp_count__ = 48;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
@@ -160,7 +160,7 @@ onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t* dst)
     uint64_t presence_all = 0;
 
 	presence_all = cel_questone_2_sfp_qsfp_get_all_ports_present();
-
+    //printf("presence_all = %d\n",presence_all);
     /* Populate bitmap */
     for(i = 0; presence_all; i++) {
         AIM_BITMAP_MOD(dst, i, (presence_all & 1));
@@ -181,7 +181,6 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
 
 	//sprintf(sub_path, "/%d-0050/eeprom", CHASSIS_SFP_I2C_BUS_BASE + port);
 	path= cel_questone_2_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
-
     /*
      * Read the SFP eeprom into data[]
      *

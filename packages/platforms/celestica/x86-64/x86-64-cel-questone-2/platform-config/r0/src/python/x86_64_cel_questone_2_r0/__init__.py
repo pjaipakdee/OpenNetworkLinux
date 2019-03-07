@@ -10,7 +10,7 @@ class OnlPlatform_x86_64_cel_questone_2_r0(OnlPlatformCelestica,
     def baseconfig(self):
         onlp_interval_time = 30  # second
         file_path = "/var/opt/interval_time.txt"
-        qsfp_quantity = 8
+        qsfp_quantity = 6
         sfp_quantity = 48
         sfp_i2c_start_bus = 2
         print("Initialize and Install the driver here")
@@ -39,12 +39,12 @@ class OnlPlatform_x86_64_cel_questone_2_r0(OnlPlatformCelestica,
         # initialize SFP devices name
         for actual_i2c_port in range(sfp_i2c_start_bus, sfp_i2c_start_bus+(qsfp_quantity+sfp_quantity)):
             port_number = actual_i2c_port - (sfp_i2c_start_bus-1)
-            if(port_number <= qsfp_quantity):
+            if(port_number <= sfp_quantity):
                 #print("echo 'QSFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number))
-                os.system("echo 'QSFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number))
+                os.system("echo 'SFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number))
             else:
                 #print("echo 'SFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number-qsfp_quantity))
-                os.system("echo 'SFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number-qsfp_quantity))
+                os.system("echo 'QSFP{1}' > /sys/devices/i2c-{0}/{0}-0050/port_name".format(actual_i2c_port,port_number-sfp_quantity))
             # self.new_i2c_device('sff8436', 0x50, port)
             # self.new_i2c_device('as5912_54x_sfp%d' % port, 0x51, port+25)
         # new device code instruction
