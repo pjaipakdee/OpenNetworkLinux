@@ -16,6 +16,12 @@
 #include "x86_64_cel_seastone_2_log.h"
 #include "platform.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
 static int is_cache_exist(){
     const char *path="/tmp/onlp-sensor-cache.txt";
     const char *time_setting_path="/var/opt/interval_time.txt";
@@ -136,6 +142,38 @@ onlp_sysi_onie_data_free(uint8_t* data)
 {
     aim_free(data);
 }
+
+int
+onlp_sysi_platform_info_get(onlp_platform_info_t* pi)
+{
+
+    off_t offset = 0xFDC504C4;
+    size_t len = 4;
+
+    size_t pagesize = sysconf(_SC_PAGE_SIZE);
+    off_t page_base = (offset / pagesize) * pagesize;
+    off_t page_offset = offset - page_base;
+
+    int fd = open("/dev/mem", O_RDWR);
+    unsigned char *mem = mmap(NULL, page_offset + len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    if (mem == MAP_FAILED) {
+        perror("Can't map memory");
+        return -1;
+    }
+
+    close(fd);
+
+    pi->other_versions = aim_fstrdup("PAD_CFG_DW1_UART0_TXD = %08x", *(uint32_t *)&mem[page_offset]);
+
+    return ONLP_STATUS_OK;
+}
+
+void
+onlp_sysi_platform_info_free(onlp_platform_info_t* pi)
+{
+    aim_free(pi->other_versions);
+}
+
 
 int onlp_sysi_platform_manage_init(void)
 {
