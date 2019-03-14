@@ -1,83 +1,122 @@
+/************************************************************
+ * <bsn.cl fy=2014 v=onl>
+ *
+ *           Copyright 2014 Big Switch Networks, Inc.
+ *           Copyright 2017 Celestica Corporation.
+ *
+ * Licensed under the Eclipse Public License, Version 1.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ *        http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the
+ * License.
+ *
+ * </bsn.cl>
+ ************************************************************
+ *
+ * Thermal Sensor Platform Implementation.
+ *
+ ***********************************************************/
 #include <unistd.h>
 #include <onlplib/mmap.h>
 #include <onlplib/file.h>
 #include <onlp/platformi/thermali.h>
 #include <fcntl.h>
+#include "platform_lib.h"
 
-#include "i2c_chips.h"
-#include "platform.h"
+#define VALIDATE(_id)                           \
+    do {                                        \
+        if(!ONLP_OID_IS_THERMAL(_id)) {         \
+            return ONLP_STATUS_E_INVALID;       \
+        }                                       \
+    } while(0)
 
-static onlp_thermal_info_t thermal_info[] = {
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_MAIN_BOARD_REAR), "Chassis Thermal (Rear)",    0},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_BCM), "BCM SOC Thermal sensor", 0},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_CPU), "CPU Core",   0},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_MAIN_BOARD_FRONT), "Chassis Thermal Sensor (Front)",   0},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_PSU1), "PSU-1 Thermal Sensor", ONLP_PSU_ID_CREATE(1)},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_PSU2), "PSU-2 Thermal Sensor", ONLP_PSU_ID_CREATE(2)},
-                ONLP_THERMAL_STATUS_PRESENT,
-                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
-            }
+enum onlp_thermal_id
+{
+    THERMAL_RESERVED = 0,
+    THERMAL_1_ON_MAIN_BROAD,
+    THERMAL_2_ON_MAIN_BROAD,
+    THERMAL_3_ON_MAIN_BROAD,	
+    THERMAL_4_ON_MAIN_BROAD,
+    THERMAL_1_ON_PSU1,
+    THERMAL_1_ON_PSU2,
 };
 
+static char* devfiles__[] =  /* must map with onlp_thermal_id */
+{
+    "reserved",
+    "/sys/celestica/sensors/temp1/hwmon/hwmon5/temp1_input",
+    "/sys/celestica/sensors/temp2/hwmon/hwmon6/temp1_input",
+    "/sys/celestica/sensors/temp3/hwmon/hwmon7/temp1_input",
+    "/sys/celestica/sensors/temp4/hwmon/hwmon8/temp1_input",
+    "/sys/celestica/psu/psu1/psu_temp1_input",
+    "/sys/celestica/psu/psu2/psu_temp1_input",
+};
+
+/* Static values */
+static onlp_thermal_info_t linfo[] = {
+	{ }, /* Not used */
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_1_ON_MAIN_BROAD), "Chassis Thermal Sensor 1", 0}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        },
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_2_ON_MAIN_BROAD), "Chassis Thermal Sensor 2", 0}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        },
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_3_ON_MAIN_BROAD), "Chassis Thermal Sensor 3", 0}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        },
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_4_ON_MAIN_BROAD), "Chassis Thermal Sensor 4", 0}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        },
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_1_ON_PSU1), "PSU-1 Thermal Sensor 1", ONLP_PSU_ID_CREATE(PSU1_ID)}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        },
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_1_ON_PSU2), "PSU-2 Thermal Sensor 1", ONLP_PSU_ID_CREATE(PSU2_ID)}, 
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+        }
+};
+
+/*
+ * This will be called to intiialize the thermali subsystem.
+ */
 int
 onlp_thermali_init(void)
 {
     return ONLP_STATUS_OK;
 }
 
+/*
+ * Retrieve the information structure for the given thermal OID.
+ *
+ * If the OID is invalid, return ONLP_E_STATUS_INVALID.
+ * If an unexpected error occurs, return ONLP_E_STATUS_INTERNAL.
+ * Otherwise, return ONLP_STATUS_OK with the OID's information.
+ *
+ * Note -- it is expected that you fill out the information
+ * structure even if the sensor described by the OID is not present.
+ */
 int
 onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info)
 {
-    int sensor_id,ret;
-    struct psuInfo psu;
-    short temp;
+    int local_id;
+    VALIDATE(id);
+	
+    local_id = ONLP_OID_ID_GET(id);
 
-    sensor_id = ONLP_OID_ID_GET(id) - 1;
+    /* Set the onlp_oid_hdr_t and capabilities */		
+    *info = linfo[local_id];
 
-    *info = thermal_info[sensor_id];
-
-    switch (sensor_id) {
-      case THERMAL_MAIN_BOARD_REAR:
-      case THERMAL_MAIN_BOARD_FRONT:
-      case THERMAL_BCM:
-      case THERMAL_CPU:
-        tsTempGet(sensor_id, &temp);
-        info->mcelsius = temp;
-        break;
-      case THERMAL_PSU1:
-        ret = getPsuInfo(0, &psu);
-        if(ret == 0){
-            info->mcelsius = psu.temp;
-            break;
-        }else{
-            return ONLP_STATUS_E_INTERNAL;
-        }
-        
-      case THERMAL_PSU2:
-        ret = getPsuInfo(1, &psu);
-        if(ret == 0){
-            info->mcelsius = psu.temp;
-            break;
-        }else{
-            return ONLP_STATUS_E_INTERNAL;
-        }
-        
-    }
-    return ONLP_STATUS_OK;
+    return onlp_file_read_int(&info->mcelsius, devfiles__[local_id]);
 }
-

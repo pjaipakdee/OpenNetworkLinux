@@ -103,5 +103,5 @@
 /* <auto.end.portingmacro(ALL).define> */
 
 
-#endif /* __X86_64_CEL_REDSTONE_XP_PORTING_H__ */
+#endif /* __x86_64_cel_redstone_xp_PORTING_H__ */
 /* @} */

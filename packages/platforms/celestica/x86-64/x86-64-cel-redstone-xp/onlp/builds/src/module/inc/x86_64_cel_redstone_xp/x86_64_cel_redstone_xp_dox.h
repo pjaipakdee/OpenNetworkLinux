@@ -23,4 +23,4 @@ The documentation overview for this module should go here.
  *
  */
 
-#endif /* __X86_64_CEL_REDSTONE_XP_DOX_H__ */
+#endif /* __x86_64_cel_redstone_xp_DOX_H__ */

@@ -2,7 +2,8 @@
 
 ######################################################################
 #
-# platform-config for REDSTONE
+# platform-config for Celestica Smallstone-XP
+#
 #
 ######################################################################
 
@@ -14,7 +15,7 @@ x86-64-cel-redstone-xp-r0:
       --port=0x3f8
       --speed=115200
       --word=8
-      --parity=no
+      --parity=0
       --stop=1
 
     kernel:
@@ -24,7 +25,7 @@ x86-64-cel-redstone-xp-r0:
       nopat
       console=ttyS0,115200n8
 
-  ##network:
+  ##network
   ##  interfaces:
   ##    ma1:
   ##      name: ~

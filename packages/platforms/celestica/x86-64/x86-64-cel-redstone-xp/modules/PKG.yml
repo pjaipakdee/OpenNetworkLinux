@@ -1,1 +1,1 @@
-!include $ONL_TEMPLATES/no-platform-modules.yml ARCH=amd64 VENDOR=celestica BASENAME=x86-64-cel-redstone-xp
+!include $ONL_TEMPLATES/platform-modules.yml VENDOR=celestica BASENAME=x86-64-cel-redstone-xp ARCH=amd64 KERNELS="onl-kernel-3.16-lts-x86-64-all:amd64"

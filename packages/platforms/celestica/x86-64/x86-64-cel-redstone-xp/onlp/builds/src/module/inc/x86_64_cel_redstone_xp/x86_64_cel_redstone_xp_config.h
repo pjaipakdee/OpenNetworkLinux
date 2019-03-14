@@ -1,9 +1,9 @@
 /**************************************************************************//**
  *
  * @file
- * @brief x86_64_cel_redstone_xp Configuration Header
+ * @brief X86_64_CEL_REDSTONE_XP Configuration Header
  *
- * @addtogroup x86_64_cel_redstone_xp-config
+ * @addtogroup X86_64_CEL_REDSTONE_XP-config
  * @{
  *
  *****************************************************************************/
@@ -89,6 +89,16 @@
 #define X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_UCLI 0
 #endif
 
+/**
+ * X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION
+ *
+ * Assume chassis fan direction is the same as the PSU fan direction. */
+
+
+#ifndef X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION
+#define X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION 0
+#endif
+
 
 
 /**
@@ -104,7 +114,7 @@ typedef struct x86_64_cel_redstone_xp_config_settings_s {
 } x86_64_cel_redstone_xp_config_settings_t;
 
 /** Configuration settings table. */
-/** x86_64_cel_redstone_xp_config_settings table. */
+/** X86_64_CEL_REDSTONE_XP_config_settings table. */
 extern x86_64_cel_redstone_xp_config_settings_t x86_64_cel_redstone_xp_config_settings[];
 
 /**

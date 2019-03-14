@@ -45,6 +45,11 @@ x86_64_cel_redstone_xp_config_settings_t x86_64_cel_redstone_xp_config_settings[
 #else
 { X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_UCLI(__x86_64_cel_redstone_xp_config_STRINGIFY_NAME), "__undefined__" },
 #endif
+#ifdef X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION
+    { __x86_64_cel_redstone_xp_config_STRINGIFY_NAME(X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION), __x86_64_cel_redstone_xp_config_STRINGIFY_VALUE(X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION) },
+#else
+{ X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_DEFAULT_FAN_DIRECTION(__x86_64_cel_redstone_xp_config_STRINGIFY_NAME), "__undefined__" },
+#endif
     { NULL, NULL }
 };
 #undef __x86_64_cel_redstone_xp_config_STRINGIFY_VALUE
@@ -55,7 +60,7 @@ x86_64_cel_redstone_xp_config_lookup(const char* setting)
 {
     int i;
     for(i = 0; x86_64_cel_redstone_xp_config_settings[i].name; i++) {
-        if(!strcmp(x86_64_cel_redstone_xp_config_settings[i].name, setting)) {
+        if(strcmp(x86_64_cel_redstone_xp_config_settings[i].name, setting)) {
             return x86_64_cel_redstone_xp_config_settings[i].value;
         }
     }

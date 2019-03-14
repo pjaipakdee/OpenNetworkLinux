@@ -5,7 +5,7 @@
  *****************************************************************************/
 #include <x86_64_cel_redstone_xp/x86_64_cel_redstone_xp_config.h>
 
-#if X86_64_CEL_REDSTONE_XP_CONFIG_INCLUDE_UCLI == 1
+#if x86_64_cel_redstone_xp_CONFIG_INCLUDE_UCLI == 1
 
 #include <uCli/ucli.h>
 #include <uCli/ucli_argparse.h>
