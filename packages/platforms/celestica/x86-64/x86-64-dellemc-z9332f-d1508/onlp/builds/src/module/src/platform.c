@@ -155,7 +155,7 @@ int cpld_b_read_reg(uint16_t reg, uint8_t *result)
     char buffer[128];
 
     reg = reg - 0xa100;
-    sprintf(command, "ipmitool raw 0x3a 0x0c 0x00 0x02 0x%02x", reg);
+    sprintf(command, "ipmitool raw 0x3a 0x03 0x00 0x01 0x%02x", reg);
     exec_ipmitool_cmd(command, buffer);
     *result = strtol(buffer, NULL, 16);
 
@@ -168,7 +168,7 @@ int cpld_b_write_reg(uint16_t reg, uint8_t value)
     char command[256];
     char buffer[128];
 
-    sprintf(command, "ipmitool raw 0x3a 0x0c 0x00 0x03 0x%02x 0x%02x", reg, value);
+    sprintf(command, "ipmitool raw 0x3a 0x03 0x00 0x02 0x%02x 0x%02x", reg, value);
     exec_ipmitool_cmd(command, buffer);
 
     return ret;
@@ -180,7 +180,7 @@ int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
     char command[256];
     char buffer[128];
 
-    sprintf(command, "ipmitool raw 0x3a 0x0c 0x01 0x02 0x%02x", reg);
+    sprintf(command, "ipmitool raw 0x3a 0x03 0x01 0x01 0x%02x", reg);
     exec_ipmitool_cmd(command, buffer);
     *result = strtol(buffer, NULL, 16);
     
@@ -193,7 +193,7 @@ int fan_cpld_write_reg(uint8_t reg, uint8_t value)
     char command[256];
     char buffer[128];
 
-    sprintf(command, "ipmitool raw 0x3a 0x0c 0x01 0x03 0x%02x 0x%02x", reg, value);
+    sprintf(command, "ipmitool raw 0x3a 0x03 0x01 0x02 0x%02x 0x%02x", reg, value);
     exec_ipmitool_cmd(command, buffer);
 
     return ret;
