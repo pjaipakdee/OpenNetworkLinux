@@ -35,4 +35,24 @@ rootdir=$1; shift
 echo "Hello from preinstall"
 echo "Chroot is $rootdir"
 
+### Change parition name with -DIAG, The uninstall operation must not modify or remove this partiion.
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}'):"ONL-BOOT" /dev/sda
+fi
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-CONFIG-DIAG" | awk '{print $1}'):"ONL-CONFIG" /dev/sda
+fi
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-IMAGES-DIAG" | awk ' {print $1}'):"ONL-IMAGES" /dev/sda
+fi
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+    sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-DATA-DIAG" | awk '{print $1}'):"ONL-DATA" /dev/sda
+fi
+
+### clear GPT system partition attribute bit (bit 0)
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-BOOT" | awk '{print $1}'):clear:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-CONFIG" | awk '{print $1}'):clear:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-IMAGES" | awk '{print $1}'):clear:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):clear:0 /dev/sda
+
 exit 0

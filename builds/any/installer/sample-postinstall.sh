@@ -39,4 +39,45 @@ rootdir=$1; shift
 echo "Hello from postinstall"
 echo "Chroot is $rootdir"
 
+PATH_TMP='/tmp/os'
+DIAG_GRUB_DATA="function diag_bootcmd {
+                \$diag_grub_custom 
+            }"
+
+###  Delete ONL boot partition 
+ONL_DIAG=$(efibootmgr | grep "Open Network Linux" | awk '{print $1}')
+ONL_BOOT_NUM="${ONL_DIAG//Boot/}"
+ONL_BOOT_NUM="${ONL_BOOT_NUM//\*/}"
+# efibootmgr -b $ONL_BOOT_NUM -A # -B is inactive command
+efibootmgr -b $ONL_BOOT_NUM -B  # -B is delete command
+
+### Change parition name with -DIAG, The uninstall operation must not modify or remove this partiion.
+sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-BOOT" | awk '{print $1}'):"ONL-BOOT-DIAG" /dev/sda
+sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-CONFIG" | awk '{print $1}'):"ONL-CONFIG-DIAG" /dev/sda
+sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-IMAGES" | awk ' {print $1}'):"ONL-IMAGES-DIAG" /dev/sda
+sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):"ONL-DATA-DIAG" /dev/sda
+
+### Set GPT system partition attribute bit (bit 0)
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-BOOT" | awk '{print $1}'):set:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-CONFIG" | awk '{print $1}'):set:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-IMAGES" | awk '{print $1}'):set:0 /dev/sda
+sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):set:0 /dev/sda
+
+### Read grub config and set back to ONIE Diag grub.
+mkdir -p $PATH_TMP
+mount -v /dev/sda$(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') $PATH_TMP
+ST_GRUB=$(cat $PATH_TMP/grub/grub.cfg | grep -n "menuentry \"Open Network Linux\" {" | head -n 1 | cut -d: -f1)
+EN_GRUB=$(tail $PATH_TMP/grub/grub.cfg -n +$ST_GRUB | grep -n "}" |head -n 1 |cut -d: -f1)
+EN_GRUB=$(($EN_GRUB+$ST_GRUB-1))
+
+sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_tmp
+# DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
+cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
+echo "Installing Diag OS grub ....."
+echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/grub/grub.cfg
+echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
+echo "$(echo diag_menu=\"DIAG OS\" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
+
 exit 0
