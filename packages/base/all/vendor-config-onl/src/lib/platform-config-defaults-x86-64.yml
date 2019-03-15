@@ -92,7 +92,7 @@ default:
       =: 1GiB
       format: ext4
   - ONL-DATA:
-      =: 100%
+      =: 1GiB
       format: ext4
 
   ### Sample partitioning scheme experiencing disk space pressure
