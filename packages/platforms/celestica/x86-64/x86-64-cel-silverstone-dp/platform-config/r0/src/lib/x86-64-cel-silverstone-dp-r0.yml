@@ -10,6 +10,8 @@ x86-64-cel-silverstone-dp-r0:
 
   grub:
 
+    device: /sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0
+
     serial: >-
       --port=0x3f8
       --speed=115200

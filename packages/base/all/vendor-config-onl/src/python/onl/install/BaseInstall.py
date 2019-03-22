@@ -567,6 +567,17 @@ class GrubInstaller(SubprocessMixin, Base):
         deviceOrLabel = self.im.platformConf['grub']['device']
         if deviceOrLabel.startswith('/dev'):
             tgtDevice, tgtLabel = deviceOrLabel, None
+        elif deviceOrLabel.startswith('/sys/devices'):
+            """FIX: Add the real path to logical conversion here.
+                Use ONIE mSATA detect method, the most accurate but not flexible.
+            """
+            for device in os.listdir('/sys/block'):
+                devpath = "{}/{}/{}".format('/sys/block',device,'device')
+                if os.path.exists(devpath):
+                    if deviceOrLabel == os.path.realpath(devpath):
+                        deviceOrLabel = '/dev/' + device
+
+            tgtDevice, tgtLabel = deviceOrLabel, None
         else:
             tgtDevice, tgtLabel = None, deviceOrLabel
 
@@ -591,9 +602,10 @@ class GrubInstaller(SubprocessMixin, Base):
                 if self.device is None:
                     self.device = dev
                 else:
-                    self.log.error("found multiple devices: %s, %s",
-                                   dev, self.device)
-                    return 1
+                    if self.device != dev:
+                        self.log.error("found multiple devices: %s, %s",
+                                    dev, self.device)
+                        return 1
         if self.device is None:
             self.log.error("cannot find an install device")
             return 1
