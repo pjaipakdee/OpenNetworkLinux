@@ -78,6 +78,21 @@ echo "Installing Diag OS grub ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/grub/grub.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
-echo "$(echo diag_menu=\"DIAG OS\" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
+echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
+rm -f $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+
+
+# DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
+cp $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg.cfg 2> /dev/null || :
+cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg
+
+cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
+echo "Installing Diag OS grub ....."
+echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
+cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+echo "$(echo "## Begin grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
+rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 
 exit 0
