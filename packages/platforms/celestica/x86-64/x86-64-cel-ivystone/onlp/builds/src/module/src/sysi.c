@@ -64,11 +64,14 @@ static int create_cache(){
     //curl -g http://240.1.1.1:8080/api/sys/fruid/psu |python -m json.tool PSU FRU data
     //curl -g http://240.1.1.1:8080/api/sys/fruid/fan |python -m json.tool FAN FRU data
     //curl -g http://240.1.1.1:8080/api/sys/fruid/sys |python -m json.tool Board FRU
-    system("curl -g http://240.1.1.1:8080/api/sys/sensors |python -m json.tool > /tmp/onlp-sensor-cache.txt");
-    system("curl -g http://240.1.1.1:8080/api/sys/fruid/psu | python -m json.tool > /tmp/onlp-psu-fru-cache.txt");
-    system("curl -g http://240.1.1.1:8080/api/sys/fruid/fan | python -m json.tool > /tmp/onlp-fan-fru-cache.txt");
-    system("curl -g http://240.1.1.1:8080/api/sys/fruid/sys | python -m json.tool > /tmp/onlp-sys-fru-cache.txt");
-    system("curl -g http://240.1.1.1:8080/api/sys/fruid/status | python -m json.tool > /tmp/onlp-status-fru-cache.txt");
+    (void)system("curl -g http://240.1.1.1:8080/api/sys/sensors |python -m json.tool > /tmp/onlp-sensor-cache.txt");
+    (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/psu | python -m json.tool > /tmp/onlp-psu-fru-cache.txt");
+    (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/fan | python -m json.tool > /tmp/onlp-fan-fru-cache.txt");
+    (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/sys | python -m json.tool > /tmp/onlp-sys-fru-cache.txt");
+    (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/status | python -m json.tool > /tmp/onlp-status-fru-cache.txt");
+    (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.txt");
+    (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.txt");
+
     return 1;
 }
 
@@ -138,22 +141,55 @@ onlp_sysi_oids_get(onlp_oid_t* table, int max)
     onlp_oid_t* e = table;
 
     memset(table, 0, max*sizeof(onlp_oid_t));
-
+    
     /* 4 PSUs */
     for (i=1; i<=PSU_COUNT; i++)
         *e++ = ONLP_PSU_ID_CREATE(i);
 
-    // // /* LEDs Item */
-    // for (i=1; i<=LED_COUNT; i++)
-    //     *e++ = ONLP_LED_ID_CREATE(i);
+    /* LEDs Item */
+    for (i=1; i<=LED_COUNT; i++)
+        *e++ = ONLP_LED_ID_CREATE(i);
 
-    // // /* THERMALs Item */
-    // for (i=1; i<=THERMAL_COUNT; i++)
-    //     *e++ = ONLP_THERMAL_ID_CREATE(i);
+    /* THERMALs Item */
+    for (i=1; i<=THERMAL_COUNT; i++)
+        *e++ = ONLP_THERMAL_ID_CREATE(i);
 
     /* Fans Item */
     for (i=1; i<=FAN_COUNT; i++)
         *e++ = ONLP_FAN_ID_CREATE(i);
 
+    return ONLP_STATUS_OK;
+}
+
+int 
+onlp_sysi_platform_info_get(onlp_platform_info_t* platform_info)
+{
+    const char *tmp = onlp_sysi_platform_get();
+    int size = 0;
+
+    if(!platform_info)
+	return ONLP_STATUS_E_PARAM;
+
+    if(!platform_info->other_versions){
+	platform_info->other_versions = aim_zmalloc(strlen(tmp) + 1);
+	strncpy(platform_info->other_versions, tmp, strlen(tmp));
+    }
+    
+    if(!platform_info->cpld_versions){
+	uint8_t *cpld_versions = aim_zmalloc(SYS_BASE_CPLD_VERSION_LEN + 1);
+        if(onlp_file_read(cpld_versions, SYS_BASE_CPLD_VERSION_LEN, &size,SYS_BASE_CPLD_VERSION_PATH) == ONLP_STATUS_OK)
+	{
+	    if(size == SYS_BASE_CPLD_VERSION_LEN)
+	    {
+		platform_info->cpld_versions = (char *)cpld_versions;
+		return ONLP_STATUS_OK;
+	    }
+	}
+        
+	aim_free(cpld_versions);
+    	cpld_versions = NULL;
+	return ONLP_STATUS_E_INTERNAL;
+    }
+  
     return ONLP_STATUS_OK;
 }

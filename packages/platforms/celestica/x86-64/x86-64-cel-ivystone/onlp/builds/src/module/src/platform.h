@@ -2,6 +2,10 @@
 #define _PLATFORM_IVYSTONE_H_
 #include <stdint.h>
 
+#ifndef BMC_RESTFUL_API_SUPPORT
+#define BMC_RESTFUL_API_SUPPORT
+#endif
+
 #define PREFIX_PATH_LEN 100
 #define PSOC_CTRL_SMBUS 0x01
 //FAN
@@ -31,15 +35,34 @@
 #define PSU_REGISTER 0xA15F
 #define PSU_LED_REGISTER 0xA161
 //THERMAL
-#define THERMAL_COUNT 13
+#define THERMAL_COUNT 12
 #define THERMAL_REGISTER 0xA176
+
+#define THERMAL_SWITCH_REMOTE_U148  1
+#define THERMAL_BASE_R_INLET_TEMP_U41 2
+#define THERMAL_BASE_C_INLET_TEMP_U3 3
+#define THERMAL_SWITCH_OUTLET_TEMP_U33 4
+#define THERMAL_PSU_INLET_L_TEMP_U8 5
+#define THERMAL_PSU_INLET_R_TEMP_U10 6
+#define THERMAL_FAN_L_TEMP_U8 7
+#define THERMAL_FAN_R_TEMP_U10 8
+#define THERMAL_RT_LINC_TEMP_U26 9
+#define THERMAL_LT_LINC_TEMP_U25 10
+#define THERMAL_RB_LINC_TEMP_U26 11
+#define THERMAL_LB_LINC_TEMP_U25 12
+
 //ALARM
 #define ALARM_REGISTER 0xA163
 //LED
+#ifndef BMC_RESTFUL_API_SUPPORT
 #define LED_COUNT   8
-
+#else
+#define LED_COUNT   3
+#endif
 #define LED_SYSTEM_H  1
+#define LED_PSU_REGISTER 0xA161
 #define LED_SYSTEM_REGISTER 0xA162
+#define LED_FAN_REGISTER    0xA163
 #define LED_SYSTEM_BOTH 3
 #define LED_SYSTEM_GREEN 1
 #define LED_SYSTEM_YELLOW 2
@@ -104,6 +127,8 @@ typedef struct psuInfo_p
 }psuInfo_p;
 
 #define SYS_CPLD_PATH "/sys/devices/platform/ivystone.cpldb/"
+#define SYS_BASE_CPLD_VERSION_PATH "/sys/devices/platform/ivystone.cpldb/version"
+#define SYS_BASE_CPLD_VERSION_LEN 4
 #define PLATFORM_PATH "/sys/devices/platform/ivystone.switchboard/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 #define FAN_CPLD_PATH "/sys/devices/platform/ivystone.switchboard/FAN_CPLD/"
@@ -113,6 +138,8 @@ typedef struct psuInfo_p
 
 int write_to_dump(uint8_t dev_reg);
 int get_fan_present_status(int id);
+int get_fan_board_sn(int id, char *sn);
+int get_fan_board_md(int id, char *md);
 uint8_t read_dump(uint16_t dev_reg);
 int get_rear_fan_per(int id, int *speed);
 int get_rear_fan_pwm(int id, int *speed);
@@ -136,6 +163,15 @@ int getFaninfo(int id,char* model,char* serial);
 int getThermalStatus_Ipmi(int id,int *tempc);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
+int read_cpu_temp(int *temperature);
+int get_psu_item_content(int id, char *item, char *content);
+int read_psu_inout(const char *adapter, const char *name, const char *item, char *content);
+int search_current_val(char *amper_c, int *amper_i);
+int search_voltage_val(char *volt_c, int *volt_i);
+int search_power_val(char *watt_c, int *watt_i);
+int get_rear_fan_rpm(int id, int *rpm);
+int search_rpm_val(char *rpm_c, int *rpm_i);
+
 // #define PSU_FAN         2
 // #define THERMAL_COUNT   6
 // #define LED_COUNT       11

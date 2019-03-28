@@ -12,13 +12,13 @@
 #include <sys/io.h>
 #include <cjson/cJSON.h>
 #include <cjson_util/cjson_util.h>
-
+#include <sys/stat.h>
 #include "platform.h"
 
 char command[256];
 FILE *fp;
 static char *sdr_value = NULL;
-static char *temp_sdr_value = NULL;
+//static char *temp_sdr_value = NULL;
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
     {"unknown", "unknown"}, //check
@@ -47,7 +47,7 @@ static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
     {0x80, 0x81, 0x82, 0x84,0x86}, //Fan 4
     {0xA0, 0xA1, 0xA2, 0xA4,0xA6}  //Fan 5
 };
-
+#ifndef BMC_RESTFUL_API_SUPPORT
 static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     /*char *name;
     uint16_t device;
@@ -62,7 +62,17 @@ static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {"LED_ALARM", 7, ALARM_REGISTER},
     {"LED_PSU", 8, PSU_LED_REGISTER}
 };
-
+#else
+static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
+    /*char *name;
+    uint16_t device;
+    uint16_t dev_reg;*/
+    {},
+    {"LED_SYSTEM", 1, LED_SYSTEM_REGISTER},
+    {"LED_PSU", 2, LED_PSU_REGISTER},
+    {"LED_FAN", 3, LED_FAN_REGISTER}
+};
+#endif
 static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
     {"PSUL_VIn", 'V'},
     {"PSUL_CIn", 'A'},
@@ -79,9 +89,9 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
 };
 
 char *Thermal_sensor_name[THERMAL_COUNT] = {
-    "Base_Temp_U5", "Base_Temp_U7", "CPU_Temp", "Switch_Temp_U1",
-    "Switch_Temp_U18", "Switch_Temp_U28", "Switch_Temp_U29", "PSUL_Temp1",
-    "PSUL_Temp2", "PSUR_Temp1", "PSUR_Temp2","Switch_U21_Temp","Switch_U33_Temp"};
+    "Switch_Remote_Temp_U148", "Base_R_Inlet_Temp_U7", "Base_C_Inlet_Temp_U3", "Switch_Outlet_Temp_U33",
+    "Psu_Inlet_L_Temp_U8", "Psu_Inlet_R_Temp_U10", "Fan_L_Temp_U8", "Fan_R_Temp_U10",
+    "Rt_Linc_Temp_U26", "Lt_Linc_Temp_U25", "Rb_Linc_Temp_U26","Lb_Linc_Temp_U25"};
 
 int write_to_dump(uint8_t dev_reg)
 {
@@ -141,6 +151,7 @@ uint8_t read_register(uint16_t dev_reg)
 uint8_t read_fan_register(uint16_t dev_reg)
 {
     int status;
+
     //printf("Input of read_register = %u\n",dev_reg);
     //sprintf(command,"echo %x",dev_reg);// > "SYSCPLD_PATH"dump"
     sprintf(command, "echo 0x%x >  %sgetreg", dev_reg, FAN_CPLD_PATH);
@@ -184,7 +195,417 @@ uint8_t write_register(uint16_t dev_reg, uint16_t write_data)
 
     return status;
 }
+#ifdef BMC_RESTFUL_API_SUPPORT
+#define ONLP_SENSOR_CACHE_FILE "/tmp/onlp-sensor-cache.txt"
+#define ONLP_PSU_CACHE_FILE "/tmp/onlp-psu-fru-cache.txt"
+#define ONLP_FAN_CACHE_FILE "/tmp/onlp-fan-fru-cache.txt"
+#define ONLP_SYS_CACHE_FILE "/tmp/onlp-sys-fru-cache.txt"
+#define ONLP_STATUS_CACHE_FILE "/tmp/onlp-status-fru-cache.txt"
 
+int phrase_json_buffer(const char *fp_path, char **fp_buf, int *fp_size)
+{
+    FILE *fp = (FILE *)NULL;
+    char *buffer = (char *)NULL;
+    int size = 0;
+    int res = -1;
+
+    if(access(fp_path, F_OK) == -1)
+    {
+	return res;
+    }
+   
+    struct stat sta;
+    stat(fp_path, &sta);
+    size = sta.st_size;
+
+    buffer = (char *)malloc(size); 
+    if(!buffer) 
+        return res;
+    
+    fp = fopen(fp_path, "r");
+    if(!fp)
+    {
+        free(buffer);   
+        return res;
+    }
+
+    int len = fread(buffer, 1, size, fp);
+    if(size != len)
+    {
+ 	free(buffer);
+	fclose(fp);
+	return res;
+    }
+
+    *fp_buf = buffer;
+    *fp_size = size;
+    res = 0;
+    fclose(fp);
+    return res; 
+}
+
+int phrase_json_key_word(char *content, char *key, char *sub, int id, cJSON **output)
+{
+    cJSON *root =(cJSON *)NULL;
+    int res = -1;
+    int i = 0;   
+    cJSON *tmp = (cJSON *)NULL;
+
+    if(!content)
+	return res;
+
+    root = cJSON_Parse(content);
+    if(!root)
+	return res;
+
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if(!item){
+	cJSON_Delete(root);
+	return res;
+    }
+
+    if(id > cJSON_GetArraySize(item)){
+	cJSON_Delete(root);
+	return res;
+    }
+
+    for(i = 0; i < cJSON_GetArraySize(item); i++)
+    {
+	cJSON *subitem = cJSON_GetArrayItem(item, i);
+        if(!subitem){
+	    continue;
+	}
+ 
+   	tmp = cJSON_GetObjectItem(subitem, sub); 
+        if(!tmp){
+	    continue;
+	}
+  	
+	cJSON *object = (cJSON *)malloc(sizeof(cJSON)); 
+        if(!object){
+	    cJSON_Delete(root);
+	    return res;
+	}
+	    
+	if(tmp->valuestring){
+	    object->valuestring = malloc(strlen(tmp->valuestring));
+            memset(object->valuestring, 0, strlen(tmp->valuestring));
+	    memcpy(object->valuestring, tmp->valuestring, strlen(tmp->valuestring));
+        }
+
+    	object->valueint = tmp->valueint;        
+   	object->valuedouble = tmp->valuedouble;
+	*output = object;
+
+	break; 
+    } 
+
+    /* may be memory leak, i mean the root */
+    cJSON_Delete(root);
+    res = 0;
+    return res;
+}
+
+int get_fan_present_status(int id)
+{
+    int ret = -1;
+
+    if (id <= (FAN_COUNT))
+    {
+        uint8_t result = 0;
+        char *tmp = NULL;
+        cJSON *present = (cJSON *)NULL; 
+	int len = 0;
+    
+        result = phrase_json_buffer(ONLP_STATUS_CACHE_FILE, &tmp, &len);
+        char subitem[8] = {0};
+        memset(subitem, 0, sizeof(subitem));
+        (void)snprintf(subitem, 8, "Fan%d", id);
+        //printf("\nFanId:%d\n", id);
+        result += phrase_json_key_word(tmp, "Information", subitem, id - 1, &present);
+        if(!present){
+	   ret = -1;
+	   printf("\nNothing\n"); 
+	}
+        else{
+            if(!strncmp(present->valuestring, " Present", strlen(" Present"))){
+		ret = 0;
+	 	//printf("\nMatch\n");
+	    }
+	    else{
+		ret = -1;
+		printf("\nMismatch\n");	
+ 	    }
+
+	    free(present);
+	}
+    }
+
+    return ret;
+}
+
+int phrase_fan_array(cJSON *information, int id, const char *item, char *content)
+{
+    int ret = -1;
+    char buf[64] = {0};
+
+    cJSON *info = information ? information->child : 0;
+
+    memset(buf, 0, sizeof(buf));
+
+    (void)snprintf(buf, 64, "Fantray%d", id);
+
+    while(info)
+    {
+        cJSON *fan_ptr = cJSON_GetObjectItem(info, "FRU Information");
+        cJSON *item_ptr = cJSON_GetObjectItem(info, item);
+
+        if(fan_ptr && item_ptr){
+       	    if(!strncmp(fan_ptr->valuestring, buf, strlen(buf))){
+                (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
+                ret = 0;
+                return ret;
+	    }
+        }
+    
+        info = info->next;
+    }
+
+    return ret;
+}
+
+int get_fan_board_md(int id, char *md)
+{
+    int ret = -1;
+    cJSON *root = (cJSON *)NULL;
+    char model[64] = {0};
+
+    if (id <= (FAN_COUNT))
+    {
+        uint8_t result = 0;
+        char *tmp = NULL;
+        int len = 0;
+
+        result = phrase_json_buffer(ONLP_FAN_CACHE_FILE, &tmp, &len);
+        if(result){
+	    return ret;
+	}
+
+        root = cJSON_Parse(tmp);
+        if(!root){
+            return ret;
+        }
+
+        cJSON *information = cJSON_GetObjectItem(root, "Information");
+        if(!information){
+            cJSON_Delete(root);
+            return ret;
+        }
+
+        char subitem[32] = {0};
+        memset(subitem, 0, sizeof(subitem));
+        (void)snprintf(subitem, 32, "Product Part Number");
+
+        result = phrase_fan_array(information, id, subitem, model);
+        if(result){
+            ret = -1;
+        }
+        else{
+   	    strncpy(md, model, strlen(model)); 
+            ret = 0;
+        }
+	
+	cJSON_Delete(root);
+    }
+
+    return ret;
+}
+
+
+int get_fan_board_sn(int id, char *sn)
+{
+    int ret = -1;
+    cJSON *root = (cJSON *)NULL;
+    char serial[64] = {0};
+
+    if (id <= (FAN_COUNT))
+    {
+        uint8_t result = 0;
+        char *tmp = NULL;
+        int len = 0;
+
+        result = phrase_json_buffer(ONLP_FAN_CACHE_FILE, &tmp, &len);
+        if(result){
+            return ret;
+        }
+
+        root = cJSON_Parse(tmp);
+        if(!root){
+            return ret;
+        }
+
+        cJSON *information = cJSON_GetObjectItem(root, "Information");
+        if(!information){
+            cJSON_Delete(root);
+            return ret;
+        }
+
+        char subitem[32] = {0};
+        memset(subitem, 0, sizeof(subitem));
+        (void)snprintf(subitem, 32, "Product Serial");
+
+        result = phrase_fan_array(information, id, subitem, serial);
+        if(result){
+            ret = -1;
+        }
+        else{
+            strncpy(sn, serial, strlen(serial));
+            ret = 0;
+        }
+
+        cJSON_Delete(root);
+    }
+
+    return ret;
+}
+int parse_psu_array(cJSON *information, int id, const char *item, char *content)
+{
+    int ret = -1;
+    char buf[64] = {0};
+
+    cJSON *info = information ? information->child : 0;
+
+    memset(buf, 0, sizeof(buf));
+
+    (void)snprintf(buf, 64, "PSU%d FRU", id);
+
+    while(info)
+    {
+        cJSON *psu_ptr = cJSON_GetObjectItem(info, buf);
+        cJSON *item_ptr = cJSON_GetObjectItem(info, item);
+
+        if(psu_ptr && item_ptr){
+            (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
+            ret = 0;
+            return ret;
+        }
+        info = info->next;
+    }
+
+    return ret;
+}
+
+int parse_rpm_array(cJSON *information, int id, const char *name, char *content)
+{
+    int ret = -1;
+    char item[64] = {0};
+
+    cJSON *info = information ? information->child : 0;
+
+    memset(item, 0, sizeof(item));
+
+    (void)snprintf(item, 64, "Fan %d Rear", id);
+
+    while(info)
+    {
+        cJSON *name_ptr = cJSON_GetObjectItem(info, name);
+        cJSON *item_ptr = cJSON_GetObjectItem(info, item);
+
+        if(name_ptr && item_ptr){
+            if(!strncmp(name_ptr->valuestring, "fancpld-i2c-8-0d", strlen("fancpld-i2c-8-0d"))){
+	    	(void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
+		 ret = 0;
+            	return ret;
+	    } 
+        }
+        info = info->next;
+    }
+
+    return ret;
+}
+
+int get_psu_item_content(int id, char *item, char *content)
+{
+    int ret = -1;
+
+    if ((id <= (PSU_COUNT) && id >= 0) && item && content)
+    {
+        uint8_t result = 0;
+        char *tmp = NULL;
+        int len = 0;
+	cJSON *root = (cJSON *)NULL;
+
+        result = phrase_json_buffer(ONLP_PSU_CACHE_FILE, &tmp, &len);
+	if(result){
+	    return ret;
+	}
+
+	root = cJSON_Parse(tmp);
+	if(!root){
+	    return ret;
+	}
+
+	cJSON *information = cJSON_GetObjectItem(root, "Information");
+    	if(!information){
+            cJSON_Delete(root);
+            return ret;
+        } 
+
+        result = parse_psu_array(information, id, item, content); 
+        cJSON_Delete(root);
+	ret = result;
+	return ret; 
+    }
+
+    return ret;
+}
+
+int get_rear_fan_rpm(int id, int *rpm)
+{
+     uint8_t result = 0;
+     int ret = -1;
+     char *tmp = NULL;
+     int len = 0;
+     cJSON *root = (cJSON *)NULL;
+     char content[64] = {0}; 
+
+     if(id < 0 || id > 5){
+	return ret;
+     }
+
+     result = phrase_json_buffer(ONLP_SENSOR_CACHE_FILE, &tmp, &len);
+     if(result){
+         return ret;
+     }
+
+     root = cJSON_Parse(tmp);
+     if(!root){
+          return ret;
+     }
+
+     cJSON *information = cJSON_GetObjectItem(root, "Information");
+     if(!information){
+        cJSON_Delete(root);
+        return ret;
+     }
+
+    result = parse_rpm_array(information, id, "name", content);
+    if(result < 0){
+	cJSON_Delete(root);
+	return ret;
+    }
+
+    result = search_rpm_val(content, rpm);
+    if(result) {
+	cJSON_Delete(root);
+	return ret;
+    }
+ 
+    cJSON_Delete(root);
+    return ret;
+}
+
+#else
 int get_fan_present_status(int id)
 {
     int ret = -1;
@@ -205,7 +626,7 @@ int get_fan_present_status(int id)
 
     return ret;
 }
-
+#endif
 int get_rear_fan_pwm(int id, int *speed)
 {
     //unsigned char data;
@@ -289,37 +710,130 @@ uint8_t get_psu_status(int id)
     return ret;
 }
 
+#define MAX_LENTH_OF_LINE 256
+static int set_pos_by_line(FILE *fp, int line)
+{
+    int i = 0;
+    char buffer[MAX_LENTH_OF_LINE + 1];
+    fpos_t pos;
+ 
+    rewind(fp);
+    for (; i < line; i++)
+	fgets(buffer, MAX_LENTH_OF_LINE, fp);
+
+    fgetpos(fp, &pos);
+    return 0;
+}
+
+/*
+{
+    "result": [
+        "0x0",
+        "",
+        "Note:",
+        "0x0: disable",
+        "0x1: enable",
+        "Bit[0:0] @ register 0x61, register value 0x0",
+        ""
+    ]
+}
+*/
+
+/*
+{
+    "result": [
+        "0x0",
+        "",
+        "Note:",
+        "0x0: disable",
+        "0x1: enable",
+        "",
+        "Bit[0:0] @ register 0x63, register value 0x0",
+        ""
+    ]
+}
+*/
+#define LED_COLOR_KEY_STR 2 
+static int read_by_line(const char *path, uint8_t *color)
+{
+    char buffer[MAX_LENTH_OF_LINE + 1];
+    FILE *fp = (FILE *)NULL;
+
+    fp = fopen(path, "r");
+    if(!fp){
+	return -1;
+    }
+
+    (void)set_pos_by_line(fp, LED_COLOR_KEY_STR);
+    (void)fgets(buffer, MAX_LENTH_OF_LINE, fp);
+
+    if(strstr(buffer, "0x0")){
+  	/* yellow */
+        *color = 1;
+    }else{
+	/* green */
+        *color = 1;
+    }
+
+    fclose(fp);
+    
+    return 0;
+}
+
+#define ONLP_PSU_LED_CACHE_FILE "/tmp/onlp-psu-led-cache.txt"
+#define ONLP_FAN_LED_CACHE_FILE "/tmp/onlp-fan-led-cache.txt"
+
+uint8_t get_led_color(const char *path, uint8_t *color)
+{
+    if(!path || !color){
+	return 0xFF;
+    }
+
+    if(read_by_line(path, color)){
+	return 0xFF;
+    }    
+    return 0;
+}
+
 uint8_t get_led_status(int id)
 {
-
-    //     {"LED_SYSTEM",LED_SYSTEM,LED_SYSTEM_REGISTER},
-    // {"LED_FAN_1",LED_FAN_1,0xA141},
-    // {"LED_FAN_2",LED_FAN_2,0xA145},
-    // {"LED_FAN_4",LED_FAN_4,0xA14D},
-    // {"LED_FAN_5",LED_FAN_5,0xA151},
-    // {"LED_ALARM",LED_ALARM,ALARM_REGISTER},
-    // {"LED_PSU_1",LED_PSU_1,PSU_LED_REGISTER},
-    // {"LED_PSU_2",LED_PSU_2,PSU_LED_REGISTER},
     uint8_t ret = 0xFF;
+    uint8_t color = 0;
 
-    if (id >= (LED_COUNT + 2) || id < 0)
+    if (id > LED_COUNT || id < 0)
         return 0xFF;
 
-    if (id <= (LED_COUNT))
+    if (id <= LED_COUNT)
     {
         uint8_t result = 0;
         uint16_t led_stat_reg;
-
-        led_stat_reg = led_mapper[id].dev_reg;
-        result = read_register(led_stat_reg);
         
+        switch(id){
+	    case 1:
+		led_stat_reg = led_mapper[id].dev_reg;
+	        result = read_register(led_stat_reg);
+		break;
+	    case 2:
+		result = get_led_color(ONLP_PSU_LED_CACHE_FILE, &color);
+                if(!result){
+                    result = color;
+                }
+		break;
+	    case 3:
+	 	result = get_led_color(ONLP_FAN_LED_CACHE_FILE, &color);
+                if(!result){
+		    result = color;
+		}	
+		break;
+        }
+
         ret = result;
-        //printf("result result=%x ret=%d\n",result,ret);
     }
 
     return ret;
 }
 
+#ifndef BMC_RESTFUL_API_SUPPORT 
 uint8_t get_fan_led_status(int id)
 {
 
@@ -350,7 +864,48 @@ uint8_t get_fan_led_status(int id)
 
     return ret;
 }
+#else
+uint8_t get_fan_led_status(int id)
+{
+    uint8_t ret = 0xFF;
 
+    if (id > LED_COUNT || id < 0)
+        return 0xFF;
+    
+    if (id <= LED_COUNT){
+	uint8_t result = 0;
+        char *tmp = NULL;
+        cJSON *present = (cJSON *)NULL;
+        int len = 0;
+
+        result = phrase_json_buffer(ONLP_STATUS_CACHE_FILE, &tmp, &len);
+        char subitem[8] = {0};
+        memset(subitem, 0, sizeof(subitem));
+        (void)snprintf(subitem, 8, "Fan%d", id);
+ 
+        result += phrase_json_key_word(tmp, "Information", subitem, id - 1, &present);
+        if(!present){
+           ret = 0xFF;
+           printf("\nNothing\n");
+        }
+        else{
+            if(!strncmp(present->valuestring, " Present", strlen(" Present"))){
+                ret = 0;
+            }
+            else{
+                ret = -1;
+                printf("\nMismatch\n");
+            }
+
+            free(present);
+        }
+
+	ret = result;
+    }
+
+    return ret; 
+}
+#endif
 uint8_t getThermalStatus(int id)
 {
 
@@ -764,6 +1319,7 @@ char *read_temp(char *name)
     return str;
 }
 
+#ifndef BMC_RESTFUL_API_SUPPORT
 int getThermalStatus_Ipmi(int id, int *tempc)
 {
     //printf("desc = %s\n",desc);
@@ -816,7 +1372,394 @@ int getThermalStatus_Ipmi(int id, int *tempc)
 
     return 1;
 }
+#else
+#define CPU_CORE_TEMPERATURE "/sys/class/thermal/thermal_zone0/temp"
+int read_cpu_temp(int *temperature)
+{
+    int res = -1;
+    FILE *fp_thermal = (FILE *)NULL;
+    char buf[64] = {0};
+    int temp = 0;
+    (void)snprintf(buf, 64, "%s %s","cat", CPU_CORE_TEMPERATURE);
 
+    fp_thermal = popen(buf, "r");
+    if(!fp_thermal){
+        return res;
+    }
+
+    fscanf(fp_thermal, "%d", &temp);
+    pclose(fp_thermal);
+    *temperature = temp;
+    res = 0;
+    return res;
+}
+int search_temp_val(char *tempc, int *tempi)
+{
+    int ret = -1;
+    char *digit = NULL;
+    char *tmp = NULL; 
+    int size = 0;
+    if(!tempc || !tempi){
+  	return ret;
+    }
+  
+    tmp = strchr(tempc, '+');
+    if(!tmp){
+	return ret;
+    }
+    digit = (tmp + 1);
+    tmp = digit;
+    char *c = strchr(digit, 'C');
+    if(!c){
+	return ret;
+    }  
+
+    size = c - digit;
+
+    char *str = malloc(size + 1);
+    if (!str){
+	return ret; 
+    }
+
+    memset(str, 0, size + 1);
+    memcpy(str, digit, size);
+
+    *tempi = atof(str)*1000;
+
+    free(str);
+    ret = 0;
+    return ret;
+}
+
+int search_current_val(char *amper_c, int *amper_i)
+{
+    int ret = -1;
+    char *digit = NULL;
+    char *tmp = NULL;
+    int size = 0;
+    if(!amper_c || !amper_i){
+        return ret;
+    }
+
+    tmp = strchr(amper_c, '+');
+    if(!tmp){
+        return ret;
+    }
+    digit = (tmp + 1);
+    tmp = digit;
+    char *c = strchr(digit, 'A');
+    if(!c){
+        return ret;
+    }
+
+    size = c - digit;
+
+    char *str = malloc(size + 1);
+    if (!str){
+        return ret;
+    }
+
+    memset(str, 0, size + 1);
+    memcpy(str, digit, size);
+
+    *amper_i = atof(str)*1000;
+
+    free(str);
+    ret = 0;
+    return ret;
+}
+
+int search_voltage_val(char *volt_c, int *volt_i)
+{
+    int ret = -1;
+    char *digit = NULL;
+    char *tmp = NULL;
+    int size = 0;
+    if(!volt_c || !volt_i){
+        return ret;
+    }
+
+    tmp = strchr(volt_c, '+');
+    if(!tmp){
+        return ret;
+    }
+    digit = (tmp + 1);
+    tmp = digit;
+    char *c = strchr(digit, 'V');
+    if(!c){
+        return ret;
+    }
+
+    size = c - digit;
+
+    char *str = malloc(size + 1);
+    if (!str){
+        return ret;
+    }
+
+    memset(str, 0, size + 1);
+    memcpy(str, digit, size);
+
+    *volt_i = atof(str)*1000;
+
+    free(str);
+    ret = 0;
+    return ret;
+}
+
+int search_power_val(char *watt_c, int *watt_i)
+{
+    int ret = -1;
+    char *digit = NULL;
+    char *tmp = NULL;
+    int size = 0;
+    if(!watt_c || !watt_i){
+        return ret;
+    }
+
+    tmp = watt_c;
+    while(!isdigit(*tmp))
+    {
+	if(*tmp == 'W'){
+	    break;
+	}
+
+	tmp++;
+    }   
+ 
+    digit = tmp;
+    char *c = strchr(digit, 'W');
+    if(!c){
+        return ret;
+    }
+
+    size = c - digit;
+
+    char *str = malloc(size + 1);
+    if (!str){
+        return ret;
+    }
+
+    memset(str, 0, size + 1);
+    memcpy(str, digit, size);
+
+    *watt_i = atof(str)*1000;
+
+    free(str);
+    ret = 0;
+    return ret;
+}
+
+int search_rpm_val(char *rpm_c, int *rpm_i)
+{
+    int ret = -1;
+    char *digit = NULL;
+    char *tmp = NULL;
+    int size = 0;
+    if(!rpm_c || !rpm_i){
+        return ret;
+    }
+
+    tmp = rpm_c;
+    while(!isdigit(*tmp))
+    {
+	/* RPM*/
+        if(*tmp == 'R'){
+            break;
+        }
+
+        tmp++;
+    }
+
+    digit = tmp;
+    char *c = strchr(digit, 'R');
+    if(!c){
+        return ret;
+    }
+
+    size = c - digit;
+
+    char *str = malloc(size + 1);
+    if (!str){
+        return ret;
+    }
+
+    memset(str, 0, size + 1);
+    memcpy(str, digit, size);
+
+    *rpm_i = atoi(str);
+
+    free(str);
+    ret = 0;
+    return ret;
+}
+
+int parse_sensor_array(cJSON *information, const char *adap_cont, const char *name_cont, const char *item_name, char *item_cont)
+{
+    int ret = -1;
+  
+    cJSON *info = information ? information->child : 0;
+
+    while(info)
+    {
+        //cJSON *adap_ptr = cJSON_GetObjectItem(info, "Adapter");
+        cJSON *name_ptr = cJSON_GetObjectItem(info, "name");
+        cJSON *item_ptr = cJSON_GetObjectItem(info, item_name); 
+        if(/*adap_ptr && */name_ptr && item_ptr){
+ 	    if(/*!strncmp(adap_ptr->valuestring, adap_cont, strlen(adap_cont)) && */
+ 	    !strncmp(name_ptr->valuestring, name_cont, strlen(name_cont))){
+	 	(void)strncpy(item_cont, item_ptr->valuestring, strlen(item_ptr->valuestring));
+	        ret = 0; 
+		return ret;	
+	    }
+         	
+        } 
+
+ 	info = info->next;
+    } 
+
+    return ret;
+}
+
+int read_sensor_temp(const char *adapter, const char *name, const char *item, int *temp)
+{
+    int ret = -1;
+    int len = 0;
+    char *tmp = (char *)NULL; 
+    char content[64] = {0};
+    cJSON *root = (cJSON *)NULL; 
+
+    if (/*!adapter ||*/ !name || !item || !temp){
+	return ret;
+    }  
+
+    ret = phrase_json_buffer(ONLP_SENSOR_CACHE_FILE, &tmp, &len);
+    if(ret < 0 || !tmp){
+	return ret;
+    }
+
+    root = cJSON_Parse(tmp);
+    if(!root){
+ 	ret = -1;
+	return ret;
+    }
+
+    cJSON *information = cJSON_GetObjectItem(root, "Information");
+    if(!information){
+        cJSON_Delete(root);
+	ret = -1;
+        return ret;
+    }
+
+    ret = parse_sensor_array(information, adapter, name, item, content);
+    ret += search_temp_val(content, temp);
+    cJSON_Delete(root);
+    return ret;
+}
+
+int read_psu_inout(const char *adapter, const char *name, const char *item, char *content)
+{
+    int ret = -1;
+    int len = 0;
+    char *tmp = (char *)NULL;
+    cJSON *root = (cJSON *)NULL;
+
+    if (!name || !item || !content){
+        return ret;
+    }
+
+    ret = phrase_json_buffer(ONLP_SENSOR_CACHE_FILE, &tmp, &len);
+    if(ret < 0 || !tmp){
+        return ret;
+    }
+
+    root = cJSON_Parse(tmp);
+    if(!root){
+        ret = -1;
+        return ret;
+    }
+
+    cJSON *information = cJSON_GetObjectItem(root, "Information");
+    if(!information){
+        cJSON_Delete(root);
+        ret = -1;
+        return ret;
+    }
+
+    ret = parse_sensor_array(information, adapter, name, item, content);
+    cJSON_Delete(root);
+    return ret;
+}
+
+#define SWITCH_REMOTE_U148_NAME "max31730-i2c-7-4c"
+#define BASE_R_INLET_TEMP_U41_NAME "tmp75-i2c-7-4f"
+#define BASE_C_INLET_TEMP_U3_NAME "tmp75-i2c-7-4e"
+#define SWITCH_OUTLET_TEMP_U33_NAME "tmp75-i2c-7-4d"
+#define PSU_INLET_L_TEMP_U8_NAME "tmp75-i2c-31-48" 
+#define PSU_INLET_R_TEMP_U10_NAME "tmp75-i2c-31-49" 
+#define FAN_L_TEMP_U8_NAME "tmp75-i2c-39-48" 
+#define FAN_R_TEMP_U10_NAME "tmp75-i2c-39-49"
+#define RT_LINC_TEMP_U26_NAME "tmp75-i2c-42-48" 
+#define LT_LINC_TEMP_U25_NAME "tmp75-i2c-42-49" 
+#define RB_LINC_TEMP_U26_NAME "tmp75-i2c-43-48" 
+#define LB_LINC_TEMP_U25_NAME "tmp75-i2c-43-49"
+
+int getThermalStatus_Ipmi(int id, int *tempc)
+{
+    int res = -1;
+    char thermal_name[32] = {0};
+
+    switch(id)
+    {
+	case THERMAL_SWITCH_REMOTE_U148:
+	    (void)strncpy(thermal_name, SWITCH_REMOTE_U148_NAME, strlen(SWITCH_REMOTE_U148_NAME));
+	    break;
+	case THERMAL_BASE_R_INLET_TEMP_U41:
+	    (void)strncpy(thermal_name, BASE_R_INLET_TEMP_U41_NAME, strlen(BASE_R_INLET_TEMP_U41_NAME));
+	    break;
+	case THERMAL_BASE_C_INLET_TEMP_U3:
+	    (void)strncpy(thermal_name, BASE_C_INLET_TEMP_U3_NAME, strlen(BASE_C_INLET_TEMP_U3_NAME));
+	    break;
+	case THERMAL_SWITCH_OUTLET_TEMP_U33:
+	    (void)strncpy(thermal_name, SWITCH_OUTLET_TEMP_U33_NAME, strlen(SWITCH_OUTLET_TEMP_U33_NAME));
+	    break;
+	case THERMAL_PSU_INLET_L_TEMP_U8:
+	    (void)strncpy(thermal_name, PSU_INLET_L_TEMP_U8_NAME, strlen(PSU_INLET_L_TEMP_U8_NAME));
+ 	    break;
+	case THERMAL_PSU_INLET_R_TEMP_U10:
+	    (void)strncpy(thermal_name, PSU_INLET_R_TEMP_U10_NAME, strlen(PSU_INLET_R_TEMP_U10_NAME));
+	    break;
+	case THERMAL_FAN_L_TEMP_U8:
+	    (void)strncpy(thermal_name, FAN_L_TEMP_U8_NAME, strlen(FAN_L_TEMP_U8_NAME));
+	    break;
+	case THERMAL_FAN_R_TEMP_U10:
+	    (void)strncpy(thermal_name, FAN_R_TEMP_U10_NAME, strlen(FAN_R_TEMP_U10_NAME));
+	    break;
+	case THERMAL_RT_LINC_TEMP_U26:
+	    (void)strncpy(thermal_name, RT_LINC_TEMP_U26_NAME, strlen(RT_LINC_TEMP_U26_NAME));
+	    break;
+	case THERMAL_LT_LINC_TEMP_U25:
+	    (void)strncpy(thermal_name, LT_LINC_TEMP_U25_NAME, strlen(LT_LINC_TEMP_U25_NAME));
+	    break;
+	case THERMAL_RB_LINC_TEMP_U26:
+	    (void)strncpy(thermal_name, RB_LINC_TEMP_U26_NAME, strlen(RB_LINC_TEMP_U26_NAME));
+	    break;
+	case THERMAL_LB_LINC_TEMP_U25:
+	    (void)strncpy(thermal_name, LB_LINC_TEMP_U25_NAME, strlen(LB_LINC_TEMP_U25_NAME));
+	    break;
+	default:
+	    return res;
+    }
+
+    if(id == THERMAL_SWITCH_REMOTE_U148){
+	res = read_sensor_temp(NULL, thermal_name, "Local temp",tempc);
+    }
+    else{
+        res = read_sensor_temp(NULL, thermal_name, "temp1",tempc);
+    }
+    return res;
+}
+#endif
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
 {
     int fd;
