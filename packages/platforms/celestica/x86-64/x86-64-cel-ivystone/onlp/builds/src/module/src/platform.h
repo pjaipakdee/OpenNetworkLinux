@@ -69,6 +69,11 @@
 #define LED_SYSTEM_OFF 3
 #define LED_SYSTEM_4_HZ 2
 #define LED_SYSTEM_1_HZ 1
+#define LED_SYS_ENUM 1
+#define LED_BLINK_ENUM 0
+#define LED_GREEN_ENUM 1
+#define LED_YELLOW_ENUM 2
+#define LED_OFF_ENUM 3 
 
 #define QSFP_FIRST 2
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))

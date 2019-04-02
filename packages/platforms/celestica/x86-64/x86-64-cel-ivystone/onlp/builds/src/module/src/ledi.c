@@ -135,22 +135,22 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
         if (result != 0xFF)
             info_p->status |= ONLP_LED_STATUS_ON;
         led_color = (result >> 4) & 0x3;
-        if (led_color == 0)
+        if (led_color == LED_BLINK_ENUM)
         {
             if (led_id == LED_SYSTEM)
                 info_p->mode |= ONLP_LED_MODE_AUTO;
             // if (led_id == LED_ALARM)
             //     info_p->mode |= ONLP_LED_MODE_OFF;
         }
-        if (led_color == 1)
+        if (led_color == LED_GREEN_ENUM)
         {
             info_p->mode = ONLP_LED_MODE_GREEN;
         }
-        if (led_color == 2)
+        if (led_color == LED_YELLOW_ENUM)
         {
             info_p->mode = ONLP_LED_MODE_YELLOW;
         }
-        if (led_color == 3)
+        if (led_color == LED_OFF_ENUM)
         {
             info_p->mode = ONLP_LED_MODE_OFF;
             break;
@@ -197,7 +197,7 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
         if (result != 0xFF)
             info_p->status |= ONLP_LED_STATUS_ON;
         led_color = result & 0x3;
-        if (led_color == 1)
+        if (led_color == LED_GREEN_ENUM)
         {
             info_p->mode = ONLP_LED_MODE_GREEN;
         }
@@ -212,7 +212,7 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
         if (result != 0xFF)
             info_p->status |= ONLP_LED_STATUS_ON;
         led_color = result & 0x3;
-        if (led_color == 1)
+        if (led_color == LED_GREEN_ENUM)
         {
             info_p->mode = ONLP_LED_MODE_GREEN;
         }
