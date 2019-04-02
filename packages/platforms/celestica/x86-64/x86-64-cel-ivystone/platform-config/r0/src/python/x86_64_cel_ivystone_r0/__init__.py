@@ -19,6 +19,7 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
         self.insmod("baseboard_cpld.ko")
         self.insmod("switchboard_fpga.ko")
         self.insmod("mc24lc64t.ko")
+        os.system("insmod /lib/modules/`uname -r`/onl/onl/common/optoe.ko")
         
         ###### new configuration for SDK support ########
         # os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
