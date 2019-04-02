@@ -15,6 +15,8 @@
 #include "platform.h"
 #include <sys/stat.h>
 #include <time.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 static int is_cache_exist(){
     const char *path="/tmp/onlp-sensor-cache.txt";
@@ -59,6 +61,17 @@ static int is_cache_exist(){
     }
 }
 
+static void update_shm_mem(void)
+{
+    (void)fill_shared_memory(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, ONLP_SENSOR_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_PSU_FRU_CACHE_SHARED, ONLP_PSU_FRU_CACHE_SEM, ONLP_PSU_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_FAN_FRU_CACHE_SHARED, ONLP_FAN_FRU_CACHE_SEM, ONLP_FAN_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_SYS_FRU_CACHE_SHARED, ONLP_SYS_FRU_CACHE_SEM, ONLP_SYS_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, ONLP_STATUS_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_PSU_LED_CACHE_SHARED, ONLP_PSU_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_FAN_LED_CACHE_SHARED, ONLP_FAN_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
+}
+
 static int create_cache(){
     //curl -g http://240.1.1.1:8080/api/sys/fruid/status |python -m json.tool Present status PSU,FAN
     //curl -g http://240.1.1.1:8080/api/sys/fruid/psu |python -m json.tool PSU FRU data
@@ -72,6 +85,7 @@ static int create_cache(){
     (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.txt");
     (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.txt");
 
+    update_shm_mem();
     return 1;
 }
 

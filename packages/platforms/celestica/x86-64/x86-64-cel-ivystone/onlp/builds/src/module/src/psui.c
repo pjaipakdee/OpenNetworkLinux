@@ -97,11 +97,20 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     }
 
     memset(cont_buf, 0, 64);
-    psu_stat = get_psu_item_content(psu_id, "Serial Number", cont_buf);
-    if(psu_stat != 0xFF){
-	(void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
+    if(psu_id == PSU3_ID){
+        psu_stat = get_psu_item_content(psu_id, "Serial Number", cont_buf);
+        if(psu_stat != 0xFF){
+	    (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
+        }
     }
+    else
+    {
+        psu_stat = get_psu_item_content(psu_id, "Product Serial", cont_buf);
+        if(psu_stat != 0xFF){
+            (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
+        }
 
+    }
     memset(cont_buf, 0, 64);
     psu_stat = get_psu_item_content(psu_id, "Product Name", cont_buf);
     if(psu_stat != 0xFF){
@@ -171,6 +180,14 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     // if ((info_p->mpin) < 0 || (info_p->mvin)<0)
     //     info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
+
+    info_p->caps = ONLP_PSU_CAPS_DC12;
+    info_p->caps |= ONLP_PSU_CAPS_VIN;
+    info_p->caps |= ONLP_PSU_CAPS_VOUT;
+    info_p->caps |= ONLP_PSU_CAPS_IIN;
+    info_p->caps |= ONLP_PSU_CAPS_IOUT;
+    info_p->caps |= ONLP_PSU_CAPS_PIN;
+    info_p->caps |= ONLP_PSU_CAPS_POUT;
 
     return ONLP_STATUS_OK;
 }

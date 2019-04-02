@@ -34,10 +34,19 @@
 #define PSUR_IPMI 4
 #define PSU_REGISTER 0xA15F
 #define PSU_LED_REGISTER 0xA161
+#define ONLP_PSU_LED_CACHE_FILE "/tmp/onlp-psu-led-cache.txt"
+#define ONLP_FAN_LED_CACHE_FILE "/tmp/onlp-fan-led-cache.txt"
+#define ONLP_SENSOR_CACHE_FILE "/tmp/onlp-sensor-cache.txt"
+#define ONLP_PSU_CACHE_FILE "/tmp/onlp-psu-fru-cache.txt"
+#define ONLP_FAN_CACHE_FILE "/tmp/onlp-fan-fru-cache.txt"
+#define ONLP_SYS_CACHE_FILE "/tmp/onlp-sys-fru-cache.txt"
+#define ONLP_STATUS_CACHE_FILE "/tmp/onlp-status-fru-cache.txt"
+
 //THERMAL
 #define THERMAL_COUNT 12
 #define THERMAL_REGISTER 0xA176
 
+#define  CPU_CORE_TEMPERATURE "/sys/class/thermal/thermal_zone0/temp"
 #define THERMAL_SWITCH_REMOTE_U148  1
 #define THERMAL_BASE_R_INLET_TEMP_U41 2
 #define THERMAL_BASE_C_INLET_TEMP_U3 3
@@ -50,6 +59,18 @@
 #define THERMAL_LT_LINC_TEMP_U25 10
 #define THERMAL_RB_LINC_TEMP_U26 11
 #define THERMAL_LB_LINC_TEMP_U25 12
+#define SWITCH_REMOTE_U148_NAME "max31730-i2c-7-4c"
+#define BASE_R_INLET_TEMP_U41_NAME "tmp75-i2c-7-4f"
+#define BASE_C_INLET_TEMP_U3_NAME "tmp75-i2c-7-4e"
+#define SWITCH_OUTLET_TEMP_U33_NAME "tmp75-i2c-7-4d"
+#define PSU_INLET_L_TEMP_U8_NAME "tmp75-i2c-31-48"
+#define PSU_INLET_R_TEMP_U10_NAME "tmp75-i2c-31-49"
+#define FAN_L_TEMP_U8_NAME "tmp75-i2c-39-48"
+#define FAN_R_TEMP_U10_NAME "tmp75-i2c-39-49"
+#define RT_LINC_TEMP_U26_NAME "tmp75-i2c-42-48"
+#define LT_LINC_TEMP_U25_NAME "tmp75-i2c-42-49"
+#define RB_LINC_TEMP_U26_NAME "tmp75-i2c-43-48"
+#define LB_LINC_TEMP_U25_NAME "tmp75-i2c-43-49"
 
 //ALARM
 #define ALARM_REGISTER 0xA163
@@ -79,7 +100,27 @@
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 
+#define ONLP_SENSOR_FRU_CACHE_SHARED "/onlp-sensor-fru-cache-shared"
+#define ONLP_PSU_FRU_CACHE_SHARED "/onlp-psu-fru-cache-shared"
+#define ONLP_FAN_FRU_CACHE_SHARED "/onlp-fan-fru-cache-shared"
+#define ONLP_SYS_FRU_CACHE_SHARED "/onlp-sys-fru-cache-shared"
+#define ONLP_STATUS_FRU_CACHE_SHARED "/onlp-status-fru-cache-shared"
+#define ONLP_PSU_LED_CACHE_SHARED "/onlp-psu-led-cache-shared"
+#define ONLP_FAN_LED_CACHE_SHARED "/onlp-fan-led-cache-shared"
 
+#define ONLP_SENSOR_FRU_CACHE_SEM "/onlp-sensor-fru-cache-sem"
+#define ONLP_PSU_FRU_CACHE_SEM "/onlp-psu-fru-cache-sem"
+#define ONLP_FAN_FRU_CACHE_SEM "/onlp-fan-fru-cache-sem"
+#define ONLP_SYS_FRU_CACHE_SEM "/onlp-sys-fru-cache-sem"
+#define ONLP_STATUS_FRU_CACHE_SEM "/onlp-status-fru-cache-sem"
+#define ONLP_PSU_LED_CACHE_SEM "/onlp-psu-led-cache-sem"
+#define ONLP_FAN_LED_CACHE_SEM "/onlp-fan-led-cache-sem"
+
+
+struct shm_map_data{
+    char data[16384]; 
+    int size;
+}; 
 
 struct device_info{
 	char serial_number[256];
@@ -176,7 +217,8 @@ int search_voltage_val(char *volt_c, int *volt_i);
 int search_power_val(char *watt_c, int *watt_i);
 int get_rear_fan_rpm(int id, int *rpm);
 int search_rpm_val(char *rpm_c, int *rpm_i);
-
+int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
+int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);\
 // #define PSU_FAN         2
 // #define THERMAL_COUNT   6
 // #define LED_COUNT       11
