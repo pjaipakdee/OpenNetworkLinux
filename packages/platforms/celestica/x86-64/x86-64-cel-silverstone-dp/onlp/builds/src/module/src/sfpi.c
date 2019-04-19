@@ -26,9 +26,9 @@
 #include "x86_64_cel_silverstone_dp_log.h"
 #include "platform.h"
 
-static int qsfp_count__ = 30;
+static int qsfp_count__ = 24;
 // static int qsfp_dd_count = 5;
-static int qsfp_dd_count = 5;
+static int qsfp_dd_count = 6;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];

@@ -573,5 +573,5 @@ module_exit(cpld_b_exit);
 
 MODULE_AUTHOR("Celestica Inc.");
 MODULE_DESCRIPTION("Celestica Silverstone CPLD baseboard driver");
-MODULE_VERSION("0.0.2");
+MODULE_VERSION("0.1.0");
 MODULE_LICENSE("GPL");

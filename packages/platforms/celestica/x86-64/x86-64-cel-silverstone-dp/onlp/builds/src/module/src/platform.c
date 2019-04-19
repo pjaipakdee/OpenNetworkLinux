@@ -70,24 +70,24 @@ static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
 };
 
 static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
-    {"PSUL_VIn", 'V'},
-    {"PSUL_CIn", 'A'},
-    {"PSUL_PIn", 'W'},
-    {"PSUL_VOut", 'V'},
-    {"PSUL_COut", 'A'},
-    {"PSUL_POut", 'W'},
-    {"PSUR_VIn", 'V'},
-    {"PSUR_CIn", 'A'},
-    {"PSUR_PIn", 'W'},
-    {"PSUR_VOut", 'V'},
-    {"PSUR_COut", 'A'},
-    {"PSUR_POut", 'W'},
+    {"PSU1_VIn", 'V'},
+    {"PSU1_CIn", 'A'},
+    {"PSU1_PIn", 'W'},
+    {"PSU1_VOut", 'V'},
+    {"PSU1_COut", 'A'},
+    {"PSU1_POut", 'W'},
+    {"PSU2_VIn", 'V'},
+    {"PSU2_CIn", 'A'},
+    {"PSU2_PIn", 'W'},
+    {"PSU2_VOut", 'V'},
+    {"PSU2_COut", 'A'},
+    {"PSU2_POut", 'W'},
 };
 
 char *Thermal_sensor_name[THERMAL_COUNT] = {
     "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
-    "TEMP_FAN_U17", "TEMP_FAN_U52", "PSUL_Temp1", "PSUL_Temp2",
-    "PSUR_Temp1", "PSUR_Temp2"};
+    "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
+    "PSU2_Temp1", "PSU2_Temp2"};
 
 int write_to_dump(uint8_t dev_reg)
 {

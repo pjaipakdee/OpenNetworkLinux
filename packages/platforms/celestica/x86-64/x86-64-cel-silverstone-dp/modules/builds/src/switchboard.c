@@ -25,7 +25,7 @@
  */
 
 #ifndef TEST_MODE
-#define MOD_VERSION "1.0.0"
+#define MOD_VERSION "0.1.0"
 #else
 #define MOD_VERSION "TEST"
 #endif
@@ -330,7 +330,7 @@ static struct i2c_switch fpga_i2c_bus_dev[] = {
 
     {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFPDD1"}, {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFPDD2"},
     {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFPDD3"}, {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFPDD4"},
-    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD_81725"},
+    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD6"},
     //{I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP31"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP32"},
     /* BUS1 SFP+ Exported as virtual bus */
     //{I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
