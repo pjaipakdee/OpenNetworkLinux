@@ -50,6 +50,18 @@ static onlp_thermal_info_t thermal_info[] = {
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
+    { { ONLP_THERMAL_ID_CREATE(11), "SW_U04_Temp",   0},
+                ONLP_THERMAL_STATUS_PRESENT,
+                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+            },
+    { { ONLP_THERMAL_ID_CREATE(12), "SW_U14_Temp",   0},
+                ONLP_THERMAL_STATUS_PRESENT,
+                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+            },
+    { { ONLP_THERMAL_ID_CREATE(13), "SW_U4403_Temp",   0},
+                ONLP_THERMAL_STATUS_PRESENT,
+                ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
+            },
 };
 
 int
