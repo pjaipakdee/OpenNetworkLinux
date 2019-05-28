@@ -356,8 +356,8 @@ static struct i2c_switch fpga_i2c_bus_dev[] = {
     {I2C_MASTER_CH_11, 0xFF, 0, NONE, "SI5344D"},
     /* BUS12 PCIe Buffer */
     {I2C_MASTER_CH_12, 0xFF, 0, NONE, "PCIe Buffer"},
-    /* BUS13 MAX6696 */
-    {I2C_MASTER_CH_13, 0xFF, 0, NONE, "MAX6696"},
+    /* BUS13 MAX31730 */
+    {I2C_MASTER_CH_13, 0xFF, 0, NONE, "MAX31730"},
 };
 
 #define VIRTUAL_I2C_PORT_LENGTH ARRAY_SIZE(fpga_i2c_bus_dev)
