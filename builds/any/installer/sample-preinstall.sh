@@ -41,15 +41,15 @@ if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; the
     sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}'):"ONL-BOOT" /dev/sda
     sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-BOOT" | awk '{print $1}'):clear:0 /dev/sda
 fi
-if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-CONFIG-DIAG" | awk '{print $1}') ]; then
     sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-CONFIG-DIAG" | awk '{print $1}'):"ONL-CONFIG" /dev/sda
     sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-CONFIG" | awk '{print $1}'):clear:0 /dev/sda
 fi
-if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-IMAGES-DIAG" | awk '{print $1}') ]; then
     sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-IMAGES-DIAG" | awk ' {print $1}'):"ONL-IMAGES" /dev/sda
     sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-IMAGES" | awk '{print $1}'):clear:0 /dev/sda
 fi
-if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') ]; then
+if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-DATA-DIAG" | awk '{print $1}') ]; then
     sgdisk --change-name=$(sgdisk -p /dev/sda | grep "ONL-DATA-DIAG" | awk '{print $1}'):"ONL-DATA" /dev/sda
     sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):clear:0 /dev/sda
 fi
