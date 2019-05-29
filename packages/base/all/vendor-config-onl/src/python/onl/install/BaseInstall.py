@@ -228,9 +228,20 @@ class Base:
                 nextBlock = max(part.geometry.start+part.geometry.length,
                                 nextBlock)
             else:
-                self.log.info("deleting this part")
-                self.partedDisk.removePartition(part)
-                dirty = True
+                disk = "{}{}".format(self.partedDisk.device.path,part.number)
+                out = subprocess.Popen(['blkid',disk],stdout=subprocess.PIPE, 
+                stderr=subprocess.STDOUT)
+
+                stdout,stderr = out.communicate()
+
+                if stderr == None:
+                    if "ONL" not in stdout:
+                        self.log.info("CLS Diag OS custom: this patition is not ONL don't delete.")
+                        self.log.info("skip this part" )
+                    else:
+                        self.log.info("deleting this part")
+                        self.partedDisk.removePartition(part)
+                        dirty = True
 
         if dirty:
             self.partedDisk.commit()
