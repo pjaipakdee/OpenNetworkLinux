@@ -25,7 +25,7 @@
  */
 
 #ifndef TEST_MODE
-#define MOD_VERSION "1.0.1"
+#define MOD_VERSION "1.0.2"
 #else
 #define MOD_VERSION "TEST"
 #endif
@@ -1349,6 +1349,9 @@ static int smbus_access(struct i2c_adapter *adapter, u16 addr,
             }
         }
     }
+    // Delay a bit before repeat start
+    // This help solve LEONI QSFP28 read issue, 
+    udelay(170);
 
     //REPEATE START
     if ( rw == I2C_SMBUS_READ && (
@@ -1438,6 +1441,7 @@ static int smbus_access(struct i2c_adapter *adapter, u16 addr,
 
     //[P]
     SET_REG_BIT_L(pci_bar + REG_CR0, I2C_CR_BIT_MSTA);
+    i2c_wait_ack(adapter, 12,0);
     info( "MS STOP");
 
 Done:
