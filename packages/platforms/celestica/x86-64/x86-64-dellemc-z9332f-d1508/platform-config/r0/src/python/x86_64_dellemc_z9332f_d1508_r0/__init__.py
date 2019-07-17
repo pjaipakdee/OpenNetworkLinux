@@ -23,5 +23,5 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
         #eeprom driver
         self.new_i2c_device('24lc64t', 0x56, 0)
 
-        os.system("sysctl -w kernel.printk=3")
+        os.system("echo '3' > /proc/sys/kernel/printk")
         return True
