@@ -23,4 +23,5 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
         #eeprom driver
         self.new_i2c_device('24lc64t', 0x56, 0)
         
+        os.system("echo '3' > /proc/sys/kernel/printk")
         return True
