@@ -54,8 +54,11 @@ if [ ! -z $(sgdisk -p /dev/sda | grep "ONL-DATA-DIAG" | awk '{print $1}') ]; the
     sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):clear:0 /dev/sda
 fi
 
-
-
+## Remove Dummy partition CLS-DIAG if exist
+if [ ! -z $(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}') ]; then
+    DUMMY_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}')
+    sgdisk -d $DUMMY_PARTITION_NUMBER /dev/sda
+fi
 
 
 

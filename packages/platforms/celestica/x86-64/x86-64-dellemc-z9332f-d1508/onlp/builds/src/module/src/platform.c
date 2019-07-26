@@ -16,7 +16,6 @@
 char command[256];
 FILE *fp;
 static char *sdr_value = NULL;
-static char *temp_sdr_value = NULL;
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
     {"unknown", "unknown"}, //check
@@ -84,10 +83,10 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
     {"PSU2_POut", 'W'},
 };
 
-char *Thermal_sensor_name[THERMAL_COUNT] = {
-    "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
-    "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
-    "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
+// const char *Thermal_sensor_name[THERMAL_COUNT] = {
+//     "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
+//     "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
+//     "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
 
 int write_to_dump(uint8_t dev_reg)
 {
@@ -749,61 +748,6 @@ int getFaninfo(int id, char *model, char *serial)
     return 1;
 }
 
-int getThermalStatus_Ipmi(int id, int *tempc)
-{
-    char data_temp[500] = "\0";
-    int position;
-    char ctemp[18] = "\0";
-    float ftemp = 0.0;
-
-    if(temp_sdr_value == NULL)
-    {
-        sprintf(command, "ipmitool sdr list | grep 'Temp\\|TEMP'");
-        temp_sdr_value = read_ipmi(command);
-    }
-    position = keyword_match(temp_sdr_value, Thermal_sensor_name[id - 1]);
-    if (position != -1){
-        //Grep word untill newline
-        //printf("Position = %d | text = %c%c",position,temp_sdr_value[position],temp_sdr_value[position+1]);
-        int search_pos = 0;
-        while(temp_sdr_value[position+search_pos] != '\n'){
-            append(data_temp,temp_sdr_value[position+search_pos]);
-            search_pos++;
-        }
-    }
-
-    if (keyword_match(data_temp, "ns") > 0)
-    {
-        if( id >= THERMAL_COUNT)
-        {
-            free(temp_sdr_value);
-            temp_sdr_value=NULL;
-        }
-        return 0;
-    }
-    else
-    {
-        int response_len = strlen(data_temp);
-        for (int i = 18; i < response_len; i++)
-        {
-            if (data_temp[i] == 'c')
-                break;
-            append(ctemp, data_temp[i]);
-        }
-        ftemp = atof(ctemp);
-        *tempc = ftemp * 1000;
-    }
-    
-    //Free malloc temp_sdr_value after use.
-    if( id >= THERMAL_COUNT)
-    {
-        free(temp_sdr_value);
-        temp_sdr_value=NULL;
-    }
-    
-    return 1;
-}
-
 void __trim(char *strIn, char *strOut)
 {
     int i, j;
@@ -826,7 +770,11 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
 	char ipmi_cmd[512] = {'\0'};
     char strTmp[10][128] = {{0}, {0}};
     char *token = NULL;
-	
+    char *Thermal_sensor_name[13] = {
+        "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
+        "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
+        "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
+
 	if((NULL == temp) || (NULL == warn) || (NULL == error) || (NULL == shutdown))
 	{
 		printf("%s null pointer!\n", __FUNCTION__);
@@ -844,7 +792,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
         ipmi_cmd, 
         "ipmitool sensor list | grep %s",  
         Thermal_sensor_name[id - 1]
-        ); 
+        );
 
     ret = exec_ipmitool_cmd(ipmi_cmd, ipmi_ret);
     if(ret != 0)

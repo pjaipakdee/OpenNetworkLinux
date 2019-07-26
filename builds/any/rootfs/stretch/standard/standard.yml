@@ -98,7 +98,7 @@ Configure:
 
   users:
     root:
-      password: onl
+      password: calvin
 
   manifests:
     '/etc/onl/rootfs/manifest.json' :

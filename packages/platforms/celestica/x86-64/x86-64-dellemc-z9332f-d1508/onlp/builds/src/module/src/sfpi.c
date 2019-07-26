@@ -28,6 +28,7 @@
 
 static int qsfp_count__ = 32;
 static int sfp_count__ = 2;
+static int i2c_bus_offset = 9;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];
@@ -61,9 +62,9 @@ dellemc_z9332f_d1508_sfp_qsfp_get_port_path(int port, char *node_name)
 
     if(port <= qsfp_count__ + sfp_count__){
         if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port);
+            sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
         }else{
-            sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
+            sprintf(node_path, "%s/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
@@ -79,9 +80,9 @@ dellemc_z9332f_d1508_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 
     if(port <= qsfp_count__ + sfp_count__){
         if(port<=qsfp_count__){
-            sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port);
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port+i2c_bus_offset); //QSFP 10 - 41
         }else{
-            sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port-qsfp_count__);
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port-qsfp_count__); //SFP 1 - 2
         }
     }else{
         AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);

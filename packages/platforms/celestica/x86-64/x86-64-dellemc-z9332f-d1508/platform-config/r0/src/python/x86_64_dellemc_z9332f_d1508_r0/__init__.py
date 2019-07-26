@@ -1,5 +1,6 @@
 from onl.platform.base import *
 from onl.platform.celestica import *
+import subprocess,string
 
 class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
                                             OnlPlatformPortConfig_2x10_32x100):
@@ -10,18 +11,47 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
     def baseconfig(self):
         print("Initialize Dell EMC Z9332F D1508 driver")
 
-        self.insmod("optoe.ko")
-        self.insmod("switchboard.ko")
-        self.insmod("baseboard.ko")
+        qsfp_qty = 32
+        sfp_qty = 2
+        qsfp_offset = 9
+
+        self.insmod("i2c-ocores.ko")
+        self.insmod("i2c-cls.ko")
+        os.system("insmod /lib/modules/`uname -r`/onl/celestica/x86-64-dellemc-z9332f-d1508/cls-switchboard.ko")
+        #self.insmod("baseboard.ko")
+        self.insmod("cpld_b.ko")
         self.insmod("mc24lc64t.ko")
+        self.insmod("optoe.ko")
+        self.insmod("xcvr-cls.ko")
 
         ###### new configuration for SDK support ########
         os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/net/core/drop_monitor.ko")
         os.system("insmod /lib/modules/`uname -r`/kernel/net/ipv4/tcp_probe.ko")
 
-        #eeprom driver
+        #tlv eeprom device
         self.new_i2c_device('24lc64t', 0x56, 0)
+
+        #transceiver device
+        for x in range(sfp_qty):
+            self.new_i2c_device('optoe2',0x50,x+1)
+        
+        for y in range(qsfp_qty):
+            self.new_i2c_device('optoe1',0x50,qsfp_offset+y+1)
+
+        #init baseboard
+        #self.new_i2c_device('baseboard',0x0d,5)
+
+        #Create new admin:admin user if not exist
+        command = ['cat','/etc/sudoers']
+        validater = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = validater.stdout.read().find('admin')
+        if(result == -1):
+            os.system("mkdir /home/admin")
+            os.system("useradd -g root -d /home/admin admin")
+            os.system("echo 'admin:admin' | chpasswd")
+            os.system("echo 'admin    ALL=(ALL:ALL) ALL' >> /etc/sudoers")
+            #usermod -a -G root test_admin_2
 
         os.system("echo '3' > /proc/sys/kernel/printk")
         return True

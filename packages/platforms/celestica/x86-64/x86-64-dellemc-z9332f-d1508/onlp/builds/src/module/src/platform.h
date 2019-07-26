@@ -106,7 +106,9 @@ typedef struct psuInfo_p
 }psuInfo_p;
 
 #define SYS_CPLD_PATH "/sys/devices/platform/sys_cpld/"
-#define PLATFORM_PATH "/sys/devices/platform/z9332f_d1508/"
+//#define PLATFORM_PATH "/sys/devices/platform/z9332f_d1508/"
+#define PLATFORM_PATH "/sys/devices/platform/cls-xcvr/"
+#define I2C_DEVICE_PATH "/sys/bus/i2c/devices/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 
 int write_to_dump(uint8_t dev_reg);
@@ -135,7 +137,6 @@ int keyword_match(char* a,char *b);
 char* trim (char *s);
 void append(char* s, char c);
 int getFaninfo(int id,char* model,char* serial);
-int getThermalStatus_Ipmi(int id,int *tempc);
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);

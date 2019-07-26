@@ -74,7 +74,7 @@ sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_t
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
-echo "Installing Diag OS grub ....."
+echo "Installing Diag OS grub to grub.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/grub/grub.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/grub/grub.cfg)" > $rootdir/mnt/onie-boot/grub/grub.cfg
@@ -87,12 +87,32 @@ cp $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg $rootdir/mnt/onie-boot/onie/
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg
 
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
-echo "Installing Diag OS grub ....."
+echo "Installing Diag OS grub grub-extra.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 cat /tmp/grub_tmp | cat - $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo "function diag_bootcmd {" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo diag_menu=\"CLS Diag OS\" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 echo "$(echo "## Begin grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg)" > $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg
 rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
+
+echo "Copy grub-extra.cfg to diag-boocmd.cfg to prevent command disappear after Onie update ..."
+cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/diag-bootcmd.cfg
+
+echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-updater"
+# DUMMY_PARTITION_NUMBER_POST=$(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}')
+# if [[ $DUMMY_PARTITION_NUMBER_POST -gt 0 ]]
+# then
+#     exit 0
+# fi
+START_POS=$(sgdisk -f /dev/sda)
+END_POS=$(($START_POS+2048))
+LAST_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep $(($START_POS-1)) | awk '{print $1}')
+NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
+sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 /dev/sda
+sgdisk --change-name=$NEW_PARTITION_NUMBER:"CLS-DIAG" /dev/sda
+dd if=/dev/zero of=/dev/sda$NEW_PARTITION_NUMBER bs=1M count=1
+mkfs.ext4 /dev/sda$NEW_PARTITION_NUMBER
+partprobe /dev/sda
+tune2fs -L "CLS-DIAG" /dev/sda$NEW_PARTITION_NUMBER
 
 exit 0
