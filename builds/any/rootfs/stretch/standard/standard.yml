@@ -94,11 +94,11 @@ Configure:
     securetty: False
     ttys: False
     console: True
-    PermitRootLogin: 'yes'
+    PermitRootLogin: 'no'
 
   users:
     root:
-      password: calvin
+      password: onl
 
   manifests:
     '/etc/onl/rootfs/manifest.json' :

@@ -20,6 +20,8 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
         os.system("insmod /lib/modules/`uname -r`/onl/celestica/x86-64-dellemc-z9332f-d1508/cls-switchboard.ko")
         #self.insmod("baseboard.ko")
         self.insmod("cpld_b.ko")
+        #self.insmod("switchboard.ko")
+        self.insmod("switchboard-diag.ko")
         self.insmod("mc24lc64t.ko")
         self.insmod("optoe.ko")
         self.insmod("xcvr-cls.ko")
@@ -51,7 +53,7 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
             os.system("useradd -g root -d /home/admin admin")
             os.system("echo 'admin:admin' | chpasswd")
             os.system("echo 'admin    ALL=(ALL:ALL) ALL' >> /etc/sudoers")
-            #usermod -a -G root test_admin_2
+            os.system("usermod -s /bin/bash admin")
 
         os.system("echo '3' > /proc/sys/kernel/printk")
         return True
