@@ -57,7 +57,7 @@ static int  majorNumber;
 
 #define CLASS_NAME "silverstone_fpga"
 #define DRIVER_NAME "silverstone"
-#define FPGA_PCI_NAME "Silverstone_fpga_pci"
+#define FPGA_PCI_NAME "silverstone_fpga_pci"
 #define DEVICE_NAME "fwupgrade"
 
 
@@ -1349,10 +1349,11 @@ static int smbus_access(struct i2c_adapter *adapter, u16 addr,
             }
         }
     }
-    // Delay a bit before repeat start
-    // This help solve LEONI QSFP28 read issue,
-    udelay(170);
 
+    // Delay a bit before repeat start
+    // This help solve LEONI QSFP28 read issue, 
+    udelay(170);
+    
     //REPEATE START
     if ( rw == I2C_SMBUS_READ && (
                 size == I2C_SMBUS_BYTE_DATA ||
