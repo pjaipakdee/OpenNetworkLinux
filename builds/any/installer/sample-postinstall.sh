@@ -102,7 +102,7 @@ mkdir -p $EFI_PATH_TMP
 mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
 echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG"
 if [ -d /tmp/efi/EFI/ONL ]; then
-    mv /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
+    rsync -a /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
 fi
 
 boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')

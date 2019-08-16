@@ -8,6 +8,9 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
     SYS_OBJECT_ID=".2060.1"
 
     def baseconfig(self):
+        onlp_interval_time = 30 #second
+        file_path = "/var/opt/interval_time.txt"
+
         print("Initialize Silverstone driver")
 
         qsfp_qty = 32
@@ -41,4 +44,12 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
             self.new_i2c_device('optoe1',0x50,qsfp_offset+y+1)
             
         os.system("echo '3' > /proc/sys/kernel/printk")
+
+        if os.path.exists(file_path):
+            pass
+        else:
+            with open(file_path, 'w') as f:  
+                f.write("{0}\r\n".format(onlp_interval_time))
+            f.close()
+        
         return True
