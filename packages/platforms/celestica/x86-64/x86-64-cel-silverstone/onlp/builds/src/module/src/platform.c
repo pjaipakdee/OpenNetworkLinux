@@ -11,6 +11,12 @@
 #include <stdint.h>
 #include <sys/io.h>
 
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <semaphore.h>
+#include <errno.h>
+#include <time.h>
+
 #include "platform.h"
 
 char command[256];
@@ -87,6 +93,42 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
 //     "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
 //     "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
 //     "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
+void update_shm_mem(void)
+{
+    (void)fill_shared_memory(ONLP_SENSOR_CACHE_SHARED, ONLP_SENSOR_CACHE_SEM, ONLP_SENSOR_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_FRU_CACHE_SHARED, ONLP_FRU_CACHE_SEM, ONLP_FRU_CACHE_FILE);
+    (void)fill_shared_memory(ONLP_SENSOR_LIST_CACHE_SHARED, ONLP_SENSOR_LIST_SEM, ONLP_SENSOR_LIST_FILE);
+}
+
+int is_cache_exist(){
+    const char *path="/tmp/onlp-sensor-cache.txt";
+    time_t current_time;
+    double diff_time;
+    struct stat fst;
+    bzero(&fst,sizeof(fst));
+
+    if (access(path, F_OK) == -1){ //Cache not exist
+        return -1;
+    }else{ //Cache exist
+        current_time = time(NULL);
+        if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+
+        diff_time = difftime(current_time,fst.st_mtime);
+
+        if(diff_time > 60){
+            return -1;
+        }
+        return 1;
+    }
+}
+
+int create_cache(){
+    (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+    (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
+    (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
+    update_shm_mem();
+    return 1;
+}
 
 int write_to_dump(uint8_t dev_reg)
 {
@@ -490,7 +532,8 @@ char *read_psu_sdr(int id)
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    sprintf(command,"ipmitool  sdr | grep PSU");
+    if(is_cache_exist()<1){         create_cache();     }
+    sprintf(command,"cat /tmp/onlp-sensor-cache.txt | grep PSU");
     pFd = popen(command, "r");
     if (pFd != NULL)
     {
@@ -588,42 +631,48 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
 
 int psu_get_model_sn(int id, char *model, char *serial_number)
 {
-    char buf[256];
     int index;
     char *token;
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int ret = -1;
+    int search_psu_id = 1;
 
     if (0 == strcasecmp(psu_information[0].model, "unknown")) {
         
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_PSU");
-        fp = popen(command, "r");
-        if (fp == 0)
-        {
+        if(is_cache_exist()<1){         create_cache();     }
+        ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
             printf("Failed - Failed to obtain system information\n");
-            return -1;
+            return ret;
         }
-        while (EOF != fscanf(fp, "%[^\n]\n", buf))
-        {
-            if (strstr(buf, "FRU Device Description")) {
+        char *content, *temp_pointer;
+        int flag = 0;
+        content = strtok_r(tmp, "\n", &temp_pointer);
+        do {
+            if (strstr(content, "FRU Device Description : FRU_PSU")) {
+                flag = 1;
                 index++;
             }
-            if (strstr(buf, "Board Serial")) {
-                token = strtok(buf, ":");
-                token = strtok(NULL, ":");
-                char* trim_token = trim(token);
-                sprintf(psu_information[index].serial_number,"%s",trim_token);
+            if(flag == 1){
+                if (strstr(content, "Board Product")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(psu_information[index].model,"%s",trim_token);
+                }
+                else if (strstr(content, "Board Serial")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(psu_information[index].serial_number,"%s",trim_token);
+                    flag = 0;
+                    search_psu_id++;
+                }
             }
-            else if (strstr(buf, "Board Product")) {
-                token = strtok(buf, ":");
-                token = strtok(NULL, ":");
-                char* trim_token = trim(token);
-                sprintf(psu_information[index].model,"%s",trim_token);
-            
-            }
-        }
+        } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
         sprintf(psu_information[0].model,"pass"); //Mark as complete
-        pclose(fp);
-        
     }
 
     strcpy(model, psu_information[id].model);
@@ -671,80 +720,57 @@ int keyword_match(char *a, char *b)
         return -1;
 }
 
-char* read_fans_fru(){
-
-    FILE *pFd = NULL;
-    char c; //,s_id[4]; //stat[5000],
-    char *str = (char *)malloc(sizeof(char) * 5000);
-    int i = 0;
-
-    sprintf(command, "ipmitool fru print | grep -A 4 FRU_FAN");
-    pFd = popen(command, "r");
-    if (pFd != NULL)
-    {
-
-        c = fgetc(pFd);
-        while (c != EOF)
-        {
-            //printf ("%c", c);
-            str[i] = c;
-            i++;
-            c = fgetc(pFd);
-        }
-
-        pclose(pFd);
-    }
-    else
-    {
-        printf("execute command %s failed\n", command);
-    }
-
-    return str;
-}
-
 int getFaninfo(int id, char *model, char *serial)
 {
-    char buf[256];
     int index;
     char *token;
+    char *tmp = (char *)NULL;
+    char search_header[35];
+    int len = 0;
+    int ret = -1;
+    int search_fan_id = 1;
 
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
         
         index = 0;
-        sprintf(command, "ipmitool fru print | grep -A 10 FRU_FAN");
-        fp = popen(command, "r");
-        if (fp == 0)
-        {
+
+        if(is_cache_exist()<1){         create_cache();     }
+        ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
             printf("Failed - Failed to obtain system information\n");
-            return -1;
+            return ret;
         }
-        while (EOF != fscanf(fp, "%[^\n]\n", buf))
-        {
-            if (strstr(buf, "FRU Device Description")) {
+        char *content, *temp_pointer;
+        int flag = 0;
+        content = strtok_r(tmp, "\n", &temp_pointer);
+        do {
+            sprintf(search_header,"FRU Device Description : FRU_FAN%d",search_fan_id);
+            if (strstr(content, search_header)) {
+                flag = 1;
                 index++;
             }
-            if (strstr(buf, "Board Serial")) {
-                token = strtok(buf, ":");
-                token = strtok(NULL, ":");
-                char* trim_token = trim(token);
-                sprintf(fan_information[index].serial_number,"%s",trim_token);
+            if(flag == 1){
+                if (strstr(content, "Board Serial")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(fan_information[index].serial_number,"%s",trim_token);
+                }
+                else if (strstr(content, "Board Part Number")) {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    sprintf(fan_information[index].model,"%s",trim_token);
+                    flag = 0;
+                    search_fan_id++;
+                }
             }
-            else if (strstr(buf, "Board Part Number")) {
-                token = strtok(buf, ":");
-                token = strtok(NULL, ":");
-                char* trim_token = trim(token);
-                sprintf(fan_information[index].model,"%s",trim_token);
-            
-            }
-        }
-        sprintf(fan_information[0].model,"pass"); //Mark as complete
-        pclose(fp);
+        } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
         
+        sprintf(fan_information[0].model,"pass"); //Mark as complete
     }
-
     strcpy(model, fan_information[id].model);
     strcpy(serial, fan_information[id].serial_number);
-
     return 1;
 }
 
@@ -764,10 +790,12 @@ void __trim(char *strIn, char *strOut)
 
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
 {
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int index  = 0;
+
 	int i = 0;
 	int ret = 0;
-	char ipmi_ret[1024] = {'\0'};
-	char ipmi_cmd[512] = {'\0'};
     char strTmp[10][128] = {{0}, {0}};
     char *token = NULL;
     char *Thermal_sensor_name[13] = {
@@ -788,28 +816,36 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
         TEMP_FAN_U52 | 32.000	  | degrees C  | ok  | na  |  na  | na  | na  | 70.000  | 75.000
         PSUR_Temp1   | na         | degrees C  | na  | na  | na   | na   | na  | na  | na
     */
-    sprintf(
-        ipmi_cmd, 
-        "ipmitool sensor list | grep %s",  
-        Thermal_sensor_name[id - 1]
-        );
-
-    ret = exec_ipmitool_cmd(ipmi_cmd, ipmi_ret);
-    if(ret != 0)
-    {
-        printf("exec_ipmitool_cmd: %s failed!\n", ipmi_cmd);
-        return -1;
-    }   
-
-    i = 0;
-    token = strtok(ipmi_ret, "|");
-    while( token != NULL ) 
-    {
-        __trim(token, &strTmp[i][0]);
-        i++;
-        if(i > 10) break;
-        token = strtok(NULL, "|");
+    if(is_cache_exist()<1){         create_cache();     }
+    ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+    if(ret < 0 || !tmp){
+        printf("Failed - Failed to obtain system information\n");
+        return ret;
     }
+    
+    char *content, *temp_pointer;
+    int flag = 0;
+    content = strtok_r(tmp, "\n", &temp_pointer);
+    do {
+        if (strstr(content, Thermal_sensor_name[id - 1])) {
+            flag = 1;
+            index++;
+        }
+        if(flag == 1){
+
+            i = 0;
+            token = strtok(content, "|");
+            while( token != NULL ) 
+            {
+                __trim(token, &strTmp[i][0]);
+                i++;
+                if(i > 10) break;
+                token = strtok(NULL, "|");
+            }
+            
+            flag = 0;
+        }
+    } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
 
     if(0 == strcmp(&strTmp[1][0], "na")) return -1;
     else *temp = atof(&strTmp[1][0]) * 1000.0;
@@ -888,4 +924,188 @@ char* trim (char *s)
     s[i + 1] = '\0';
     //printf ("%s\n", s);
     return s;
+}
+
+int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path)
+{
+    int seg_size = 0;    
+    int shm_fd = -1;   
+    struct shm_map_data * shm_map_ptr = (struct shm_map_data *)NULL;
+
+    if(!shm_path || !sem_path || !cache_path){
+	return -1;
+    }
+
+    seg_size = sizeof(struct shm_map_data);
+
+    shm_fd = shm_open(shm_path, O_CREAT|O_RDWR, S_IRWXU|S_IRWXG);
+    if(shm_fd < 0){
+        
+	printf("\nshm_path:%s. errno:%d\n", shm_path, errno);
+        return -1;
+    }   
+ 
+    ftruncate(shm_fd, seg_size);
+
+    shm_map_ptr = (struct shm_map_data *)mmap(NULL, seg_size, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0); 
+    if(shm_map_ptr == MAP_FAILED){
+	    printf("\nMAP_FAILED. errno:%d.\n", errno);
+    	close(shm_fd);
+        return -1;
+    }
+
+    if(access(cache_path, F_OK) == -1)
+    {
+        munmap(shm_map_ptr, seg_size);
+        close(shm_fd);
+        return -1;
+    }
+ 
+    struct stat sta;
+    stat(cache_path, &sta);
+    int st_size = sta.st_size;
+    if(st_size == 0){
+        munmap(shm_map_ptr, seg_size);
+	    close(shm_fd);
+	    return -1;
+    }
+
+    char *cache_buffer = (char *)malloc(st_size); 
+    if(!cache_buffer){ 
+        munmap(shm_map_ptr, seg_size);
+	    close(shm_fd);
+        return -1;
+    }
+
+    memset(cache_buffer, 0, st_size);
+ 
+    FILE *cache_fp = fopen(cache_path, "r");
+    if(!cache_fp)
+    {
+        free(cache_buffer);   
+        munmap(shm_map_ptr, seg_size);
+	    close(shm_fd);
+        return -1;
+    }
+
+    int cache_len = fread(cache_buffer, 1, st_size, cache_fp);
+    if(st_size != cache_len)
+    {
+        munmap(shm_map_ptr, seg_size);
+        close(shm_fd);
+        free(cache_buffer);
+        fclose(cache_fp);
+        return -1;
+    }
+
+    sem_t * sem_id = sem_open(sem_path, O_CREAT, S_IRUSR | S_IWUSR, 1);
+    if(sem_id == SEM_FAILED){
+        munmap(shm_map_ptr, seg_size);
+	    close(shm_fd);
+        free(cache_buffer);
+        fclose(cache_fp);
+        return -1;
+    }    
+
+    sem_wait(sem_id);
+
+    memcpy(shm_map_ptr->data, cache_buffer, st_size); 
+    
+    shm_map_ptr->size = st_size;
+ 
+    sem_post(sem_id);
+
+    (void)free(cache_buffer);
+
+    //shm_unlink(shm_path);
+    
+    sem_close(sem_id);
+
+    //sem_unlink(sem_path);
+
+    munmap(shm_map_ptr, seg_size);
+   
+    close(shm_fd);
+
+    return 0; 
+}
+
+int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem)
+{
+    sem_t *sem_id = (sem_t *)NULL;
+    struct shm_map_data *map_ptr = (struct shm_map_data *)NULL;
+    int seg_size = 0;
+    int shm_fd = -1;
+
+    if(!shm_path || !sem_path || !shared_mem){
+	    return -1;
+    }
+
+    seg_size = sizeof(struct shm_map_data);
+
+    shm_fd = shm_open(shm_path, O_RDONLY, 0666);
+    if(shm_fd < 0){
+   	    printf("\ndump shm_path:%s. errno:%d\n", shm_path, errno);
+        return -1; 
+    }
+
+    map_ptr = (struct shm_map_data *)mmap(NULL, seg_size, PROT_READ, MAP_SHARED, shm_fd, 0);
+    if(map_ptr == MAP_FAILED){
+        printf("\ndump mmap failed. errno:%d.\n", errno);
+        close(shm_fd);
+        return -1;
+    }   
+ 
+    sem_id = sem_open(sem_path, 0);
+    if(SEM_FAILED == sem_id){
+        printf("\nsem open failed. errno:%d.\n", errno);
+        munmap(map_ptr, seg_size);
+        close(shm_fd);
+        return -1;
+    }
+
+    sem_wait(sem_id);
+    
+    memcpy(shared_mem, map_ptr, sizeof(struct shm_map_data));
+   
+    sem_post(sem_id);
+    
+    //shm_unlink(shm_path);
+
+    sem_close(sem_id);
+ 
+    //sem_unlink(sem_path);
+    
+    munmap(map_ptr, seg_size);
+    close(shm_fd);
+
+    return 0;
+}
+
+int open_file(const char *shm_path, const char *sem_path, char **cache_data, int *cache_size)
+{
+    int res = -1;
+    char *tmp_ptr = (char *)NULL;
+    struct shm_map_data shm_map_tmp;
+
+    memset(&shm_map_tmp, 0, sizeof(struct shm_map_data));
+
+    res = dump_shared_memory(shm_path, sem_path, &shm_map_tmp);
+    if(!res){
+	tmp_ptr = malloc(shm_map_tmp.size);
+        if(!tmp_ptr){
+	    res = -1;
+	    return res;
+	}	
+
+	memset(tmp_ptr, 0, shm_map_tmp.size);
+
+        memcpy(tmp_ptr, shm_map_tmp.data, shm_map_tmp.size);
+
+        *cache_data = tmp_ptr;
+
+        *cache_size = shm_map_tmp.size;
+    }
+
+    return res; 
 }

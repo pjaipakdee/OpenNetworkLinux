@@ -13,6 +13,11 @@
 #include "x86_64_cel_silverstone_int.h"
 #include "x86_64_cel_silverstone_log.h"
 #include "platform.h"
+//Below include add for support Cache system
+#include <sys/stat.h>
+#include <time.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 static char arr_cplddev_name[NUM_OF_CPLD][10] =
 {
@@ -25,57 +30,70 @@ onlp_sysi_platform_get(void)
     return "x86-64-cel-silverstone-r0";
 }
 
+// static int is_cache_exist(){
+//     const char *path="/tmp/onlp-sensor-cache.txt";
+//     const char *time_setting_path="/var/opt/interval_time.txt";
+//     time_t current_time;
+//     double diff_time;
+//     int interval_time = 30; //set default to 30 sec
+//     struct stat fst;
+//     bzero(&fst,sizeof(fst));
+
+//     //Read setting
+//     if(access(time_setting_path, F_OK) == -1){ //Setting not exist
+//         return -1;
+//     }else{
+//         FILE *fp;
+        
+//         fp = fopen(time_setting_path, "r"); // read setting
+        
+//         if (fp == NULL)
+//         {
+//             perror("Error while opening the file.\n");
+//             exit(EXIT_FAILURE);
+//         }
+
+//         fscanf(fp,"%d", &interval_time);
+
+//         fclose(fp);
+//     }
+
+//     if (access(path, F_OK) == -1){ //Cache not exist
+//         return -1;
+//     }else{ //Cache exist
+//         current_time = time(NULL);
+//         if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+
+//         diff_time = difftime(current_time,fst.st_mtime);
+
+//         if(diff_time > interval_time){
+//             return -1;
+//         }
+//         return 1;
+//     }
+// }
+
 int
 onlp_sysi_init(void)
 {
-    // const char *path="/tmp/onlp_result";
-    // FILE *file, *out_file;
-    // char command[256];
-
-    // if (access(path, F_OK) == -1){
-    //     printf("Create folder\n");
-    //     sprintf(command,"mkdir %s",path);
-    //     system(command);
-    // }
-    // FILE *fptr = NULL;
-    // //After Path created we should create the static memory file.
-    // file = fopen("/tmp/onlp_result/cache_onlp.txt","r");
-    
-    // char buf[256];
-    // if(file){
-    //     //Check file timestamp create new if duration more than 1 minute.
-    //     printf("Init cache file\n");
-
-    //     while (EOF != fscanf(file, "%[^\n]\n", buf))
-    //     {
-    //         printf("%s\n",buf);
-    //     }
-    //     fclose(file);
-
-    // }else{
-    //     printf("Execute cache file\n");
-
-    //     out_file = fopen("/tmp/onlp_result/cache_onlp.txt","w+");
-        
-    //     fptr = popen("ipmitool sdr list | grep 'Temp\\|TEMP'", "r");
-    //     if (!fptr) {
-    //         printf("Error: ONLP can't execute\n");
-    //         return -1;
-    //     }
-
-    //     while (EOF != fscanf(fptr, "%[^\n]\n", buf))
-    //     {
-    //         fprintf(out_file,"%s\n",buf);
-    //     }
-
-    //     printf("close out_file\n");
-    //     fclose(out_file);
-    //     printf("close fptr\n");
-    //     fclose(fptr); 
-    // }
-
     return ONLP_STATUS_OK;
 }
+
+// static void update_shm_mem(void)
+// {
+//     (void)fill_shared_memory(ONLP_SENSOR_CACHE_SHARED, ONLP_SENSOR_CACHE_SEM, ONLP_SENSOR_CACHE_FILE);
+//     (void)fill_shared_memory(ONLP_FRU_CACHE_SHARED, ONLP_FRU_CACHE_SEM, ONLP_FRU_CACHE_FILE);
+//     (void)fill_shared_memory(ONLP_SENSOR_LIST_CACHE_SHARED, ONLP_SENSOR_LIST_SEM, ONLP_SENSOR_LIST_FILE);
+// }
+
+// static int create_cache(){
+//     (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
+//     (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
+//     (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
+//     update_shm_mem();
+//     return 1;
+// }
+
 
 int
 onlp_sysi_platform_info_get(onlp_platform_info_t* pi)
@@ -126,6 +144,31 @@ void
 onlp_sysi_onie_data_free(uint8_t* data)
 {
     aim_free(data);
+}
+
+int onlp_sysi_platform_manage_init(void)
+{
+    //printf("Check the sequence from onlp_sysi_platform_manage_init\n");
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
+}
+
+int onlp_sysi_platform_manage_fans(void){
+    //printf("Check the sequence from onlp_sysi_platform_manage_fans\n");
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
+}
+
+int onlp_sysi_platform_manage_leds(void){
+    //printf("Check the sequence from onlp_sysi_platform_manage_leds\n");
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
 }
 
 int

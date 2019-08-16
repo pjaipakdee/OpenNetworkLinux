@@ -45,10 +45,27 @@
 #define QSFP_FIRST 2
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
+#define ONLP_SENSOR_CACHE_SHARED "/onlp-sensor-cache-shared"
+#define ONLP_FRU_CACHE_SHARED "/onlp-fru-cache-shared"
+#define ONLP_SENSOR_LIST_CACHE_SHARED "/onlp-sensor-list-cache-shared"
+
+#define ONLP_SENSOR_CACHE_SEM "/onlp-sensor-cache-sem"
+#define ONLP_FRU_CACHE_SEM "/onlp-fru-cache-sem"
+#define ONLP_SENSOR_LIST_SEM "/onlp-sensor-list-cache-sem"
+
+#define ONLP_SENSOR_CACHE_FILE "/tmp/onlp-sensor-cache.txt"
+#define ONLP_FRU_CACHE_FILE "/tmp/onlp-fru-cache.txt"
+#define ONLP_SENSOR_LIST_FILE "/tmp/onlp-sensor-list-cache.txt"
+
 #define PSUL_ID 1
 #define PSUR_ID 2
 
 #define NUM_OF_CPLD 1
+
+struct shm_map_data{
+    char data[16384]; 
+    int size;
+}; 
 
 struct device_info{
 	char serial_number[256];
@@ -145,6 +162,12 @@ uint8_t getFanPresent(int id);
 uint8_t getFanSpeed(int id);
 uint8_t getPsuStatus(int id);
 uint8_t getPsuStatus_sysfs_cpld(int id);
+int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
+int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);
+int open_file(const char *shm_path, const char *sem_path, char **cache_data, int *cache_size);
+int create_cache();
+void update_shm_mem(void);
+int is_cache_exist();
 // #define PSU_FAN         2
 // #define THERMAL_COUNT   6
 // #define LED_COUNT       11
