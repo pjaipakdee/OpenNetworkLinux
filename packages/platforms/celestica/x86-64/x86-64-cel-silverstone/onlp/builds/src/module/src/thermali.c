@@ -3,10 +3,7 @@
 #include <onlplib/file.h>
 #include <onlp/platformi/thermali.h>
 #include <fcntl.h>
-
-// #include "i2c_chips.h"
 #include "platform.h"
-
 
 static onlp_thermal_info_t thermal_info[] = {
     { },
@@ -64,35 +61,34 @@ static onlp_thermal_info_t thermal_info[] = {
             },
 };
 
-int
-onlp_thermali_init(void)
+int onlp_thermali_init(void)
 {
     return ONLP_STATUS_OK;
 }
 
-int
-onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t* info_p)
+int onlp_thermali_info_get(onlp_oid_t id, onlp_thermal_info_t *info_p)
 {
     int thermal_id;
-	int thermal_status = 0;
-	int temp, warn, err, shutdown;
-	
-    thermal_id = ONLP_OID_ID_GET(id);
-	memcpy(info_p, &thermal_info[thermal_id], sizeof(onlp_thermal_info_t));
+    int thermal_status = 0;
+    int temp, warn, err, shutdown;
 
-	/* Get thermal temperature. */
+    thermal_id = ONLP_OID_ID_GET(id);
+    memcpy(info_p, &thermal_info[thermal_id], sizeof(onlp_thermal_info_t));
+
+    /* Get thermal temperature. */
     thermal_status = getSensorInfo(thermal_id, &temp, &warn, &err, &shutdown);
-	if(-1 == thermal_status)
-	{
-        info_p->status = ONLP_THERMAL_STATUS_FAILED;	
-	} else 
+    if (-1 == thermal_status)
+    {
+        info_p->status = ONLP_THERMAL_STATUS_FAILED;
+    }
+    else
     {
         info_p->status = ONLP_THERMAL_STATUS_PRESENT;
         info_p->mcelsius = temp;
         info_p->thresholds.warning = warn;
-	    info_p->thresholds.error = err;
-	    info_p->thresholds.shutdown = shutdown;        
-    }	
+        info_p->thresholds.error = err;
+        info_p->thresholds.shutdown = shutdown;
+    }
 
     return ONLP_STATUS_OK;
 }

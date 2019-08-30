@@ -52,4 +52,10 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
                 f.write("{0}\r\n".format(onlp_interval_time))
             f.close()
         
+        #initialize onlp cache files
+        print("Initialize ONLP Cache files")
+        os.system("ipmitool sdr > /tmp/onlp-sensor-cache.txt")
+        os.system("ipmitool fru > /tmp/onlp-fru-cache.txt")
+        os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt")
+
         return True

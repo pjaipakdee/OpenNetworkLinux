@@ -41,7 +41,6 @@ static struct device_info psu_information[PSU_COUNT + 1] = {
 };
 
 static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
-    //{pwm_reg,ctrl_sta_reg,rear_spd_reg,front_spd_reg}
     {},
     {0x22, 0x26, 0x21, 0x20}, //FAN_1
     {0x32, 0x36, 0x31, 0x30}, //FAN_2
@@ -89,10 +88,6 @@ static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
     {"PSU2_POut", 'W'},
 };
 
-// const char *Thermal_sensor_name[THERMAL_COUNT] = {
-//     "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
-//     "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
-//     "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
 void update_shm_mem(void)
 {
     (void)fill_shared_memory(ONLP_SENSOR_CACHE_SHARED, ONLP_SENSOR_CACHE_SEM, ONLP_SENSOR_CACHE_FILE);
@@ -102,10 +97,31 @@ void update_shm_mem(void)
 
 int is_cache_exist(){
     const char *path="/tmp/onlp-sensor-cache.txt";
+    const char *time_setting_path="/var/opt/interval_time.txt";
     time_t current_time;
+    int interval_time = 30; //set default to 30 sec
     double diff_time;
     struct stat fst;
     bzero(&fst,sizeof(fst));
+
+    //Read setting
+    if(access(time_setting_path, F_OK) == -1){ //Setting not exist
+        return -1;
+    }else{
+        FILE *fp;
+        
+        fp = fopen(time_setting_path, "r"); // read setting
+        
+        if (fp == NULL)
+        {
+            perror("Error while opening the file.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fscanf(fp,"%d", &interval_time);
+
+        fclose(fp);
+    }
 
     if (access(path, F_OK) == -1){ //Cache not exist
         return -1;
@@ -115,11 +131,23 @@ int is_cache_exist(){
 
         diff_time = difftime(current_time,fst.st_mtime);
 
-        if(diff_time > 60){
+        if(diff_time > interval_time){
             return -1;
         }
         return 1;
     }
+}
+
+int is_shm_mem_ready(){
+
+    const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
+    const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
+
+    if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
+        return 0;
+    }
+
+    return 1;
 }
 
 int create_cache(){
@@ -130,22 +158,12 @@ int create_cache(){
     return 1;
 }
 
-int write_to_dump(uint8_t dev_reg)
-{
-    uint8_t ret;
-
-    sprintf(command, "echo 0x%x> " SYS_CPLD_PATH "getreg", dev_reg);
-    ret = system(command);
-    return ret;
-}
-
 uint8_t read_register(uint16_t dev_reg)
 {
     int status;
-    //printf("Input of read_register = %u\n",dev_reg);
-    //sprintf(command,"echo %x",dev_reg);// > "SYSCPLD_PATH"dump"
+
     sprintf(command, "echo 0x%x >  %sgetreg", dev_reg, SYS_CPLD_PATH);
-    //printf("Command %s\n",command);
+
     fp = popen(command, "r");
     if (!fp)
     {
@@ -189,32 +207,6 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     return ret;
 }
 
-int cpld_b_read_reg(uint16_t reg, uint8_t *result)
-{
-    int ret = 0;
-    char command[256];
-    char buffer[128];
-
-    reg = reg - 0xa100;
-    sprintf(command, "ipmitool raw 0x3a 0x03 0x00 0x01 0x%02x", reg);
-    exec_ipmitool_cmd(command, buffer);
-    *result = strtol(buffer, NULL, 16);
-
-    return ret;
-}
-
-int cpld_b_write_reg(uint16_t reg, uint8_t value)
-{
-    int ret = 0;
-    char command[256];
-    char buffer[128];
-
-    sprintf(command, "ipmitool raw 0x3a 0x03 0x00 0x02 0x%02x 0x%02x", reg, value);
-    exec_ipmitool_cmd(command, buffer);
-
-    return ret;
-}
-
 int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
 {
     int ret = 0;
@@ -225,18 +217,6 @@ int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
     exec_ipmitool_cmd(command, buffer);
     *result = strtol(buffer, NULL, 16);
     
-    return ret;
-}
-
-int fan_cpld_write_reg(uint8_t reg, uint8_t value)
-{
-    int ret = 0;
-    char command[256];
-    char buffer[128];
-
-    sprintf(command, "ipmitool raw 0x3a 0x03 0x01 0x02 0x%02x 0x%02x", reg, value);
-    exec_ipmitool_cmd(command, buffer);
-
     return ret;
 }
 
@@ -256,38 +236,6 @@ uint8_t getFanPresent(int id)
     return ret;
 }
 
-int getFanPresent_tmp(int id)
-{
-    int ret = -1;
-    uint16_t fan_stat_reg;
-    uint8_t result;
-
-    if (id <= (FAN_COUNT))
-    {
-        fan_stat_reg = fan_sys_reg[id].ctrl_sta_reg;
-        fan_cpld_read_reg(fan_stat_reg, &result);
-        ret = result & 0x01;
-    }
-
-    return ret;
-}
-
-int getFanAirflow_tmp(int id)
-{
-    int ret = -1;
-    uint16_t fan_stat_reg;
-    uint8_t result;
-
-    if (id <= (FAN_COUNT))
-    {
-        fan_stat_reg = fan_sys_reg[id].ctrl_sta_reg;
-        fan_cpld_read_reg(fan_stat_reg, &result);
-        ret = (result >> 1) & 0x1;
-    }
-
-    return ret;
-}
-
 uint8_t getFanSpeed(int id)
 {
     uint8_t value;
@@ -302,64 +250,8 @@ uint8_t getFanSpeed(int id)
     return value;
 }
 
-
-int getFanSpeed_PWM(int id, int *speed)
-{
-    int ret = -1;
-    uint8_t value;
-    uint8_t max_speed = 0xFF;
-    int max_rpm_speed = 13800;
-    int lowest_rpm_speed = 1200;
-    float speed_percentage;
-
-    if (id <= (FAN_COUNT))
-    {
-        uint16_t fan_stat_reg;
-        fan_stat_reg = fan_sys_reg[id].pwm_reg;
-        fan_cpld_read_reg(fan_stat_reg, &value);
-
-        speed_percentage = (value * 100) / max_speed;
-        *speed = (speed_percentage * ((max_rpm_speed - lowest_rpm_speed) / 100) + lowest_rpm_speed);
-    }
-
-    return ret;
-}
-
-int getFanSpeed_Percentage(int id, int *speed)
-{
-    int ret = -1;
-    uint8_t value;
-    uint8_t max_speed = 0xFF;
-
-    if (id <= (FAN_COUNT))
-    {
-        uint16_t fan_stat_reg;
-        fan_stat_reg = fan_sys_reg[id].pwm_reg;
-        fan_cpld_read_reg(fan_stat_reg, &value);
-
-        *speed = (value * 100) / max_speed;
-    }
-
-    return ret;
-}
-
 uint8_t getLEDStatus(int id)
 {
-
-// static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
-//     {},
-//     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
-//     {"LED_FAN_1", LED_FAN_1_H, 0x24},
-//     {"LED_FAN_2", LED_FAN_2_H, 0x34},
-//     {"LED_FAN_3", LED_FAN_3_H, 0x44},
-//     {"LED_FAN_4", LED_FAN_4_H, 0x54},
-//     {"LED_FAN_5", LED_FAN_5_H, 0x64},
-//     {"LED_FAN_6", LED_FAN_6_H, 0x74},
-//     {"LED_FAN_7", LED_FAN_7_H, 0x84},
-//     {"LED_ALARM", LED_ALARM_H, ALARM_REGISTER},
-//     {"LED_PSU_LEFT", LED_PSU_L_H, PSU_LED_REGISTER},
-//     {"LED_PSU_RIGHT", LED_PSU_R_H, PSU_LED_REGISTER},
-// };
     uint8_t ret = 0xFF;
 
     if (id >= (LED_COUNT + 2) || id < 0)
@@ -367,62 +259,34 @@ uint8_t getLEDStatus(int id)
 
     if (id <= (LED_COUNT))
     {
-        //uint16_t fan_stat_reg;
         uint8_t result = 0;
-        //fan_stat_reg  = fan_sys_reg[id].ctrl_sta_reg;
         uint16_t led_stat_reg;
-        // uint8_t result = 0;
         led_stat_reg = led_mapper[id].dev_reg;
         if(id >=2 && id <= 8){
             fan_cpld_read_reg(led_stat_reg,&result);
         }else{
-            //cpld_b_read_reg(led_stat_reg, &result);
             result = read_register(led_stat_reg);
         }        
         ret = result;
-        //printf("result led id = %d result=%x ret=%d\n",id,result,ret);
     }
 
     return ret;
 }
 
-uint8_t getThermalStatus(int id)
-{
-
-    uint8_t ret = 0;
-    // if(id >= (THERMAL_COUNT)|| id<0)
-    //     return 0;
-
-    if (id <= (THERMAL_COUNT - 1))
-    {
-        uint8_t result = 0;
-        cpld_b_read_reg(THERMAL_REGISTER, &result);
-        ret = result;
-        //printf("result = %x , %d\n",ret,ret);
-    }
-
-    return ret;
-}
-
-char *read_ipmi(char *cmd)
+char *read_tmp_cache(char *cmd)
 {
     FILE *pFd = NULL;
-    char c; //,s_id[4]; //stat[5000],
-    char *str = (char *)malloc(sizeof(char) * 5000);
-    memset (str, 0, sizeof (char) * 5000);
+    char c; 
+    char *str = (char *)malloc(sizeof(char) * 16384);
+    memset (str, 0, sizeof (char) * 16384);
     int i = 0;
-    //float marks;
-    //sprintf(command,"cat /home/tdcadmin/Work/Git/seastone2-diag/onl-sysinfo/fru.txt");
-    //sprintf(s_id,"%d",id);
-    //sprintf(command);
+
     pFd = popen(cmd, "r");
     if (pFd != NULL)
     {
-
         c = fgetc(pFd);
         while (c != EOF)
         {
-            //printf ("%c", c);
             str[i] = c;
             i++;
             c = fgetc(pFd);
@@ -438,26 +302,8 @@ char *read_ipmi(char *cmd)
     return str;
 }
 
-uint8_t getPsuStatus(int id)
-{
-    //int ret = -1;
-    uint16_t psu_stat_reg;
-    uint8_t value;
-
-    if (id <= (PSU_COUNT))
-    {
-        psu_stat_reg = psu_mapper[id].sta_reg;
-        cpld_b_read_reg(psu_stat_reg, &value);
-        // value = (value >> psu_mapper[id].bit_present) & 0x01;
-        // ret = value;
-    }
-
-    return value;
-}
-
 uint8_t getPsuStatus_sysfs_cpld(int id)
 {
-
     uint8_t ret = 0xFF;
     uint16_t psu_stat_reg;
 
@@ -466,60 +312,7 @@ uint8_t getPsuStatus_sysfs_cpld(int id)
         uint8_t result = 0;
         psu_stat_reg = psu_mapper[id].sta_reg;
         result = read_register(psu_stat_reg);
-        //ret = (result >> 2) & 0x1;
         ret = result;
-        //printf("result result=%x ret=%d\n",result,ret);
-    }
-
-    return ret;
-}
-
-int getPsuPresent(int id)
-{
-    int ret = -1;
-    uint16_t psu_stat_reg;
-    uint8_t value;
-
-    if (id <= (PSU_COUNT))
-    {
-        psu_stat_reg = psu_mapper[id].sta_reg;
-        cpld_b_read_reg(psu_stat_reg, &value);
-        value = (value >> psu_mapper[id].bit_present) & 0x01;
-        ret = value;
-    }
-
-    return ret;
-}
-
-int getPsuAcStatus(int id)
-{
-    int ret = -1;
-    uint16_t psu_stat_reg;
-    uint8_t value;
-
-    if (id <= (PSU_COUNT))
-    {
-        psu_stat_reg = psu_mapper[id].sta_reg;
-        cpld_b_read_reg(psu_stat_reg, &value);
-        value = (value >> psu_mapper[id].bit_ac_sta) & 0x01;
-        ret = value;
-    }
-
-    return ret;
-}
-
-int getPsuPowStatus(int id)
-{
-    int ret = -1;
-    uint16_t psu_stat_reg;
-    uint8_t value;
-
-    if (id <= (PSU_COUNT))
-    {
-        psu_stat_reg = psu_mapper[id].sta_reg;
-        cpld_b_read_reg(psu_stat_reg, &value);
-        value = (value >> psu_mapper[id].bit_pow_sta) & 0x01;
-        ret = value;
     }
 
     return ret;
@@ -528,11 +321,10 @@ int getPsuPowStatus(int id)
 char *read_psu_sdr(int id)
 {
     FILE *pFd = NULL;
-    char c; //,s_id[4]; //stat[5000],
+    char c;
     char *str = (char *)malloc(sizeof(char) * 5000);
     int i = 0;
 
-    if(is_cache_exist()<1){         create_cache();     }
     sprintf(command,"cat /tmp/onlp-sensor-cache.txt | grep PSU");
     pFd = popen(command, "r");
     if (pFd != NULL)
@@ -541,7 +333,6 @@ char *read_psu_sdr(int id)
         c = fgetc(pFd);
         while (c != EOF)
         {
-            //printf ("%c", c);
             str[i] = c;
             i++;
             c = fgetc(pFd);
@@ -560,6 +351,8 @@ char *read_psu_sdr(int id)
 int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
     int ret = 0;
+    int search_length = 39;
+    int value_length = 19;
     int position = 0;
     int val_pos = 0;
     int str_index = 0;
@@ -579,30 +372,21 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
 
         if (position != -1)
         {
-            int status_pos = position + 39;
-            //printf("Status = 0%c1%c2%c\n",sdr_value[status_pos],sdr_value[status_pos+1],sdr_value[status_pos+2]);
+            int status_pos = position + search_length;
             if (sdr_value[status_pos] != 'n')
             {
-                int v_pos = position + 19;
-                //printf("Map the %s with %c\n",search_psu_sdr_info[str_index].keyword,search_psu_sdr_info[str_index].unit);
-                for (int a = 0; a <= 18; a++)
+                int v_pos = position + value_length;
+                int a = 0;
+                for (a = 0; a <= value_length-1; a++)
                 {
-                    //printf("%c",sdr_value[v_pos+a]);
-                    // 			//if(search_psu_sdr_info[str_index].unit!=NULL){
-                    //                 printf("%c",sdr_value[v_pos+a]);
                     if (sdr_value[v_pos + a] != search_psu_sdr_info[str_index].unit)
                     {
-                        // ctemp[a]=sdr_value[v_pos+a];
                         append(ctemp, sdr_value[v_pos + a]);
-                        //printf("%c",sdr_value[v_pos+a]);
                     }
                     else
                     {
-                        //printf("ctemp = %s\n",ctemp);
                         ftemp = atof(ctemp);
-                        //printf("ftemp %f\n",ftemp);
                         val[val_pos] = ftemp * 1000;
-                        //printf("val[%d] = %d %s\n",val_pos,val[val_pos],search_psu_sdr_info[str_index].keyword);
                         memset(ctemp, 0, sizeof(ctemp));
                         val_pos++;
                         break;
@@ -641,16 +425,26 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     if (0 == strcasecmp(psu_information[0].model, "unknown")) {
         
         index = 0;
-        if(is_cache_exist()<1){         create_cache();     }
-        ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
-        if(ret < 0 || !tmp){
-            printf("Failed - Failed to obtain system information\n");
-            return ret;
+        if(is_shm_mem_ready()){
+            ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                printf("Failed - Failed to obtain system information\n");
+                (void)free(tmp);
+                tmp = (char *)NULL;
+                return ret;
+            }
+        }else{
+            // use unsafe method to read the cache file.
+            sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
+            tmp = read_tmp_cache(command);
         }
+        
         char *content, *temp_pointer;
         int flag = 0;
+
         content = strtok_r(tmp, "\n", &temp_pointer);
-        do {
+
+        while(content != NULL){
             if (strstr(content, "FRU Device Description : FRU_PSU")) {
                 flag = 1;
                 index++;
@@ -671,8 +465,22 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
                     search_psu_id++;
                 }
             }
-        } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
+            if(search_psu_id > PSU_COUNT){
+                content = NULL;
+            }else{
+                content = strtok_r(NULL, "\n", &temp_pointer);
+            }
+        }
+
         sprintf(psu_information[0].model,"pass"); //Mark as complete
+
+        if(temp_pointer){
+            temp_pointer = (char *)NULL;
+        }
+        if(tmp){
+    	    (void)free(tmp);
+	        tmp = (char *)NULL;
+        }
     }
 
     strcpy(model, psu_information[id].model);
@@ -690,7 +498,6 @@ void append(char *s, char c)
 
 int keyword_match(char *a, char *b)
 {
-
     int position = 0;
     char *x, *y;
 
@@ -731,19 +538,24 @@ int getFaninfo(int id, char *model, char *serial)
     int search_fan_id = 1;
 
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
-        
         index = 0;
-
-        if(is_cache_exist()<1){         create_cache();     }
-        ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
-        if(ret < 0 || !tmp){
-            printf("Failed - Failed to obtain system information\n");
-            return ret;
+        if(is_shm_mem_ready()){
+            ret = open_file(ONLP_FRU_CACHE_SHARED,ONLP_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                printf("Failed - Failed to obtain system information\n");
+                (void)free(tmp);
+                tmp = (char *)NULL;
+                return ret;
+            }
+        }else{
+            sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
+            tmp = read_tmp_cache(command);
         }
         char *content, *temp_pointer;
         int flag = 0;
         content = strtok_r(tmp, "\n", &temp_pointer);
-        do {
+
+        while(content != NULL){
             sprintf(search_header,"FRU Device Description : FRU_FAN%d",search_fan_id);
             if (strstr(content, search_header)) {
                 flag = 1;
@@ -765,16 +577,31 @@ int getFaninfo(int id, char *model, char *serial)
                     search_fan_id++;
                 }
             }
-        } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
-        
+            if(search_fan_id > FAN_COUNT){
+                content = NULL;
+            }else{
+                content = strtok_r(NULL, "\n", &temp_pointer);
+            }
+        }
+
         sprintf(fan_information[0].model,"pass"); //Mark as complete
+
+        if(temp_pointer){
+            temp_pointer = (char *)NULL;
+        }
+        if(tmp){
+    	    (void)free(tmp);
+	        tmp = (char *)NULL;
+        }
     }
     strcpy(model, fan_information[id].model);
     strcpy(serial, fan_information[id].serial_number);
+
+    
     return 1;
 }
 
-void __trim(char *strIn, char *strOut)
+void array_trim(char *strIn, char *strOut)
 {
     int i, j;
 
@@ -799,7 +626,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     char strTmp[10][128] = {{0}, {0}};
     char *token = NULL;
     char *Thermal_sensor_name[13] = {
-        "Temp_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
+        "TEMP_CPU", "TEMP_BB", "TEMP_SW_U16", "TEMP_SW_U52",
         "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
         "PSU2_Temp1", "PSU2_Temp2","SW_U04_Temp","SW_U14_Temp","SW_U4403_Temp"};
 
@@ -812,21 +639,28 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     /*
         String example:			  
         ipmitool sensor list | grep TEMP_FAN_U52
-        Temp_CPU     | 1.000      | degrees C  | ok  | 5.000  | 9.000  | 16.000  | 65.000  | 73.000  | 75.606
+        TEMP_CPU     | 1.000      | degrees C  | ok  | 5.000  | 9.000  | 16.000  | 65.000  | 73.000  | 75.606
         TEMP_FAN_U52 | 32.000	  | degrees C  | ok  | na  |  na  | na  | na  | 70.000  | 75.000
         PSUR_Temp1   | na         | degrees C  | na  | na  | na   | na   | na  | na  | na
     */
-    if(is_cache_exist()<1){         create_cache();     }
-    ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
-    if(ret < 0 || !tmp){
-        printf("Failed - Failed to obtain system information\n");
-        return ret;
+    if(is_shm_mem_ready()){
+        ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            printf("Failed - Failed to obtain system information\n");
+            (void)free(tmp);
+            tmp = (char *)NULL;
+            return ret;
+        }
+    }else{
+        // use unsafe method to read the cache file.
+        sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
+        tmp = read_tmp_cache(command);
     }
     
     char *content, *temp_pointer;
     int flag = 0;
     content = strtok_r(tmp, "\n", &temp_pointer);
-    do {
+    while(content != NULL){
         if (strstr(content, Thermal_sensor_name[id - 1])) {
             flag = 1;
             index++;
@@ -837,15 +671,21 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
             token = strtok(content, "|");
             while( token != NULL ) 
             {
-                __trim(token, &strTmp[i][0]);
+                array_trim(token, &strTmp[i][0]);
                 i++;
                 if(i > 10) break;
                 token = strtok(NULL, "|");
             }
             
-            flag = 0;
+            flag = 3;
         }
-    } while ((content = strtok_r(NULL, "\n", &temp_pointer)) != NULL);
+        
+        if(flag == 3){
+            content = NULL;
+        }else{
+            content = strtok_r(NULL, "\n", &temp_pointer);
+        }
+    }
 
     if(0 == strcmp(&strTmp[1][0], "na")) return -1;
     else *temp = atof(&strTmp[1][0]) * 1000.0;
@@ -858,6 +698,17 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
 
     if(0 == strcmp(&strTmp[9][0], "na")) *shutdown = 0;	
     else *shutdown = atof(&strTmp[9][0]) * 1000.0;
+
+    if(content){
+        content = (char *)NULL;
+    }
+    if(temp_pointer){
+        temp_pointer = (char *)NULL;
+    }
+    if(tmp){
+    	(void)free(tmp);
+	    tmp = (char *)NULL;
+    }
 
     return 0;
 }
@@ -906,7 +757,6 @@ int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_le
     }
 
     ret = deviceNodeReadBinary(filename, buffer, buf_size - 1, data_len);
-    //printf("deviceNodeReadBinary = ret %d buffer = %s\n",ret,buffer);
     if (ret == 0)
     {
         buffer[buf_size - 1] = '\0';
@@ -922,7 +772,7 @@ char* trim (char *s)
     while (isspace (*s)) s++;   // skip left side white spaces
     for (i = strlen (s) - 1; (isspace (s[i])); i--) ;   // skip right side white spaces
     s[i + 1] = '\0';
-    //printf ("%s\n", s);
+    
     return s;
 }
 
@@ -1016,12 +866,8 @@ int fill_shared_memory(const char *shm_path, const char *sem_path, const char *c
     sem_post(sem_id);
 
     (void)free(cache_buffer);
-
-    //shm_unlink(shm_path);
     
     sem_close(sem_id);
-
-    //sem_unlink(sem_path);
 
     munmap(shm_map_ptr, seg_size);
    
@@ -1043,22 +889,20 @@ int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_ma
 
     seg_size = sizeof(struct shm_map_data);
 
+
     shm_fd = shm_open(shm_path, O_RDONLY, 0666);
     if(shm_fd < 0){
-   	    printf("\ndump shm_path:%s. errno:%d\n", shm_path, errno);
         return -1; 
     }
 
     map_ptr = (struct shm_map_data *)mmap(NULL, seg_size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if(map_ptr == MAP_FAILED){
-        printf("\ndump mmap failed. errno:%d.\n", errno);
         close(shm_fd);
         return -1;
     }   
  
     sem_id = sem_open(sem_path, 0);
     if(SEM_FAILED == sem_id){
-        printf("\nsem open failed. errno:%d.\n", errno);
         munmap(map_ptr, seg_size);
         close(shm_fd);
         return -1;
@@ -1069,12 +913,8 @@ int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_ma
     memcpy(shared_mem, map_ptr, sizeof(struct shm_map_data));
    
     sem_post(sem_id);
-    
-    //shm_unlink(shm_path);
 
     sem_close(sem_id);
- 
-    //sem_unlink(sem_path);
     
     munmap(map_ptr, seg_size);
     close(shm_fd);
