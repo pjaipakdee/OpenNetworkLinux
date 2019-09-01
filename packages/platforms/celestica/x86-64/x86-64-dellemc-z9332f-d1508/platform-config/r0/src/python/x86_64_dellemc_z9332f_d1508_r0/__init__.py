@@ -9,6 +9,9 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
     SYS_OBJECT_ID=".2060.1"
 
     def baseconfig(self):
+        onlp_interval_time = 30 #second
+        file_path = "/var/opt/interval_time.txt"
+
         print("Initialize Dell EMC Z9332F D1508 driver")
 
         qsfp_qty = 32
@@ -17,7 +20,7 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
 
         self.insmod("i2c-ocores.ko")
         self.insmod("i2c-cls.ko")
-        os.system("insmod /lib/modules/`uname -r`/onl/celestica/x86-64-dellemc-z9332f-d1508/cls-switchboard.ko")
+        self.insmod("cls-switchboard.ko")
         #self.insmod("baseboard.ko")
         self.insmod("cpld_b.ko")
         #self.insmod("switchboard.ko")
@@ -56,4 +59,18 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
             os.system("usermod -s /bin/bash admin")
 
         os.system("echo '3' > /proc/sys/kernel/printk")
+
+        if os.path.exists(file_path):
+            pass
+        else:
+            with open(file_path, 'w') as f:  
+                f.write("{0}\r\n".format(onlp_interval_time))
+            f.close()
+        
+        #initialize onlp cache files
+        print("Initialize ONLP Cache files")
+        os.system("ipmitool sdr > /tmp/onlp-sensor-cache.txt")
+        os.system("ipmitool fru > /tmp/onlp-fru-cache.txt")
+        os.system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt")
+
         return True

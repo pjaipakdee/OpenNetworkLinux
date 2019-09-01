@@ -45,8 +45,6 @@ dellemc_z9332f_d1508_qsfp_sfp_node_read_int(char *path, int *value, int data_len
 
     ret = deviceNodeReadString(path, buf, sizeof(buf), data_len);
     if (ret == 0) {
-        //port present
-        //*value = atoi(buf);
         int is_not_present = atoi(buf);
         if(!is_not_present){
             *value = !is_not_present;
@@ -62,10 +60,8 @@ dellemc_z9332f_d1508_sfp_qsfp_get_port_path(int port, char *node_name)
 
     if(port <= qsfp_count__ + sfp_count__){
         if(port<=qsfp_count__){
-            //sprintf(node_path, "%sSFF/QSFP%d/qsfp_modprs", PLATFORM_PATH, port); 
             sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
         }else{
-            //sprintf(node_path, "%sSFF/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
             sprintf(node_path, "%s/SFP%d/sfp_modabs", PLATFORM_PATH, port-qsfp_count__);
         }
     }else{
@@ -82,10 +78,8 @@ dellemc_z9332f_d1508_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 
     if(port <= qsfp_count__ + sfp_count__){
         if(port<=qsfp_count__){
-            //sprintf(node_path, "%sSFF/QSFP%d/i2c/eeprom", PLATFORM_PATH, port);
             sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port+i2c_bus_offset); //QSFP 10 - 41
         }else{
-            //sprintf(node_path, "%sSFF/SFP%d/i2c/eeprom", PLATFORM_PATH, port-qsfp_count__);
             sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port-qsfp_count__); //SFP 1 - 2
         }
     }else{
@@ -182,8 +176,6 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
 {
 
     char* path;
-
-	//sprintf(sub_path, "/%d-0050/eeprom", CHASSIS_SFP_I2C_BUS_BASE + port);
 	path= dellemc_z9332f_d1508_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
 
     /*
@@ -193,7 +185,6 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
      * Return OK if eeprom is read
      */
     memset(data, 0, 256);
-    
     if (deviceNodeReadBinary(path, (char*)data, 256, 256) != 0) {
         AIM_LOG_ERROR("Unable to read eeprom from port(%d)\r\n", port);
         return ONLP_STATUS_E_INTERNAL;

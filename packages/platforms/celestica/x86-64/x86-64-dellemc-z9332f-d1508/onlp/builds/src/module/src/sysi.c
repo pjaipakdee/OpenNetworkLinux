@@ -1,6 +1,3 @@
-/*
- * Copyright
- */
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -13,6 +10,11 @@
 #include "x86_64_dellemc_z9332f_d1508_int.h"
 #include "x86_64_dellemc_z9332f_d1508_log.h"
 #include "platform.h"
+//Below include add for support Cache system
+#include <sys/stat.h>
+#include <time.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 static char arr_cplddev_name[NUM_OF_CPLD][10] =
 {
@@ -28,52 +30,9 @@ onlp_sysi_platform_get(void)
 int
 onlp_sysi_init(void)
 {
-    // const char *path="/tmp/onlp_result";
-    // FILE *file, *out_file;
-    // char command[256];
-
-    // if (access(path, F_OK) == -1){
-    //     printf("Create folder\n");
-    //     sprintf(command,"mkdir %s",path);
-    //     system(command);
-    // }
-    // FILE *fptr = NULL;
-    // //After Path created we should create the static memory file.
-    // file = fopen("/tmp/onlp_result/cache_onlp.txt","r");
-    
-    // char buf[256];
-    // if(file){
-    //     //Check file timestamp create new if duration more than 1 minute.
-    //     printf("Init cache file\n");
-
-    //     while (EOF != fscanf(file, "%[^\n]\n", buf))
-    //     {
-    //         printf("%s\n",buf);
-    //     }
-    //     fclose(file);
-
-    // }else{
-    //     printf("Execute cache file\n");
-
-    //     out_file = fopen("/tmp/onlp_result/cache_onlp.txt","w+");
-        
-    //     fptr = popen("ipmitool sdr list | grep 'Temp\\|TEMP'", "r");
-    //     if (!fptr) {
-    //         printf("Error: ONLP can't execute\n");
-    //         return -1;
-    //     }
-
-    //     while (EOF != fscanf(fptr, "%[^\n]\n", buf))
-    //     {
-    //         fprintf(out_file,"%s\n",buf);
-    //     }
-
-    //     printf("close out_file\n");
-    //     fclose(out_file);
-    //     printf("close fptr\n");
-    //     fclose(fptr); 
-    // }
-
+  if(is_cache_exist()<1){
+        create_cache();
+    }
     return ONLP_STATUS_OK;
 }
 
@@ -126,6 +85,28 @@ void
 onlp_sysi_onie_data_free(uint8_t* data)
 {
     aim_free(data);
+}
+
+int onlp_sysi_platform_manage_init(void)
+{
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
+}
+
+int onlp_sysi_platform_manage_fans(void){
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
+}
+
+int onlp_sysi_platform_manage_leds(void){
+    if(is_cache_exist()<1){
+        create_cache();
+    }
+    return ONLP_STATUS_OK;
 }
 
 int

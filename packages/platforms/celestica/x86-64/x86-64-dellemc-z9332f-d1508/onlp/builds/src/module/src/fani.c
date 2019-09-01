@@ -1,6 +1,4 @@
 #include <onlp/platformi/fani.h>
-
-//#include "i2c_chips.h"
 #include "platform.h"
 
 
@@ -41,10 +39,6 @@ onlp_fan_info_t f_info[FAN_COUNT + 1] = {
         0,
         ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
-    // {
-    //     { ONLP_FAN_ID_CREATE(5), "Chassis Fan 5", 0 },
-    //     0x0,
-    // }
 };
 
 

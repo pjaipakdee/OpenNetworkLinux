@@ -3,10 +3,7 @@
 #include <onlplib/file.h>
 #include <onlp/platformi/thermali.h>
 #include <fcntl.h>
-
-// #include "i2c_chips.h"
 #include "platform.h"
-
 
 static onlp_thermal_info_t thermal_info[] = {
     { },

@@ -3,9 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-
-// #include "i2c_chips.h"
 #include "platform.h"
+
 static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
     {},
     {0xa160, 3, 7, 1},
@@ -100,7 +99,6 @@ static onlp_led_info_t led_info[] =
 int
 onlp_ledi_init(void)
 {
-    //printf("onlp call onlp_ledi_init\n");
     return ONLP_STATUS_OK;
 }
 
@@ -110,12 +108,10 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
     int led_id;
     uint8_t led_color = 0;
     uint8_t blink_status = 0;
-    //uint8_t result[LED_COUNT];
     uint8_t result = 0;
     int present_status=0;
 
     led_id = ONLP_OID_ID_GET(id);
-    // *info = linfo[ONLP_OID_ID_GET(id)];
     *info_p = led_info[led_id];
     switch(led_id){
         case LED_SYSTEM:
@@ -146,8 +142,7 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
 
     if(psu_status_l == 0)
         psu_status_l = getPsuStatus_sysfs_cpld(psu_id);
-    //printf("led id = %d  status = %d\n",led_id,result);
-    //printf("before assign info_p->mode = %d\n",info_p->mode);
+
     switch(led_id){
         case LED_SYSTEM:
         case LED_ALARM:
@@ -199,7 +194,6 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             break;
         case LED_LEFT_PSU:
             psu_id = 1;
-            //printf("psu led Left val = %x\n",psu_led_result);
             present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
             led_color = psu_led_result & 0x1;
             if(!present_status)
@@ -215,7 +209,6 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             break;
         case LED_RIGHT_PSU:
             psu_id = 2;
-            //printf("psu led right val = %x\n",psu_led_result);
             present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
             led_color = (psu_led_result >>1) & 0x1;
             if(!present_status)

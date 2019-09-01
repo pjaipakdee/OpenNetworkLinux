@@ -1349,10 +1349,11 @@ static int smbus_access(struct i2c_adapter *adapter, u16 addr,
             }
         }
     }
+
     // Delay a bit before repeat start
     // This help solve LEONI QSFP28 read issue, 
     udelay(170);
-
+    
     //REPEATE START
     if ( rw == I2C_SMBUS_READ && (
                 size == I2C_SMBUS_BYTE_DATA ||

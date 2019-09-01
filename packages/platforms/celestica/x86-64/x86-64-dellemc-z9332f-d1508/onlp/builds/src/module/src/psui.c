@@ -1,6 +1,4 @@
 #include <onlp/platformi/psui.h>
-
-// #include "i2c_chips.h"
 #include "platform.h"
 
 static

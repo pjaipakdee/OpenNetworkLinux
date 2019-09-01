@@ -38,7 +38,6 @@ x86-64-dellemc-z9332f-d1508-r0:
       =: 3GiB
       # =: 2500MiB
       format: ext4
-
   ##network:
   ##  interfaces:
   ##    ma1:

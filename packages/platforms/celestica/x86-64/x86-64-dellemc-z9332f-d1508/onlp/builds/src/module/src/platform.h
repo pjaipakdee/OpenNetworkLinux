@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #define PREFIX_PATH_LEN 100
-#define PSOC_CTRL_SMBUS 0x01
 
 //FAN
 #define FAN_COUNT   7
@@ -42,13 +41,29 @@
 #define LED_ALARM_H   9
 #define LED_PSU_L_H   10
 #define LED_PSU_R_H   11
-#define QSFP_FIRST 2
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
+
+#define ONLP_SENSOR_CACHE_SHARED "/onlp-sensor-cache-shared"
+#define ONLP_FRU_CACHE_SHARED "/onlp-fru-cache-shared"
+#define ONLP_SENSOR_LIST_CACHE_SHARED "/onlp-sensor-list-cache-shared"
+
+#define ONLP_SENSOR_CACHE_SEM "/onlp-sensor-cache-sem"
+#define ONLP_FRU_CACHE_SEM "/onlp-fru-cache-sem"
+#define ONLP_SENSOR_LIST_SEM "/onlp-sensor-list-cache-sem"
+
+#define ONLP_SENSOR_CACHE_FILE "/tmp/onlp-sensor-cache.txt"
+#define ONLP_FRU_CACHE_FILE "/tmp/onlp-fru-cache.txt"
+#define ONLP_SENSOR_LIST_FILE "/tmp/onlp-sensor-list-cache.txt"
 
 #define PSUL_ID 1
 #define PSUR_ID 2
 
 #define NUM_OF_CPLD 1
+
+struct shm_map_data{
+    char data[16384]; 
+    int size;
+}; 
 
 struct device_info{
 	char serial_number[256];
@@ -80,12 +95,6 @@ struct search_psu_sdr_info_mapper{
 	char unit;
 };
 
-struct search_psu_fru_info_mapper{
-	char* keyword;
-	int start_index;
-	int end_index;
-};
-
 typedef struct psuInfo_p
 {
     unsigned int lvin;
@@ -106,33 +115,15 @@ typedef struct psuInfo_p
 }psuInfo_p;
 
 #define SYS_CPLD_PATH "/sys/devices/platform/sys_cpld/"
-//#define PLATFORM_PATH "/sys/devices/platform/z9332f_d1508/"
 #define PLATFORM_PATH "/sys/devices/platform/cls-xcvr/"
 #define I2C_DEVICE_PATH "/sys/bus/i2c/devices/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 
-int write_to_dump(uint8_t dev_reg);
-int getFanPresent_tmp(int id);
-uint8_t read_dump(uint16_t dev_reg);
-int getFanSpeed_Percentage(int id, int *speed);
-int getFanAirflow_tmp(int id);
-int getFanSpeed_PWM(int id, int *speed);
-uint8_t getPsuStatus(int id);
-uint8_t getThermalStatus(int id);
 uint8_t getLEDStatus(int id);
-int led_present(int id,uint8_t value);
-int led_mask(int start,uint8_t value);
-int led_translate(int id, uint8_t value);
-int fanSpeedSet(int id, unsigned short speed);
 int psu_get_model_sn(int id,char* model,char* serial_number);
 
 int psu_get_info(int id,int *mvin,int *mvout,int *mpin,int *mpout,int *miin,int *miout);
-int getPsuPresent(int id);
-int getPsuAcStatus(int id);
-int getPsuPowStatus(int id);
-char* read_psu_fru(int id);
 char* read_psu_sdr(int id);
-char* read_ipmi(char* cmd);
 int keyword_match(char* a,char *b);
 char* trim (char *s);
 void append(char* s, char c);
@@ -142,18 +133,14 @@ int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_le
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
 uint8_t getFanPresent(int id);
 uint8_t getFanSpeed(int id);
-uint8_t getPsuStatus(int id);
 uint8_t getPsuStatus_sysfs_cpld(int id);
-// #define PSU_FAN         2
-// #define THERMAL_COUNT   6
-// #define LED_COUNT       11
+int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
+int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);
+int open_file(const char *shm_path, const char *sem_path, char **cache_data, int *cache_size);
+int create_cache();
+void update_shm_mem(void);
+int is_cache_exist();
 
-// #define THERMAL_MAIN_BOARD_REAR     0
-// #define THERMAL_BCM                 1
-// #define THERMAL_CPU                 2
-// #define THERMAL_MAIN_BOARD_FRONT    3
-// #define THERMAL_PSU1                4
-// #define THERMAL_PSU2                5
 #define DEBUG_MODE 0
 
 #if (DEBUG_MODE == 1)
