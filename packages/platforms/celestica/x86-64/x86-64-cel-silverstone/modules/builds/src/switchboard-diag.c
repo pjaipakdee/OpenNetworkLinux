@@ -19,7 +19,7 @@
  *   \--sys
  *       \--devices
  *            \--platform
- *                \--silverstone
+ *                \--cls_switch
  *                    |--FPGA
  *                    |--CPLD1
  *                    |--CPLD2
@@ -52,14 +52,14 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.0"
+#define MOD_VERSION "2.0.1"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
 
-#define CLASS_NAME "silverstone_fpga"
-#define DRIVER_NAME "silverstone"
-#define FPGA_PCI_NAME "silverstone_fpga_pci"
+#define CLASS_NAME "cls_fpga"
+#define DRIVER_NAME "cls_switch"
+#define FPGA_PCI_NAME "cls_fpga_pci"
 #define DEVICE_NAME "fwupgrade"
 
 static int fpga_pci_probe(struct pci_dev *pdev);
