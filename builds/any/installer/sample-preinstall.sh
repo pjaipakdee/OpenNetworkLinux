@@ -60,7 +60,10 @@ if [ ! -z $(sgdisk -p /dev/sda | grep CLS-DIAG | awk '{print $1}') ]; then
     sgdisk -d $DUMMY_PARTITION_NUMBER /dev/sda
 fi
 
-
+## Move back the ONL efi partition for protect the conflict between install process.
+if [ -d /boot/efi/EFI/ONL-DIAG ]; then
+    mv /boot/efi/EFI/ONL-DIAG /boot/efi/EFI/ONL
+fi
 
 
 exit 0
