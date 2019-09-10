@@ -201,7 +201,7 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
                 if(led_color == 1){
                     info_p->mode |= ONLP_LED_MODE_ORANGE;
                 }else{
-                    info_p->mode |= ONLP_LED_MODE_AUTO;
+                    info_p->mode |= ONLP_LED_MODE_GREEN;
                 }
             }else{
                 info_p->mode = ONLP_LED_STATUS_FAILED;
@@ -210,13 +210,13 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
         case LED_RIGHT_PSU:
             psu_id = 2;
             present_status = (psu_status_l >> psu_mapper[psu_id].bit_present) & 0x01;
-            led_color = (psu_led_result >>1) & 0x1;
+            led_color = psu_led_result & 0x1;
             if(!present_status)
             {
                 if(led_color == 1){
                     info_p->mode |= ONLP_LED_MODE_ORANGE;
                 }else{
-                    info_p->mode |= ONLP_LED_MODE_AUTO;
+                    info_p->mode |= ONLP_LED_MODE_GREEN;
                 }
                 break;
             }else{
