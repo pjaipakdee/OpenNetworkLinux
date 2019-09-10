@@ -102,11 +102,12 @@ mkdir -p $EFI_PATH_TMP
 mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
 echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG"
 if [ -d /tmp/efi/EFI/ONL ]; then
-    rsync -a /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
+    mv /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
 fi
 
 boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
-if [ ! -z boot_num ]; then
+boot_num=${#boot_num}
+if [ $boot_num -eq 0 ]; then
     efibootmgr -c -L "CLS-DIAG-OS" -l '\EFI\ONL-DIAG\grubx64.efi'
 fi
 
@@ -114,7 +115,8 @@ fi
 boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
 boot_num=${boot_num#Boot}
 boot_num=${boot_num%\*}
-efibootmgr -o ${CURRENT_BOOT_ORDER},${boot_num}
+new_boot_order="$(echo -n $CURRENT_BOOT_ORDER | sed -e s/,$boot_num// -e s/$boot_num,// -e s/$boot_num//)"
+efibootmgr -o ${new_boot_order},${boot_num}
 
 echo "Copy grub-extra.cfg to diag-boocmd.cfg to prevent command disappear after Onie update ..."
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/diag-bootcmd.cfg
