@@ -21,7 +21,6 @@
 
 char command[256];
 FILE *fp;
-static char *sdr_value = NULL;
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
     {"unknown", "unknown"}, //check
@@ -71,21 +70,6 @@ static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
     {},
     {0xa160, 3, 7, 1},
     {0xa160, 2, 6, 0},
-};
-
-static const struct search_psu_sdr_info_mapper search_psu_sdr_info[12] = {
-    {"PSU1_VIn", 'V'},
-    {"PSU1_CIn", 'A'},
-    {"PSU1_PIn", 'W'},
-    {"PSU1_VOut", 'V'},
-    {"PSU1_COut", 'A'},
-    {"PSU1_POut", 'W'},
-    {"PSU2_VIn", 'V'},
-    {"PSU2_CIn", 'A'},
-    {"PSU2_PIn", 'W'},
-    {"PSU2_VOut", 'V'},
-    {"PSU2_COut", 'A'},
-    {"PSU2_POut", 'W'},
 };
 
 void update_shm_mem(void)
@@ -158,12 +142,24 @@ int create_cache(){
     return 1;
 }
 
+void array_trim(char *strIn, char *strOut)
+{
+    int i, j;
+
+    i = 0;
+    j = strlen(strIn) - 1;
+
+    while(strIn[i] == ' ') ++i;
+    while(strIn[j] == ' ') --j;
+
+    strncpy(strOut, strIn + i , j - i + 1);
+    strOut[j - i + 1] = '\0';
+}
+
 uint8_t read_register(uint16_t dev_reg)
 {
     int status;
-
     sprintf(command, "echo 0x%x >  %sgetreg", dev_reg, SYS_CPLD_PATH);
-
     fp = popen(command, "r");
     if (!fp)
     {
@@ -235,6 +231,7 @@ uint8_t getFanPresent(int id)
 
     return ret;
 }
+
 
 uint8_t getFanSpeed(int id)
 {
@@ -350,65 +347,157 @@ char *read_psu_sdr(int id)
 
 int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
-    int ret = 0;
-    int search_length = 39;
-    int value_length = 19;
-    int position = 0;
-    int val_pos = 0;
-    int str_index = 0;
-    int val[12]={0,0,0,0,0,0,0,0,0,0,0,0};
-    char ctemp[18] = "\0";
-    float ftemp = 0.0;
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int index  = 0;
 
-    if(sdr_value == NULL)
-        sdr_value = read_psu_sdr(id);
+	int i = 0;
+	int ret = 0;
+    char strTmp[12][128] = {{0}, {0}};
+    char *token = NULL;
+    char *psu_sensor_name[12] = {
+        "PSU1_VIn", "PSU1_CIn", "PSU1_PIn", "PSU1_VOut",
+        "PSU1_COut", "PSU1_POut", "PSU2_VIn", "PSU2_CIn",
+        "PSU2_PIn", "PSU2_VOut","PSU2_COut","PSU2_POut"};
 
-    if(id == 2)
-        str_index = 6;
+    /*
+        String example:			  
+        root@localhost:~# ipmitool sensor list | grep PSU
+        PSU1_Status      | 0x0        | discrete   | 0x0180| na        | na        | na        | na        | na        | na        
+        PSU2_Status      | 0x0        | discrete   | 0x0180| na        | na        | na        | na        | na        | na        
+        PSU1_Fan         | na         | RPM        | na    | na        | na        | na        | na        | na        | na        
+        PSU2_Fan         | 15800.000  | RPM        | ok    | na        | na        | na        | na        | na        | na        
+        PSU1_VIn         | na         | Volts      | na    | na   0     | na        | na        | 239.800   | 264.000   | na        
+        PSU1_CIn         | na         | Amps       | na    | na   1    | na        | na        | na        | 14.080    | na        
+        PSU1_PIn         | na         | Watts      | na    | na   2    | na        | na        | na        | 1500.000  | na        
+        PSU1_Temp1       | na         | degrees C  | na    | na       | na        | na        | na        | na        | na        
+        PSU1_Temp2       | na         | degrees C  | na    | na        | na        | na        | na        | na        | na        
+        PSU1_VOut        | na         | Volts      | na    | na   3    | na        | na        | na        | 13.500    | 15.600    
+        PSU1_COut        | na         | Amps       | na    | na   4    | na        | na        | na        | 125.000   | na        
+        PSU1_POut        | na         | Watts      | na    | na   5    | na        | na        | na        | 1500.000  | na        
+        PSU2_VIn         | 228.800    | Volts      | ok    | na   6    | na        | na        | 239.800   | 264.000   | na        
+        PSU2_CIn         | 0.480      | Amps       | ok    | na   7    | na        | na        | na        | 14.080    | na        
+        PSU2_PIn         | 114.000    | Watts      | ok    | na   8     | na        | na        | na        | 1500.000  | na        
+        PSU2_Temp1       | 26.000     | degrees C  | ok    | na        | na        | na        | na        | na        | na        
+        PSU2_Temp2       | 43.000     | degrees C  | ok    | na        | na        | na        | na        | na        | na        
+        PSU2_VOut        | 12.000     | Volts      | ok    | na   9     | na        | na        | na        | 13.500    | 15.600    
+        PSU2_COut        | 7.500      | Amps       | ok    | na   10     | na        | na        | na        | 125.000   | na        
+        PSU2_POut        | 90.000     | Watts      | ok    | na   11     | na        | na        | na        | 1500.000  | na        
+        root@localhost:~# 
+    */
+    if((NULL == mvin) || (NULL == mvout) ||(NULL == mpin) || (NULL == mpout) || (NULL == miin) || (NULL == miout))
+	{
+		printf("%s null pointer!\n", __FUNCTION__);
+		return -1;
+	}
 
-    for (; str_index < NELEMS(search_psu_sdr_info); str_index++)
-    {
-        position = keyword_match(sdr_value, search_psu_sdr_info[str_index].keyword);
+    if(is_shm_mem_ready()){
+        ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            printf("Failed - Failed to obtain system information\n");
+            (void)free(tmp);
+            tmp = (char *)NULL;
+            return ret;
+        }
+    }else{
+        // use unsafe method to read the cache file.
+        sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
+        tmp = read_tmp_cache(command);
+    }
 
-        if (position != -1)
+    char *content, *temp_pointer;
+    int flag = 0;
+    content = strtok_r(tmp, "\n", &temp_pointer);
+
+    int search_from = 0;
+    int search_to = 0;
+
+    if(id == 1){
+        search_from = 0;
+        search_to = 6;
+    }else{
+        search_from = 6;
+        search_to = 12;
+    }
+    
+    while(content != NULL && search_from <= search_to){
+        if (strstr(content, psu_sensor_name[search_from]))
         {
-            int status_pos = position + search_length;
-            if (sdr_value[status_pos] != 'n')
+            flag = 1;
+            index++;
+            search_from++;
+        }
+
+        if(flag == 1){
+            i = 0;
+            token = strtok(content, "|");
+            while( token != NULL ) 
             {
-                int v_pos = position + value_length;
-                int a = 0;
-                for (a = 0; a <= value_length-1; a++)
-                {
-                    if (sdr_value[v_pos + a] != search_psu_sdr_info[str_index].unit)
-                    {
-                        append(ctemp, sdr_value[v_pos + a]);
-                    }
-                    else
-                    {
-                        ftemp = atof(ctemp);
-                        val[val_pos] = ftemp * 1000;
-                        memset(ctemp, 0, sizeof(ctemp));
-                        val_pos++;
-                        break;
-                    }
+                if(i == 1){
+                    array_trim(token, &strTmp[search_from][i]);
                 }
+                i++;
+                if(i > 2) break;
+                token = strtok(NULL, "|");
             }
         }
+
+
+        flag = 0;
+        content = strtok_r(NULL, "\n", &temp_pointer);
+        if(search_from == search_to)
+            content = NULL;
+
     }
 
-    //free malloc after complete use sdr_value variable
-    if(id >= PSU_COUNT)
-    {
-        free(sdr_value);
-        sdr_value=NULL;
+    if(id==1){
+        if(0 == strcmp(&strTmp[1][1], "na")) return -1;
+        else *mvin = atof(&strTmp[1][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[4][1], "na")) return -1;
+        else *mvout = atof(&strTmp[4][1]) * 1000.0;
+        
+        if(0 == strcmp(&strTmp[3][1], "na")) return -1;
+        else *mpin = atof(&strTmp[3][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[6][1], "na")) return -1;
+        else *mpout = atof(&strTmp[6][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[2][1], "na")) return -1;
+        else *miin = atof(&strTmp[2][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[5][1], "na")) return -1;
+        else *miout = atof(&strTmp[5][1]) * 1000.0;
+    }else{
+        if(0 == strcmp(&strTmp[7][1], "na")) return -1;
+        else *mvin = atof(&strTmp[7][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[10][1], "na")) return -1;
+        else *mvout = atof(&strTmp[10][1]) * 1000.0;
+        
+        if(0 == strcmp(&strTmp[9][1], "na")) return -1;
+        else *mpin = atof(&strTmp[9][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[12][1], "na")) return -1;
+        else *mpout = atof(&strTmp[12][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[8][1], "na")) return -1;
+        else *miin = atof(&strTmp[8][1]) * 1000.0;
+
+        if(0 == strcmp(&strTmp[11][1], "na")) return -1;
+        else *miout = atof(&strTmp[11][1]) * 1000.0;
     }
 
-    *mvin = val[0];
-    *miin = val[1];
-    *mpin = val[2];
-    *mvout = val[3];
-    *miout = val[4];
-    *mpout = val[5];
+    if(content){
+        content = (char *)NULL;
+    }
+    if(temp_pointer){
+        temp_pointer = (char *)NULL;
+    }
+    if(tmp){
+    	(void)free(tmp);
+	    tmp = (char *)NULL;
+    }
 
     return ret;
 }
@@ -548,6 +637,7 @@ int getFaninfo(int id, char *model, char *serial)
                 return ret;
             }
         }else{
+            // use unsafe method to read the cache file.
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
             tmp = read_tmp_cache(command);
         }
@@ -599,20 +689,6 @@ int getFaninfo(int id, char *model, char *serial)
 
     
     return 1;
-}
-
-void array_trim(char *strIn, char *strOut)
-{
-    int i, j;
-
-    i = 0;
-    j = strlen(strIn) - 1;
-
-    while(strIn[i] == ' ') ++i;
-    while(strIn[j] == ' ') --j;
-
-    strncpy(strOut, strIn + i , j - i + 1);
-    strOut[j - i + 1] = '\0';
 }
 
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)

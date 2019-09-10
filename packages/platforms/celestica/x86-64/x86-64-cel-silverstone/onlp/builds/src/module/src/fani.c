@@ -71,10 +71,10 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     else
         return ONLP_STATUS_E_MISSING;
 
-    if (isfanb2f)
-        info_p->status |= ONLP_FAN_STATUS_B2F;
-    else
+    if (!isfanb2f)
         info_p->status |= ONLP_FAN_STATUS_F2B;
+    else
+        info_p->status |= ONLP_FAN_STATUS_B2F;
 
     getFaninfo(fan_id, info_p->model, info_p->serial);
 
