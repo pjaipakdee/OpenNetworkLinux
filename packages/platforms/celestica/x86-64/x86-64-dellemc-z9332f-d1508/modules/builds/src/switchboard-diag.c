@@ -52,7 +52,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.1"
+#define MOD_VERSION "2.0.2"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -1083,13 +1083,14 @@ static int silverstone_drv_probe(struct platform_device *pdev)
         goto err_exit;
     }
     cpld1_client = i2c_new_dummy(cpld_bus_adap, CPLD1_SLAVE_ADDR);
+    i2c_put_adapter(cpld_bus_adap);
     if (!cpld1_client){
         dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD1\n");
         ret = -ENODEV;
-        goto err_free_adap;
+        goto err_exit;
     }
 
-    cpld2_client = i2c_new_dummy(cpld_bus_adap, CPLD2_SLAVE_ADDR);
+    cpld2_client = i2c_new_dummy(cpld1_client->adapter, CPLD2_SLAVE_ADDR);
     if (!cpld2_client){
         dev_err(&pdev->dev, "cannot create i2c dummy device of CPLD2\n");
         ret = ENODEV;
@@ -1181,8 +1182,6 @@ err_free_cli_clpd2:
     i2c_unregister_device(cpld2_client);
 err_free_cli_clpd1:
     i2c_unregister_device(cpld1_client);
-err_free_adap:
-    i2c_put_adapter(cpld_bus_adap);
 err_exit:
     return ret;
 
