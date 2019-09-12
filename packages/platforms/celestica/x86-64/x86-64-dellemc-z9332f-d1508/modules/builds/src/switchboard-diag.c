@@ -52,7 +52,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.2"
+#define MOD_VERSION "2.0.3"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -578,7 +578,7 @@ static ssize_t cpld2_getreg_show(struct device *dev, struct device_attribute *at
     // CPLD register is one byte
     uint8_t data;
     struct i2c_client *client = fpga_data->cpld_i2c_clients[1];
-    data = i2c_smbus_read_byte_data(client, fpga_data->cpld1_read_addr);
+    data = i2c_smbus_read_byte_data(client, fpga_data->cpld2_read_addr);
     if(data < 0)
         return data;
     return sprintf(buf, "0x%2.2x\n", data);
