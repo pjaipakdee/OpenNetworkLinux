@@ -414,10 +414,10 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
 
     if(id == 1){
         search_from = 0;
-        search_to = 6;
+        search_to = 5;
     }else{
         search_from = 6;
-        search_to = 12;
+        search_to = 11;
     }
     
     while(content != NULL && search_from <= search_to){
@@ -425,7 +425,6 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
         {
             flag = 1;
             index++;
-            search_from++;
         }
 
         if(flag == 1){
@@ -435,6 +434,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
             {
                 if(i == 1){
                     array_trim(token, &strTmp[search_from][i]);
+                    search_from++;
                 }
                 i++;
                 if(i > 2) break;
@@ -445,47 +445,6 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
 
         flag = 0;
         content = strtok_r(NULL, "\n", &temp_pointer);
-        if(search_from == search_to)
-            content = NULL;
-
-    }
-
-    if(id==1){
-        if(0 == strcmp(&strTmp[1][1], "na")) return -1;
-        else *mvin = atof(&strTmp[1][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[4][1], "na")) return -1;
-        else *mvout = atof(&strTmp[4][1]) * 1000.0;
-        
-        if(0 == strcmp(&strTmp[3][1], "na")) return -1;
-        else *mpin = atof(&strTmp[3][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[6][1], "na")) return -1;
-        else *mpout = atof(&strTmp[6][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[2][1], "na")) return -1;
-        else *miin = atof(&strTmp[2][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[5][1], "na")) return -1;
-        else *miout = atof(&strTmp[5][1]) * 1000.0;
-    }else{
-        if(0 == strcmp(&strTmp[7][1], "na")) return -1;
-        else *mvin = atof(&strTmp[7][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[10][1], "na")) return -1;
-        else *mvout = atof(&strTmp[10][1]) * 1000.0;
-        
-        if(0 == strcmp(&strTmp[9][1], "na")) return -1;
-        else *mpin = atof(&strTmp[9][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[12][1], "na")) return -1;
-        else *mpout = atof(&strTmp[12][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[8][1], "na")) return -1;
-        else *miin = atof(&strTmp[8][1]) * 1000.0;
-
-        if(0 == strcmp(&strTmp[11][1], "na")) return -1;
-        else *miout = atof(&strTmp[11][1]) * 1000.0;
     }
 
     if(content){
@@ -497,6 +456,71 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     if(tmp){
     	(void)free(tmp);
 	    tmp = (char *)NULL;
+    }
+
+    if (id == 1)
+    {
+        if (0 == strcmp(&strTmp[0][1], "na"))
+            *mvin = 0;
+        else
+            *mvin = atof(&strTmp[0][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[3][1], "na"))
+            *mvout = 0;
+        else
+            *mvout = atof(&strTmp[3][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[2][1], "na"))
+            *mpin = 0;
+        else
+            *mpin = atof(&strTmp[2][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[5][1], "na"))
+            *mpout = 0;
+        else
+            *mpout = atof(&strTmp[5][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[1][1], "na"))
+            *miin = 0;
+        else
+            *miin = atof(&strTmp[1][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[4][1], "na"))
+            *miout = 0;
+        else
+            *miout = atof(&strTmp[4][1]) * 1000.0;
+    }
+    else
+    {
+        if (0 == strcmp(&strTmp[6][1], "na"))
+            *mvin = 0;
+        else
+            *mvin = atof(&strTmp[6][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[9][1], "na"))
+            *mvout = 0;
+        else
+            *mvout = atof(&strTmp[9][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[8][1], "na"))
+            *mpin = 0;
+        else
+            *mpin = atof(&strTmp[8][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[11][1], "na"))
+            *mpout = 0;
+        else
+            *mpout = atof(&strTmp[11][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[7][1], "na"))
+            *miin = 0;
+        else
+            *miin = atof(&strTmp[7][1]) * 1000.0;
+
+        if (0 == strcmp(&strTmp[10][1], "na"))
+            *miout = 0;
+        else
+            *miout = atof(&strTmp[10][1]) * 1000.0;
     }
 
     return ret;
@@ -763,17 +787,25 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
         }
     }
 
-    if(0 == strcmp(&strTmp[1][0], "na")) return -1;
-    else *temp = atof(&strTmp[1][0]) * 1000.0;
+    if (0 == strcmp(&strTmp[1][0], "na"))
+        *temp = 0;
+    else
+        *temp = atof(&strTmp[1][0]) * 1000.0;
 
-    if(0 == strcmp(&strTmp[7][0], "na")) *warn = 0;	
-    else *warn = atof(&strTmp[7][0]) * 1000.0;
+    if (0 == strcmp(&strTmp[7][0], "na"))
+        *warn = 0;
+    else
+        *warn = atof(&strTmp[7][0]) * 1000.0;
 
-    if(0 == strcmp(&strTmp[8][0], "na")) *error = 0;	
-    else *error = atof(&strTmp[8][0]) * 1000.0;
+    if (0 == strcmp(&strTmp[8][0], "na"))
+        *error = 0;
+    else
+        *error = atof(&strTmp[8][0]) * 1000.0;
 
-    if(0 == strcmp(&strTmp[9][0], "na")) *shutdown = 0;	
-    else *shutdown = atof(&strTmp[9][0]) * 1000.0;
+    if (0 == strcmp(&strTmp[9][0], "na"))
+        *shutdown = 0;
+    else
+        *shutdown = atof(&strTmp[9][0]) * 1000.0;
 
     if(content){
         content = (char *)NULL;
