@@ -16,6 +16,7 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
         qsfp_qty = 32
         sfp_qty = 2
         qsfp_offset = 9
+        actual_port_num = 1
 
         self.insmod("i2c-ocores.ko")
         self.insmod("i2c-cls.ko")
@@ -39,10 +40,16 @@ class OnlPlatform_x86_64_cel_silverstone_r0(OnlPlatformCelestica,
         #transceiver device
         for x in range(sfp_qty):
             self.new_i2c_device('optoe2',0x50,x+1)
+            os.system("echo 'SFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(x+1,actual_port_num))
+            actual_port_num += 1
         
+        actual_port_num = 1
+
         for y in range(qsfp_qty):
             self.new_i2c_device('optoe1',0x50,qsfp_offset+y+1)
-            
+            os.system("echo 'QSFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+y+1,actual_port_num))
+            actual_port_num += 1
+
         os.system("echo '3' > /proc/sys/kernel/printk")
 
         if os.path.exists(file_path):
