@@ -35,12 +35,21 @@ onlp_fan_info_t f_info[FAN_COUNT + 1] = {
         ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
     {
-        { ONLP_FAN_ID_CREATE(7), "Chassis Fan 7", 0 },
+        {ONLP_FAN_ID_CREATE(7), "Chassis Fan 7", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
+    {
+        {ONLP_FAN_ID_CREATE(8), "PSU Fan 1", 0},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
+    {
+        {ONLP_FAN_ID_CREATE(9), "PSU Fan 2", 0},
         0,
         ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
 };
-
 
 int onlp_fani_init(void)
 {
@@ -56,38 +65,41 @@ onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t* info_p)
 
     *info_p = f_info[fan_id];
 
+    uint8_t spd_result;
+    int isfanb2f = 0;
 
-    uint8_t result,spd_result;
-    int present_status , isfanb2f,speed_pwm;
-
-    uint8_t max_speed = 0xFF;
-    int max_rpm_speed = 13800;
-    int lowest_rpm_speed = 1200;
-    float speed_percentage;
+    if(fan_id <= 7){
+        getFaninfo(fan_id, info_p->model, info_p->serial,&isfanb2f);
+    }else{
+        int psu_id = 0;
+        if(fan_id == 8){
+            psu_id = 1;
+        }else if(fan_id == 9){
+            psu_id = 2;
+        }
+        psu_get_model_sn(psu_id, info_p->model, info_p->serial);
+        isfanb2f = -1;
+    }
     
-    result = getFanPresent(fan_id);
 
-    present_status = result & 0x01;
-    isfanb2f = (result >> 1) & 0x1;
+    spd_result = getFanSpeedCache(fan_id,&(info_p->percentage), &(info_p->rpm));
+    if(spd_result){
+        return ONLP_FAN_STATUS_FAILED;
+    }
 
-    if (!present_status)
-        info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    else
-        return ONLP_STATUS_E_MISSING;
+    info_p->status |= ONLP_FAN_STATUS_PRESENT;
 
-    if (!isfanb2f)
+    switch (isfanb2f)
+    {
+    case ONLP_FAN_STATUS_F2B:
         info_p->status |= ONLP_FAN_STATUS_F2B;
-    else
+        break;
+    case ONLP_FAN_STATUS_B2F:
         info_p->status |= ONLP_FAN_STATUS_B2F;
-
-    getFaninfo(fan_id,info_p->model,info_p->serial);
-
-    spd_result = getFanSpeed(fan_id);
-    speed_percentage = (spd_result * 100) / max_speed;
-    speed_pwm = (speed_percentage * ((max_rpm_speed - lowest_rpm_speed) / 100) + lowest_rpm_speed);
-
-    info_p->percentage = (int)speed_percentage;
-    info_p->rpm = speed_pwm;
+        break;
+    default:
+        break;
+    }
 
     return ONLP_STATUS_OK;
 }

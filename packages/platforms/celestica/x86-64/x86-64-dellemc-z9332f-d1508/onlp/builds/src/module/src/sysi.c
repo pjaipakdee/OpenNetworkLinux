@@ -30,9 +30,6 @@ onlp_sysi_platform_get(void)
 int
 onlp_sysi_init(void)
 {
-  if(is_cache_exist()<1){
-        create_cache();
-    }
     return ONLP_STATUS_OK;
 }
 

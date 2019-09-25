@@ -16,6 +16,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "platform.h"
 
@@ -23,11 +24,13 @@ char command[256];
 FILE *fp;
 
 static struct device_info fan_information[FAN_COUNT + 1] = {
-    {"unknown", "unknown"}, //check
+    {"unknown", "unknown",1}, //check
     {}, //Fan 1
     {}, //Fan 2
     {}, //Fan 3
     {}, //Fan 4
+    {},
+    {},
     {},
     {},
     {},
@@ -54,16 +57,9 @@ static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
 static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {},
     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
-    {"LED_FAN_1", LED_FAN_1_H, 0x24},
-    {"LED_FAN_2", LED_FAN_2_H, 0x34},
-    {"LED_FAN_3", LED_FAN_3_H, 0x44},
-    {"LED_FAN_4", LED_FAN_4_H, 0x54},
-    {"LED_FAN_5", LED_FAN_5_H, 0x64},
-    {"LED_FAN_6", LED_FAN_6_H, 0x74},
-    {"LED_FAN_7", LED_FAN_7_H, 0x84},
     {"LED_ALARM", LED_ALARM_H, ALARM_REGISTER},
-    {"LED_PSU_LEFT", LED_PSU_L_H, PSU_LED_REGISTER},
-    {"LED_PSU_RIGHT", LED_PSU_R_H, PSU_LED_REGISTER},
+    {"LED_PSU", LED_PSU_H, PSU_LED_REGISTER},
+    {"LED_FAN",LED_FAN_H,LED_FAN_REGISTER}
 };
 
 static const struct psu_reg_bit_mapper psu_mapper [PSU_COUNT + 1] = {
@@ -80,13 +76,15 @@ void update_shm_mem(void)
 }
 
 int is_cache_exist(){
-    const char *path="/tmp/onlp-sensor-cache.txt";
+    const char *sdr_cache_path="/tmp/onlp-sensor-list-cache.txt";
+    const char *fru_cache_path="/tmp/onlp-fru-cache.txt";
     const char *time_setting_path="/var/opt/interval_time.txt";
     time_t current_time;
     int interval_time = 30; //set default to 30 sec
-    double diff_time;
-    struct stat fst;
-    bzero(&fst,sizeof(fst));
+    double sdr_diff_time,fru_diff_time;
+    struct stat sdr_fst,fru_fst;
+    bzero(&sdr_fst,sizeof(sdr_fst));
+    bzero(&fru_fst,sizeof(fru_fst));
 
     //Read setting
     if(access(time_setting_path, F_OK) == -1){ //Setting not exist
@@ -107,15 +105,17 @@ int is_cache_exist(){
         fclose(fp);
     }
 
-    if (access(path, F_OK) == -1){ //Cache not exist
+    if ((access(sdr_cache_path, F_OK) == -1) && (access(fru_cache_path, F_OK) == -1)){ //Cache not exist
         return -1;
     }else{ //Cache exist
         current_time = time(NULL);
-        if (stat(path,&fst) != 0) { printf("stat() failed"); exit(-1); }
+        if (stat(sdr_cache_path,&sdr_fst) != 0) { printf("stat() sdr_cache failed\n"); return -1; }
+        if (stat(fru_cache_path,&fru_fst) != 0) { printf("stat() fru_cache failed\n"); return -1; }
 
-        diff_time = difftime(current_time,fst.st_mtime);
+        sdr_diff_time = difftime(current_time,sdr_fst.st_mtime);
+        fru_diff_time = difftime(current_time,fru_fst.st_mtime);
 
-        if(diff_time > interval_time){
+        if((sdr_diff_time > interval_time)&&(fru_diff_time > interval_time)){
             return -1;
         }
         return 1;
@@ -124,21 +124,26 @@ int is_cache_exist(){
 
 int is_shm_mem_ready(){
 
-    const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
-    const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
+    if(USE_SHM_METHOD){
+        const char *sdr_cache_path="/run/shm/onlp-sensor-list-cache-shared";
+        const char *fru_cache_path="/run/shm/onlp-fru-cache-shared";
 
-    if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
-        return 0;
-    }
+        if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
+            return 0;
+        }
 
     return 1;
+    }
+    
+    return 0;
 }
 
 int create_cache(){
-    (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
-    (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
-    (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
-    update_shm_mem();
+    (void)system("ipmitool fru > /tmp/onlp-fru-cache.tmp; sync; rm -f /tmp/onlp-fru-cache.txt; mv /tmp/onlp-fru-cache.tmp /tmp/onlp-fru-cache.txt");
+    (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.tmp; sync; rm -f /tmp/onlp-sensor-list-cache.txt; mv /tmp/onlp-sensor-list-cache.tmp /tmp/onlp-sensor-list-cache.txt");
+    if(USE_SHM_METHOD){
+        update_shm_mem();
+    }
     return 1;
 }
 
@@ -203,50 +208,6 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     return ret;
 }
 
-int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
-{
-    int ret = 0;
-    char command[256];
-    char buffer[128];
-
-    sprintf(command, "ipmitool raw 0x3a 0x03 0x01 0x01 0x%02x", reg);
-    exec_ipmitool_cmd(command, buffer);
-    *result = strtol(buffer, NULL, 16);
-    
-    return ret;
-}
-
-uint8_t getFanPresent(int id)
-{
-    int ret = -1;
-    uint16_t fan_stat_reg;
-    uint8_t result;
-
-    if (id <= (FAN_COUNT))
-    {
-        fan_stat_reg = fan_sys_reg[id].ctrl_sta_reg;
-        fan_cpld_read_reg(fan_stat_reg, &result);
-        ret = result;
-    }
-
-    return ret;
-}
-
-
-uint8_t getFanSpeed(int id)
-{
-    uint8_t value;
-
-    if (id <= (FAN_COUNT))
-    {
-        uint16_t fan_stat_reg;
-        fan_stat_reg = fan_sys_reg[id].pwm_reg;
-        fan_cpld_read_reg(fan_stat_reg, &value);
-    }
-
-    return value;
-}
-
 uint8_t getLEDStatus(int id)
 {
     uint8_t ret = 0xFF;
@@ -258,44 +219,47 @@ uint8_t getLEDStatus(int id)
     {
         uint8_t result = 0;
         uint16_t led_stat_reg;
-        led_stat_reg = led_mapper[id].dev_reg;
-        if(id >=2 && id <= 8){
-            fan_cpld_read_reg(led_stat_reg,&result);
-        }else{
-            result = read_register(led_stat_reg);
-        }        
+        led_stat_reg = led_mapper[id].dev_reg; 
+        result = read_register(led_stat_reg);     
         ret = result;
     }
 
     return ret;
 }
 
-char *read_tmp_cache(char *cmd)
+char *read_tmp_cache(char *cmd, char *cache_file_path)
 {
-    FILE *pFd = NULL;
-    char c; 
-    char *str = (char *)malloc(sizeof(char) * 16384);
-    memset (str, 0, sizeof (char) * 16384);
-    int i = 0;
+    FILE* pFd = NULL;
+    char *str = NULL;
+    int round = 1;
 
-    pFd = popen(cmd, "r");
-    if (pFd != NULL)
-    {
-        c = fgetc(pFd);
-        while (c != EOF)
-        {
-            str[i] = c;
-            i++;
-            c = fgetc(pFd);
+    for(round = 1;round <= 10;round++){
+        pFd = fopen(cache_file_path, "r");
+        if(pFd != NULL ){
+
+            struct stat st;
+
+            stat(cache_file_path, &st);
+
+            int size = st.st_size;
+            str = (char *)malloc(size + 1);
+            
+            memset (str, 0, size+1);
+
+            fread(str, size+1, 1, pFd);
+
+            fclose(pFd);
+            break;
+        }else{
+            usleep(5000); //Sleep for 5 Microsec for waiting the file operation complete
         }
-
-        pclose(pFd);
-    }
-    else
-    {
-        printf("execute command %s failed\n", command);
     }
 
+    if(round >= 10 && str == NULL){
+        str = (char *)malloc(1);
+        memset (str, 0, 1);
+    }
+    
     return str;
 }
 
@@ -313,36 +277,6 @@ uint8_t getPsuStatus_sysfs_cpld(int id)
     }
 
     return ret;
-}
-
-char *read_psu_sdr(int id)
-{
-    FILE *pFd = NULL;
-    char c;
-    char *str = (char *)malloc(sizeof(char) * 5000);
-    int i = 0;
-
-    sprintf(command,"cat /tmp/onlp-sensor-cache.txt | grep PSU");
-    pFd = popen(command, "r");
-    if (pFd != NULL)
-    {
-
-        c = fgetc(pFd);
-        while (c != EOF)
-        {
-            str[i] = c;
-            i++;
-            c = fgetc(pFd);
-        }
-
-        pclose(pFd);
-    }
-    else
-    {
-        printf("execute command %s failed\n", command);
-    }
-
-    return str;
 }
 
 int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
@@ -402,7 +336,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     }else{
         // use unsafe method to read the cache file.
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
-        tmp = read_tmp_cache(command);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
 
     char *content, *temp_pointer;
@@ -549,12 +483,26 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
         }else{
             // use unsafe method to read the cache file.
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
-            tmp = read_tmp_cache(command);
+            tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
         
         char *content, *temp_pointer;
         int flag = 0;
+        /*
+        String example:			  
+        root@localhost:~# ipmitool fru (Pull out PSU1)
 
+        FRU Device Description : FRU_PSUL (ID 3)
+         Device not present (Unknown (0x81))
+
+        FRU Device Description : FRU_PSUR (ID 4)
+         Board Mfg Date        : Mon Mar 11 08:55:00 2019
+         Board Mfg             : DELTA-THAILAND  
+         Board Product         : 1500W-CAPELLA-PSU 1500W 
+         Board Serial          : FFGT1911000697
+         Board Part Number     : TDPS1500AB6B
+
+        */
         content = strtok_r(tmp, "\n", &temp_pointer);
 
         while(content != NULL){
@@ -602,53 +550,13 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     return 1;
 }
 
-void append(char *s, char c)
-{
-    int len = strlen(s);
-    s[len] = c;
-    s[len + 1] = '\0';
-}
-
-int keyword_match(char *a, char *b)
-{
-    int position = 0;
-    char *x, *y;
-
-    x = a;
-    y = b;
-
-    while (*a)
-    {
-        while (*x == *y)
-        {
-            x++;
-            y++;
-            if (*x == '\0' || *y == '\0')
-                break;
-        }
-        if (*y == '\0')
-            break;
-
-        a++;
-        position++;
-        x = a;
-        y = b;
-    }
-    if (*a)
-        return position;
-    else
-        return -1;
-}
-
-int getFaninfo(int id, char *model, char *serial)
+int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
 {
     int index;
     char *token;
     char *tmp = (char *)NULL;
-    char search_header[35];
     int len = 0;
     int ret = -1;
-    int search_fan_id = 1;
 
     if (0 == strcasecmp(fan_information[0].model, "unknown")) {
         index = 0;
@@ -663,15 +571,45 @@ int getFaninfo(int id, char *model, char *serial)
         }else{
             // use unsafe method to read the cache file.
             sprintf(command, "cat %s",ONLP_FRU_CACHE_FILE);
-            tmp = read_tmp_cache(command);
+            tmp = read_tmp_cache(command,ONLP_FRU_CACHE_FILE);
         }
+        /*
+        String example:			  
+        root@localhost:~# ipmitool fru (Pull out FAN1)
+
+        FRU Device Description : FRU_FAN1 (ID 6)
+         Device not present (Unknown (0x81))
+
+        FRU Device Description : FRU_FAN2 (ID 7)
+         Board Mfg Date        : Sat Apr  6 10:26:00 2019
+         Board Mfg             : Celestica
+         Board Product         : Fan Board 2
+         Board Serial          : R1141-F0018-01GD0119170163
+         Board Part Number     : R1141-F0018-01
+         Board Extra           : Mt.Echo-Fan
+         Board Extra           : 02
+         Board Extra           : F2B
+
+        .
+        .
+
+        FRU Device Description : FRU_FAN7 (ID 12)
+         Board Mfg Date        : Sat Apr  6 10:26:00 2019
+         Board Mfg             : Celestica
+         Board Product         : Fan Board 7
+         Board Serial          : R1141-F0018-01GD0119170165
+         Board Part Number     : R1141-F0018-01
+         Board Extra           : Mt.Echo-Fan
+         Board Extra           : 02
+         Board Extra           : F2B
+
+        */
         char *content, *temp_pointer;
         int flag = 0;
         content = strtok_r(tmp, "\n", &temp_pointer);
 
         while(content != NULL){
-            sprintf(search_header,"FRU Device Description : FRU_FAN%d",search_fan_id);
-            if (strstr(content, search_header)) {
+            if (strstr(content, "FRU_FAN") && !strstr(content,"FRU_FANBRD")) {
                 flag = 1;
                 index++;
             }
@@ -687,11 +625,25 @@ int getFaninfo(int id, char *model, char *serial)
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
                     sprintf(fan_information[index].model,"%s",trim_token);
-                    flag = 0;
-                    search_fan_id++;
+                    
+                }else if (strstr(content, "Board Extra")) 
+                {
+                    token = strtok(content, ":");
+                    token = strtok(NULL, ":");
+                    char* trim_token = trim(token);
+                    //Check until find B2F or F2B
+                    if(strcmp(trim_token, "B2F") == 0){
+                        fan_information[index].airflow = 4;
+                        flag = 0;
+                    }else if(strcmp(trim_token ,"F2B") == 0){
+                        fan_information[index].airflow = 8;
+                        flag = 0;
+                    }
+
                 }
+                
             }
-            if(search_fan_id > FAN_COUNT){
+            if(index > FAN_COUNT){
                 content = NULL;
             }else{
                 content = strtok_r(NULL, "\n", &temp_pointer);
@@ -710,7 +662,7 @@ int getFaninfo(int id, char *model, char *serial)
     }
     strcpy(model, fan_information[id].model);
     strcpy(serial, fan_information[id].serial_number);
-
+    *isfanb2f = fan_information[id].airflow;
     
     return 1;
 }
@@ -738,7 +690,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
 
     /*
         String example:			  
-        ipmitool sensor list | grep TEMP_FAN_U52
+        ipmitool sensor list
         TEMP_CPU     | 1.000      | degrees C  | ok  | 5.000  | 9.000  | 16.000  | 65.000  | 73.000  | 75.606
         TEMP_FAN_U52 | 32.000	  | degrees C  | ok  | na  |  na  | na  | na  | 70.000  | 75.000
         PSUR_Temp1   | na         | degrees C  | na  | na  | na   | na   | na  | na  | na
@@ -754,7 +706,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     }else{
         // use unsafe method to read the cache file.
         sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
-        tmp = read_tmp_cache(command);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
     }
     
     char *content, *temp_pointer;
@@ -819,6 +771,111 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     }
 
     return 0;
+}
+
+int getFanSpeedCache(int id,int *per, int *rpm)
+{
+    
+    int max_rpm_speed = 29700;// = 100% speed
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int index  = 0;
+
+	int i = 0;
+	int ret = 0;
+    char strTmp[2][128] = {{0}, {0}};
+    char *token = NULL;
+    char *Fan_sensor_name[9] = {
+        "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
+        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear","PSU1_Fan","PSU2_Fan"};
+
+	if((NULL == per) || (NULL == rpm))
+	{
+		printf("%s null pointer!\n", __FUNCTION__);
+		return -1;
+	}
+
+    /*
+        String example:			  
+        ipmitool sensor list (Plug out FAN1 and PSU 1)
+        Fan1_Rear        | na         | RPM        | na    | na        | 1050.000  | na        | na        | na        | na        
+        Fan2_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan3_Rear        | 29250.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan4_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan5_Rear        | 29400.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan6_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan7_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na   
+        PSU1_Fan         | na         | RPM        | na    | na        | na        | na        | na        | na        | na        
+        PSU2_Fan         | 15800.000  | RPM        | ok    | na        | na        | na        | na        | na        | na      
+    */
+    if(is_shm_mem_ready()){
+        ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            printf("Failed - Failed to obtain system information\n");
+            (void)free(tmp);
+            tmp = (char *)NULL;
+            return ret;
+        }
+    }else{
+        // use unsafe method to read the cache file.
+        sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_LIST_FILE);
+    }
+    
+    char *content, *temp_pointer;
+    int flag = 0;
+    content = strtok_r(tmp, "\n", &temp_pointer);
+    while(content != NULL){
+        if (strstr(content, Fan_sensor_name[id - 1])) {
+            flag = 1;
+            index++;
+        }
+        if(flag == 1){
+
+            i = 0;
+            token = strtok(content, "|");
+            while( token != NULL ) 
+            {
+                array_trim(token, &strTmp[i][0]);
+                i++;
+                if(i > 2) break;
+                token = strtok(NULL, "|");
+            }
+            
+            flag = 3;
+        }
+        
+        if(flag == 3){
+            content = NULL;
+        }else{
+            content = strtok_r(NULL, "\n", &temp_pointer);
+        }
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na")){
+        *rpm = 0;
+        ret = -1;
+    }else{
+        *rpm = atof(&strTmp[1][0]);
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na"))
+        *per = 0;
+    else
+        *per = (atof(&strTmp[1][0]) * 100 )/ max_rpm_speed;
+
+    if(content){
+        content = (char *)NULL;
+    }
+    if(temp_pointer){
+        temp_pointer = (char *)NULL;
+    }
+    if(tmp){
+    	(void)free(tmp);
+	    tmp = (char *)NULL;
+    }
+
+    return ret;
 }
 
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)

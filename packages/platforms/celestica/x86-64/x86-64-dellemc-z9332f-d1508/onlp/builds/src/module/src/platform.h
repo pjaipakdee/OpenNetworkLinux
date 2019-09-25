@@ -5,7 +5,7 @@
 #define PREFIX_PATH_LEN 100
 
 //FAN
-#define FAN_COUNT   7
+#define FAN_COUNT   9
 
 //PSU
 #define PSU_COUNT 2
@@ -20,7 +20,7 @@
 #define ALARM_REGISTER 0xA163
 
 //LED
-#define LED_COUNT   11
+#define LED_COUNT   4
 
 #define LED_SYSTEM_H  1
 #define LED_SYSTEM_REGISTER 0xA162
@@ -31,16 +31,10 @@
 #define LED_SYSTEM_4_HZ 2
 #define LED_SYSTEM_1_HZ 1
 
-#define LED_FAN_1_H   2
-#define LED_FAN_2_H   3
-#define LED_FAN_3_H   4
-#define LED_FAN_4_H   5
-#define LED_FAN_5_H   6
-#define LED_FAN_6_H   7
-#define LED_FAN_7_H   8
-#define LED_ALARM_H   9
-#define LED_PSU_L_H   10
-#define LED_PSU_R_H   11
+#define LED_FAN_H   4
+#define LED_FAN_REGISTER 0xA165
+#define LED_ALARM_H   2
+#define LED_PSU_H   3
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 #define ONLP_SENSOR_CACHE_SHARED "/onlp-sensor-cache-shared"
@@ -60,6 +54,8 @@
 
 #define NUM_OF_CPLD 1
 
+#define USE_SHM_METHOD 0
+
 struct shm_map_data{
     char data[16384]; 
     int size;
@@ -68,6 +64,7 @@ struct shm_map_data{
 struct device_info{
 	char serial_number[256];
 	char model[256];
+	int airflow;
 };
 
 struct fan_config_p{
@@ -123,16 +120,12 @@ uint8_t getLEDStatus(int id);
 int psu_get_model_sn(int id,char* model,char* serial_number);
 
 int psu_get_info(int id,int *mvin,int *mvout,int *mpin,int *mpout,int *miin,int *miout);
-char* read_psu_sdr(int id);
-int keyword_match(char* a,char *b);
 char* trim (char *s);
-void append(char* s, char c);
-int getFaninfo(int id,char* model,char* serial);
+int getFaninfo(int id,char* model,char* serial,int *getFaninfo);
 int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
 int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
 int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
-uint8_t getFanPresent(int id);
-uint8_t getFanSpeed(int id);
+int getFanSpeedCache(int id,int* per,int* rpm);
 uint8_t getPsuStatus_sysfs_cpld(int id);
 int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
 int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);
