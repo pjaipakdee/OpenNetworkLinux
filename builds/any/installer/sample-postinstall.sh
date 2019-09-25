@@ -137,6 +137,6 @@ sgdisk -A $(sgdisk -p /dev/sda | grep "CLS-DIAG" | awk '{print $1}'):set:0 /dev/
 dd if=/dev/zero of=/dev/sda$NEW_PARTITION_NUMBER bs=1M count=1
 mkfs.ext4 /dev/sda$NEW_PARTITION_NUMBER
 partprobe /dev/sda
-tune2fs -L "CLS-DIAG" /dev/sda$NEW_PARTITION_NUMBER
+mkfs.ext4 -F -L "CLS-DIAG" /dev/sda$NEW_PARTITION_NUMBER
 
 exit 0
