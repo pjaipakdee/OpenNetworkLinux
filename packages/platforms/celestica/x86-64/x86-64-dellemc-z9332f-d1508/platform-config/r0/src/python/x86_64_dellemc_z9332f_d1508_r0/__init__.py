@@ -42,7 +42,7 @@ class OnlPlatform_x86_64_dellemc_z9332f_d1508_r0(OnlPlatformCelestica,
             self.new_i2c_device('optoe2',0x50,x+1)
         
         for y in range(qsfp_qty):
-            self.new_i2c_device('optoe1',0x50,qsfp_offset+y+1)
+            self.new_i2c_device('optoe3',0x50,qsfp_offset+y+1)
 
         #init baseboard
         #self.new_i2c_device('baseboard',0x0d,5)
