@@ -42,18 +42,6 @@ static struct device_info psu_information[PSU_COUNT + 1] = {
     {}, //PSU 2
 };
 
-static const struct fan_config_p fan_sys_reg[FAN_COUNT + 1] = {
-    {},
-    {0x22, 0x26, 0x21, 0x20}, //FAN_1
-    {0x32, 0x36, 0x31, 0x30}, //FAN_2
-    {0x42, 0x46, 0x41, 0x40}, //FAN_3
-    {0x52, 0x56, 0x51, 0x50}, //FAN_4
-    {0x62, 0x66, 0x61, 0x60}, //FAN_5
-    {0x72, 0x76, 0x71, 0x70}, //FAN_6
-    {0x82, 0x86, 0x81, 0x80}, //FAN_7
-
-};
-
 static const struct led_reg_mapper led_mapper[LED_COUNT + 1] = {
     {},
     {"LED_SYSTEM", LED_SYSTEM_H, LED_SYSTEM_REGISTER},
