@@ -196,7 +196,7 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     return ret;
 }
 
-uint8_t getLEDStatus(int id)
+uint8_t get_led_status(int id)
 {
     uint8_t ret = 0xFF;
 
@@ -251,7 +251,7 @@ char *read_tmp_cache(char *cmd, char *cache_file_path)
     return str;
 }
 
-uint8_t getPsuStatus_sysfs_cpld(int id)
+uint8_t get_psu_status(int id)
 {
     uint8_t ret = 0xFF;
     uint16_t psu_stat_reg;
@@ -267,7 +267,7 @@ uint8_t getPsuStatus_sysfs_cpld(int id)
     return ret;
 }
 
-int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
+int get_psu_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -448,7 +448,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     return ret;
 }
 
-int psu_get_model_sn(int id, char *model, char *serial_number)
+int get_psu_model_sn(int id, char *model, char *serial_number)
 {
     int index;
     char *token;
@@ -538,7 +538,7 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
     return 1;
 }
 
-int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
+int get_fan_info(int id, char *model, char *serial, int *isfanb2f)
 {
     int index;
     char *token;
@@ -655,7 +655,7 @@ int getFaninfo(int id, char *model, char *serial, int *isfanb2f)
     return 1;
 }
 
-int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
+int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -761,7 +761,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     return 0;
 }
 
-int getFanSpeedCache(int id,int *per, int *rpm)
+int get_fan_speed(int id,int *per, int *rpm)
 {
     
     int max_rpm_speed = 29700;// = 100% speed
@@ -866,7 +866,7 @@ int getFanSpeedCache(int id,int *per, int *rpm)
     return ret;
 }
 
-int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_binary(char *filename, char *buffer, int buf_size, int data_len)
 {
     int fd;
     int len;
@@ -900,7 +900,7 @@ int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_le
     return 0;
 }
 
-int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_string(char *filename, char *buffer, int buf_size, int data_len)
 {
     int ret;
 
@@ -909,7 +909,7 @@ int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_le
         return -1;
     }
 
-    ret = deviceNodeReadBinary(filename, buffer, buf_size - 1, data_len);
+    ret = read_device_node_binary(filename, buffer, buf_size - 1, data_len);
     if (ret == 0)
     {
         buffer[buf_size - 1] = '\0';
