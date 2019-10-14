@@ -26,6 +26,7 @@
 #include "x86_64_cel_silverstone_dp_log.h"
 #include "platform.h"
 
+static int sfp_count__ = 2;
 static int qsfp_count__ = 24;
 static int qsfp_dd_count = 6;
 static int i2c_bus_offset = 9;
@@ -41,7 +42,7 @@ cel_silverstone_dp_qsfp_sfp_node_read_int(char *path, int *value, int data_len)
     char buf[8];
     *value = 0;
 
-    ret = deviceNodeReadString(path, buf, sizeof(buf), data_len);
+    ret = read_device_node_string(path, buf, sizeof(buf), data_len);
     if (ret == 0)
     {
         int is_not_present = atoi(buf);
@@ -57,15 +58,17 @@ static char *
 cel_silverstone_dp_sfp_qsfp_get_port_path(int port, char *node_name)
 {
 
-    if (port <= qsfp_count__ + qsfp_dd_count)
+    if (port <= qsfp_count__ + qsfp_dd_count + sfp_count__)
     {
         if (port <= qsfp_count__)
         {
             sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
         }
-        else
+        else if(port <= qsfp_count__ + qsfp_dd_count)
         {
             sprintf(node_path, "%s/QSFPDD%d/qsfp_modprsL", PLATFORM_PATH, port - qsfp_count__);
+        }else{
+            sprintf(node_path, "%s/SFP%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__ - qsfp_dd_count);
         }
     }
     else
@@ -81,9 +84,17 @@ static char *
 cel_silverstone_dp_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
 
-    if (port <= qsfp_count__ + qsfp_dd_count)
+    if (port <= qsfp_count__ + qsfp_dd_count + qsfp_dd_count)
     {
-        sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset);
+        // sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset);
+        if (port <= qsfp_count__ + qsfp_dd_count)
+        {
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset); //QSFP 10 - 41
+        }
+        else
+        {
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__ - qsfp_dd_count); //SFP 1 - 2
+        }
     }
     else
     {
@@ -100,10 +111,12 @@ cel_silverstone_dp_sfp_qsfp_get_all_ports_present(void)
     int i, ret;
     uint64_t present = 0;
     char *path;
+    char *path_1;
 
-    for (i = 0; i < (qsfp_count__ + qsfp_dd_count); i++)
+    for (i = 0; i < (qsfp_count__ + qsfp_dd_count + sfp_count__); i++)
     {
         path = cel_silverstone_dp_sfp_qsfp_get_port_path(i + 1, "present");
+        path_1 = cel_silverstone_dp_sfp_qsfp_get_eeprom_path(i+1,path_1);
         if (cel_silverstone_dp_qsfp_sfp_node_read_int(path, &ret, 0) != 0)
         {
             ret = 0;
@@ -124,7 +137,7 @@ int onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t *bmap)
     int p;
     AIM_BITMAP_CLR_ALL(bmap);
 
-    for (p = 0; p < (qsfp_count__ + qsfp_dd_count); p++)
+    for (p = 0; p < (qsfp_count__ + qsfp_dd_count + sfp_count__); p++)
     {
         AIM_BITMAP_SET(bmap, p);
     }
@@ -143,13 +156,15 @@ int onlp_sfpi_is_present(int port)
     char *path = cel_silverstone_dp_sfp_qsfp_get_port_path(port + 1, "present");
     if (cel_silverstone_dp_qsfp_sfp_node_read_int(path, &present, 0) != 0)
     {
-        if (port <= qsfp_count__)
+        if (port < qsfp_count__)
         {
-            AIM_LOG_ERROR("Unable to read present status from qsfp port(%d)\r\n", port);
+            AIM_LOG_ERROR("Unable to read present status from qsfp port(%d)\r\n", port+1);
         }
-        else
+        else if(port < qsfp_count__ + qsfp_dd_count)
         {
-            AIM_LOG_ERROR("Unable to read present status from qsfp dd port(%d)\r\n", port - qsfp_count__);
+            AIM_LOG_ERROR("Unable to read present status from qsfp dd port(%d)\r\n", port+1 - qsfp_count__);
+        }else{
+            AIM_LOG_ERROR("Unable to read present status from sfp port(%d)\r\n", port+1 - qsfp_count__ - qsfp_dd_count);
         }
 
         return ONLP_STATUS_E_INTERNAL;
@@ -192,15 +207,17 @@ int onlp_sfpi_eeprom_read(int port, uint8_t data[256])
      */
     memset(data, 0, 256);
 
-    if (deviceNodeReadBinary(path, (char *)data, 256, 256) != 0)
+    if (read_device_node_binary(path, (char *)data, 256, 256) != 0)
     {
-        if (port <= qsfp_count__)
+        if (port < qsfp_count__)
         {
-            AIM_LOG_ERROR("Unable to read eeprom from qsfp port(%d)\r\n", port);
+            AIM_LOG_ERROR("Unable to read eeprom from qsfp port(%d)\r\n", port+1);
         }
-        else
+        else if(port < qsfp_count__ + qsfp_dd_count)
         {
-            AIM_LOG_ERROR("Unable to read eeprom from qsfp dd port (%d)\r\n", port - qsfp_count__);
+            AIM_LOG_ERROR("Unable to read eeprom from qsfp dd port (%d)\r\n", port+1 - qsfp_count__);
+        }else{
+            AIM_LOG_ERROR("Unable to read eeprom from sfp port (%d)\r\n", port+1 - qsfp_count__ - qsfp_dd_count);
         }
         return ONLP_STATUS_E_INTERNAL;
     }

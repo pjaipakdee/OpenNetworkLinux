@@ -122,13 +122,13 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
     case LED_FAN_5:
     case LED_FAN_6:
     case LED_FAN_7:
-        result = getLEDStatus(led_id);
+        result = get_led_status(led_id);
         break;
 
     case LED_LEFT_PSU:
     case LED_RIGHT_PSU:
         if (psu_led_result == 0xFF)
-            psu_led_result = getLEDStatus(led_id);
+            psu_led_result = get_led_status(led_id);
         break;
     }
 
@@ -138,7 +138,7 @@ int onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t *info_p)
     int psu_id = 1;
 
     if (psu_status_l == 0)
-        psu_status_l = getPsuStatus_sysfs_cpld(psu_id);
+        psu_status_l = get_psu_status(psu_id);
 
     switch (led_id)
     {

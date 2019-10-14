@@ -5,7 +5,8 @@
 #define PREFIX_PATH_LEN 100
 
 //FAN
-#define FAN_COUNT 7
+#define FAN_COUNT 9
+#define CHASSIS_FAN_COUNT 7
 
 //PSU
 #define PSU_COUNT 2
@@ -15,6 +16,7 @@
 //THERMAL
 #define THERMAL_COUNT 15
 #define THERMAL_REGISTER 0xA176
+#define CHASSIS_THERMAL_COUNT 11
 
 //ALARM
 #define ALARM_REGISTER 0xA163
@@ -125,21 +127,22 @@ typedef struct psuInfo_p
 #define I2C_DEVICE_PATH "/sys/bus/i2c/devices/"
 #define PREFIX_PATH_ON_SYS_EEPROM "/sys/bus/i2c/devices/i2c-0/0-0056/eeprom"
 
-uint8_t getLEDStatus(int id);
-int psu_get_model_sn(int id, char *model, char *serial_number);
+uint8_t get_led_status(int id);
+int get_psu_model_sn(int id, char *model, char *serial_number);
 
-int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout);
+int get_psu_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout);
 char *read_psu_sdr(int id);
 int keyword_match(char *a, char *b);
 char *trim(char *s);
 void append(char *s, char c);
-int getFaninfo(int id, char *model, char *serial);
-int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown);
-int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len);
-int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len);
-uint8_t getFanPresent(int id);
-uint8_t getFanSpeed(int id);
-uint8_t getPsuStatus_sysfs_cpld(int id);
+int get_fan_info(int id, char *model, char *serial);
+int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown);
+int read_device_node_binary(char *filename, char *buffer, int buf_size, int data_len);
+int read_device_node_string(char *filename, char *buffer, int buf_size, int data_len);
+uint8_t get_fan_present_status_ipmi_raw(int id);
+uint8_t get_fan_speed_ipmi_raw(int id);
+int get_fan_speed(int id,int *per, int *rpm);
+uint8_t get_psu_status(int id);
 int dump_shared_memory(const char *shm_path, const char *sem_path, struct shm_map_data *shared_mem);
 int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path);
 int open_file(const char *shm_path, const char *sem_path, char **cache_data, int *cache_size);

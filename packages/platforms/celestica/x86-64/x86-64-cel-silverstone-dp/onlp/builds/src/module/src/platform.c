@@ -94,7 +94,6 @@ static const struct psu_reg_bit_mapper psu_mapper[PSU_COUNT + 1] = {
 
 void update_shm_mem(void)
 {
-    (void)fill_shared_memory(ONLP_SENSOR_CACHE_SHARED, ONLP_SENSOR_CACHE_SEM, ONLP_SENSOR_CACHE_FILE);
     (void)fill_shared_memory(ONLP_FRU_CACHE_SHARED, ONLP_FRU_CACHE_SEM, ONLP_FRU_CACHE_FILE);
     (void)fill_shared_memory(ONLP_SENSOR_LIST_CACHE_SHARED, ONLP_SENSOR_LIST_SEM, ONLP_SENSOR_LIST_FILE);
 }
@@ -170,7 +169,6 @@ int is_shm_mem_ready()
 
 int create_cache()
 {
-    (void)system("ipmitool sdr > /tmp/onlp-sensor-cache.txt");
     (void)system("ipmitool fru > /tmp/onlp-fru-cache.txt");
     (void)system("ipmitool sensor list > /tmp/onlp-sensor-list-cache.txt");
     update_shm_mem();
@@ -242,7 +240,7 @@ int exec_ipmitool_cmd(char *cmd, char *retd)
     return ret;
 }
 
-int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
+int read_fan_cpld_reg(uint8_t reg, uint8_t *result)
 {
     int ret = 0;
     char command[256];
@@ -255,7 +253,7 @@ int fan_cpld_read_reg(uint8_t reg, uint8_t *result)
     return ret;
 }
 
-uint8_t getFanPresent(int id)
+uint8_t get_fan_present_status_ipmi_raw(int id)
 {
     int ret = -1;
     uint16_t fan_stat_reg;
@@ -264,14 +262,14 @@ uint8_t getFanPresent(int id)
     if (id <= (FAN_COUNT))
     {
         fan_stat_reg = fan_sys_reg[id].ctrl_sta_reg;
-        fan_cpld_read_reg(fan_stat_reg, &result);
+        read_fan_cpld_reg(fan_stat_reg, &result);
         ret = result;
     }
 
     return ret;
 }
 
-uint8_t getFanSpeed(int id)
+uint8_t get_fan_speed_ipmi_raw(int id)
 {
     uint8_t value;
 
@@ -279,13 +277,13 @@ uint8_t getFanSpeed(int id)
     {
         uint16_t fan_stat_reg;
         fan_stat_reg = fan_sys_reg[id].pwm_reg;
-        fan_cpld_read_reg(fan_stat_reg, &value);
+        read_fan_cpld_reg(fan_stat_reg, &value);
     }
 
     return value;
 }
 
-uint8_t getLEDStatus(int id)
+uint8_t get_led_status(int id)
 {
     uint8_t ret = 0xFF;
 
@@ -299,7 +297,7 @@ uint8_t getLEDStatus(int id)
         led_stat_reg = led_mapper[id].dev_reg;
         if (id >= 2 && id <= 8)
         {
-            fan_cpld_read_reg(led_stat_reg, &result);
+            read_fan_cpld_reg(led_stat_reg, &result);
         }
         else
         {
@@ -340,7 +338,7 @@ char *read_tmp_cache(char *cmd)
     return str;
 }
 
-uint8_t getPsuStatus_sysfs_cpld(int id)
+uint8_t get_psu_status(int id)
 {
     uint8_t ret = 0xFF;
     uint16_t psu_stat_reg;
@@ -386,7 +384,7 @@ char *read_psu_sdr(int id)
     return str;
 }
 
-int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
+int get_psu_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin, int *miout)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -567,7 +565,7 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
     return ret;
 }
 
-int psu_get_model_sn(int id, char *model, char *serial_number)
+int get_psu_model_sn(int id, char *model, char *serial_number)
 {
     int index;
     char *token;
@@ -696,7 +694,7 @@ int keyword_match(char *a, char *b)
         return -1;
 }
 
-int getFaninfo(int id, char *model, char *serial)
+int get_fan_info(int id, char *model, char *serial)
 {
     int index;
     char *token;
@@ -784,7 +782,7 @@ int getFaninfo(int id, char *model, char *serial)
     return 1;
 }
 
-int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
+int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown)
 {
     char *tmp = (char *)NULL;
     int len = 0;
@@ -796,8 +794,8 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     char *token = NULL;
     char *Thermal_sensor_name[15] = {
         "TEMP_CPU", "TEMP_BB_U3", "TEMP_SW_U16", "TEMP_SW_U52",
-        "TEMP_FAN_U17", "TEMP_FAN_U52", "PSU1_Temp1", "PSU1_Temp2",
-        "PSU2_Temp1", "PSU2_Temp2","TEMP_SW_Internal","SW_U45_Temp","SW_U72_Temp","SW_U87_Temp","SW_U103_Temp"};
+        "TEMP_FAN_U17", "TEMP_FAN_U52", "SW_U45_Temp", "SW_U72_Temp",
+        "SW_U87_Temp", "SW_U103_Temp","TEMP_SW_Internal","PSU1_Temp1","PSU1_Temp2","PSU2_Temp1","PSU2_Temp2"};
 
 	if((NULL == temp) || (NULL == warn) || (NULL == error) || (NULL == shutdown))
 	{
@@ -890,7 +888,7 @@ int getSensorInfo(int id, int *temp, int *warn, int *error, int *shutdown)
     return 0;
 }
 
-int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_binary(char *filename, char *buffer, int buf_size, int data_len)
 {
     int fd;
     int len;
@@ -924,7 +922,7 @@ int deviceNodeReadBinary(char *filename, char *buffer, int buf_size, int data_le
     return 0;
 }
 
-int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_len)
+int read_device_node_string(char *filename, char *buffer, int buf_size, int data_len)
 {
     int ret;
 
@@ -933,7 +931,7 @@ int deviceNodeReadString(char *filename, char *buffer, int buf_size, int data_le
         return -1;
     }
 
-    ret = deviceNodeReadBinary(filename, buffer, buf_size - 1, data_len);
+    ret = read_device_node_binary(filename, buffer, buf_size - 1, data_len);
     if (ret == 0)
     {
         buffer[buf_size - 1] = '\0';
@@ -953,6 +951,111 @@ char *trim(char *s)
     s[i + 1] = '\0';
 
     return s;
+}
+
+int get_fan_speed(int id,int *per, int *rpm)
+{
+    
+    int max_rpm_speed = 29700;// = 100% speed
+    char *tmp = (char *)NULL;
+    int len = 0;
+    int index  = 0;
+
+	int i = 0;
+	int ret = 0;
+    char strTmp[2][128] = {{0}, {0}};
+    char *token = NULL;
+    char *Fan_sensor_name[9] = {
+        "Fan1_Rear", "Fan2_Rear", "Fan3_Rear", "Fan4_Rear",
+        "Fan5_Rear", "Fan6_Rear", "Fan7_Rear","PSU1_Fan","PSU2_Fan"};
+
+	if((NULL == per) || (NULL == rpm))
+	{
+		printf("%s null pointer!\n", __FUNCTION__);
+		return -1;
+	}
+
+    /*
+        String example:			  
+        ipmitool sensor list (Plug out FAN1 and PSU 1)
+        Fan1_Rear        | na         | RPM        | na    | na        | 1050.000  | na        | na        | na        | na        
+        Fan2_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan3_Rear        | 29250.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan4_Rear        | 28650.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan5_Rear        | 29400.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan6_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na        
+        Fan7_Rear        | 29100.000  | RPM        | ok    | na        | 1050.000  | na        | na        | na        | na   
+        PSU1_Fan         | na         | RPM        | na    | na        | na        | na        | na        | na        | na        
+        PSU2_Fan         | 15800.000  | RPM        | ok    | na        | na        | na        | na        | na        | na      
+    */
+    if(is_shm_mem_ready()){
+        ret = open_file(ONLP_SENSOR_LIST_CACHE_SHARED,ONLP_SENSOR_LIST_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            printf("Failed - Failed to obtain system information\n");
+            (void)free(tmp);
+            tmp = (char *)NULL;
+            return ret;
+        }
+    }else{
+        // use unsafe method to read the cache file.
+        sprintf(command, "cat %s",ONLP_SENSOR_LIST_FILE);
+        tmp = read_tmp_cache(command);
+    }
+    
+    char *content, *temp_pointer;
+    int flag = 0;
+    content = strtok_r(tmp, "\n", &temp_pointer);
+    while(content != NULL){
+        if (strstr(content, Fan_sensor_name[id - 1])) {
+            flag = 1;
+            index++;
+        }
+        if(flag == 1){
+
+            i = 0;
+            token = strtok(content, "|");
+            while( token != NULL ) 
+            {
+                array_trim(token, &strTmp[i][0]);
+                i++;
+                if(i > 2) break;
+                token = strtok(NULL, "|");
+            }
+            
+            flag = 3;
+        }
+        
+        if(flag == 3){
+            content = NULL;
+        }else{
+            content = strtok_r(NULL, "\n", &temp_pointer);
+        }
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na")){
+        *rpm = 0;
+        ret = -1;
+    }else{
+        *rpm = atof(&strTmp[1][0]);
+    }
+
+    if (0 == strcmp(&strTmp[1][0], "na"))
+        *per = 0;
+    else
+        *per = (atof(&strTmp[1][0]) * 100 )/ max_rpm_speed;
+
+    if(content){
+        content = (char *)NULL;
+    }
+    if(temp_pointer){
+        temp_pointer = (char *)NULL;
+    }
+    if(tmp){
+    	(void)free(tmp);
+	    tmp = (char *)NULL;
+    }
+
+    return ret;
 }
 
 int fill_shared_memory(const char *shm_path, const char *sem_path, const char *cache_path)

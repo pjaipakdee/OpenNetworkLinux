@@ -25,7 +25,9 @@
  *                    |--CPLD2
  *                    \--SFF
  *                        |--QSFP[1..24]
+ *                        |--SFP[1..2]
  *                        \--QSFPDD[1..6]
+ * 
  *
  */
 
@@ -52,7 +54,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.3"
+#define MOD_VERSION "2.1.4"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -84,6 +86,8 @@ I2C_CH10        0x00000A00 - 0x00000A10.
 I2C_CH11        0x00000B00 - 0x00000B10.
 I2C_CH12        0x00000C00 - 0x00000C10.
 I2C_CH13        0x00000D00 - 0x00000D10.
+I2C_CH14        0x000009A0 - 0x000009B0.
+I2C_CH15        0x000009C0 - 0x000009D0.
 SPI Master      0x00001200 - 0x00001300.
 DPLL SPI Master 0x00001320 - 0x0000132F.
 PORT XCVR       0x00004000 - 0x00004FFF.
@@ -96,9 +100,9 @@ PORT XCVR       0x00004000 - 0x00004FFF.
 #define FPGA_SCRATCH            0x0004
 #define FPGA_PORT_XCVR_READY    0x000c
 
-#define I2C_MASTER_CH_1             1
-#define I2C_MASTER_CH_2             2
 #define I2C_MASTER_CH_3             3
+#define I2C_MASTER_CH_14            14
+#define I2C_MASTER_CH_15            15
 
 /* FPGA FRONT PANEL PORT MGMT */
 #define SFF_PORT_CTRL_BASE          0x4000
@@ -182,7 +186,7 @@ PORT XCVR       0x00004000 - 0x00004FFF.
  */
 
 #define VIRTUAL_I2C_QSFP_PORT   30
-#define VIRTUAL_I2C_SFP_PORT    0
+#define VIRTUAL_I2C_SFP_PORT    2
 #define CPLD1_SLAVE_ADDR        0x30
 #define CPLD2_SLAVE_ADDR        0x31
 #define NUM_I2C_CLIENT          2
@@ -231,9 +235,9 @@ static struct i2c_switch fpga_i2c_bus_dev[] = {
     {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFPDD3"}, {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFPDD4"},
     {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD6"},
     /* BUS1 SFP+ Exported as virtual bus */
-    //{I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
+    {I2C_MASTER_CH_14, 0xFF, 0, SFP, "SFP1"},
     /* BUS2 SFP+ Exported as virtual bus */
-    //{I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP2"},
+    {I2C_MASTER_CH_15, 0xFF, 0, SFP, "SFP2"},
 };
 
 struct fpga_device {

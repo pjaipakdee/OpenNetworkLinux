@@ -42,7 +42,7 @@ int onlp_sysi_platform_info_get(onlp_platform_info_t *pi)
     {
         memset(fullpath, 0, PREFIX_PATH_LEN);
         sprintf(fullpath, "%s%s", SYS_CPLD_PATH, arr_cplddev_name[i]);
-        if (deviceNodeReadString(fullpath, r_data, sizeof(r_data), 0) != 0)
+        if (read_device_node_string(fullpath, r_data, sizeof(r_data), 0) != 0)
         {
             DEBUG_PRINT("%s(%d): read %s error\n", __FUNCTION__, __LINE__, fullpath);
             return ONLP_STATUS_E_INTERNAL;
@@ -116,21 +116,22 @@ int onlp_sysi_oids_get(onlp_oid_t *table, int max)
 
     memset(table, 0, max * sizeof(onlp_oid_t));
 
-    /* 2 PSUs */
-    *e++ = ONLP_PSU_ID_CREATE(1);
-    *e++ = ONLP_PSU_ID_CREATE(2);
 
-    // // /* LEDs Item */
+    /* LEDs Item */
     for (i = 1; i <= LED_COUNT; i++)
         *e++ = ONLP_LED_ID_CREATE(i);
 
-    // // /* THERMALs Item */
-    for (i = 1; i <= THERMAL_COUNT; i++)
+    /* THERMALs Item */
+    for (i = 1; i <= CHASSIS_THERMAL_COUNT; i++)
         *e++ = ONLP_THERMAL_ID_CREATE(i);
 
-    // /* Fans Item */
-    for (i = 1; i <= FAN_COUNT; i++)
+    /* Fans Item */
+    for (i = 1; i <= CHASSIS_FAN_COUNT; i++)
         *e++ = ONLP_FAN_ID_CREATE(i);
+
+    /* 2 PSUs */
+    *e++ = ONLP_PSU_ID_CREATE(1);
+    *e++ = ONLP_PSU_ID_CREATE(2);
 
     return ONLP_STATUS_OK;
 }

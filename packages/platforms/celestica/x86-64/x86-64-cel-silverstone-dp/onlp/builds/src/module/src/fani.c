@@ -38,6 +38,16 @@ onlp_fan_info_t f_info[FAN_COUNT + 1] = {
         0,
         ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
     },
+    {
+        {ONLP_FAN_ID_CREATE(8), "PSU Fan 1", ONLP_PSU_ID_CREATE(1)},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
+    {
+        {ONLP_FAN_ID_CREATE(9), "PSU Fan 2", ONLP_PSU_ID_CREATE(2)},
+        0,
+        ONLP_FAN_CAPS_B2F | ONLP_FAN_CAPS_F2B | ONLP_FAN_CAPS_GET_RPM | ONLP_FAN_CAPS_GET_PERCENTAGE,
+    },
 };
 
 int onlp_fani_init(void)
@@ -54,36 +64,33 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
     *info_p = f_info[fan_id];
 
     uint8_t result, spd_result;
-    int present_status, isfanb2f, speed_pwm;
+    int present_status, isfanb2f;
 
-    uint8_t max_speed = 0xFF;
-    int max_rpm_speed = 13800;
-    int lowest_rpm_speed = 1200;
-    float speed_percentage;
+    if(fan_id < 8){
+        result = get_fan_present_status_ipmi_raw(fan_id);
 
-    result = getFanPresent(fan_id);
+        present_status = result & 0x01;
+        isfanb2f = (result >> 1) & 0x1;
 
-    present_status = result & 0x01;
-    isfanb2f = (result >> 1) & 0x1;
+        if (!present_status)
+            info_p->status |= ONLP_FAN_STATUS_PRESENT;
+        else
+            return ONLP_FAN_STATUS_FAILED;
 
-    if (!present_status)
+        if (!isfanb2f)
+            info_p->status |= ONLP_FAN_STATUS_F2B;
+        else
+            info_p->status |= ONLP_FAN_STATUS_B2F;
+
+        get_fan_info(fan_id, info_p->model, info_p->serial);
+    }else{
         info_p->status |= ONLP_FAN_STATUS_PRESENT;
-    else
-        return ONLP_STATUS_E_MISSING;
+    }
 
-    if (!isfanb2f)
-        info_p->status |= ONLP_FAN_STATUS_F2B;
-    else
-        info_p->status |= ONLP_FAN_STATUS_B2F;
-
-    getFaninfo(fan_id, info_p->model, info_p->serial);
-
-    spd_result = getFanSpeed(fan_id);
-    speed_percentage = (spd_result * 100) / max_speed;
-    speed_pwm = (speed_percentage * ((max_rpm_speed - lowest_rpm_speed) / 100) + lowest_rpm_speed);
-
-    info_p->percentage = (int)speed_percentage;
-    info_p->rpm = speed_pwm;
+    spd_result = get_fan_speed(fan_id,&(info_p->percentage), &(info_p->rpm));
+    if(spd_result){
+        return ONLP_FAN_STATUS_FAILED;
+    }
 
     return ONLP_STATUS_OK;
 }
