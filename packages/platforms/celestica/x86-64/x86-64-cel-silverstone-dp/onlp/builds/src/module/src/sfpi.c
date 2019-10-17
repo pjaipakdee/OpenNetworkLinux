@@ -93,7 +93,14 @@ cel_silverstone_dp_sfp_qsfp_get_eeprom_path(int port, char *node_name)
         }
         else
         {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__ - qsfp_dd_count); //SFP 1 - 2
+            if((port - qsfp_count__ - qsfp_dd_count) == 1){
+                sprintf(node_path, "%s/2-0050/eeprom", I2C_DEVICE_PATH);
+            }else if((port - qsfp_count__ - qsfp_dd_count) == 2){
+                sprintf(node_path, "%s/1-0050/eeprom", I2C_DEVICE_PATH);
+            }else{
+                AIM_LOG_ERROR("Number of port config is mismatch port(%d)\r\n", port);
+                return "";
+            }
         }
     }
     else

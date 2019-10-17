@@ -26,7 +26,7 @@
 #include "i2c-ocores.h"
 #include "xcvr-cls.h"
 
-#define MOD_VERSION "2.2.2"
+#define MOD_VERSION "2.2.3"
 #define DRV_NAME "cls-switchboard"
 
 #define I2C_MUX_CHANNEL(_ch, _adap_id, _deselect) \
@@ -203,14 +203,14 @@ static struct resource  cls_i2c_res_5[] = {
 		.flags = IORESOURCE_MEM,}, 
 };
 
-/* Resource IOMEM for i2c bus 14 */
+/* Resource IOMEM for i2c bus 14 for SFP2*/
 static struct resource  cls_i2c_res_14[] = {
 	{
 		.start = 0x9A0, .end = 0x9BF,
 		.flags = IORESOURCE_MEM,}, 
 };
 
-/* Resource IOMEM for i2c bus 15 */
+/* Resource IOMEM for i2c bus 15 for SFP1*/
 static struct resource  cls_i2c_res_15[] = {
 	{
 		.start = 0x9C0, .end = 0x9DF,
@@ -240,6 +240,34 @@ static struct resource xcvr_res[] = {
 };
 
 static struct i2c_bus_config i2c_bus_configs[] = {
+	{
+		.id = 14,
+		.res = cls_i2c_res_14,
+		.num_res = ARRAY_SIZE(cls_i2c_res_14),
+		.pdata = {
+			.reg_shift = OCORE_REGSHIFT,
+			.reg_io_width = OCORE_REG_IO_WIDTH,
+			.clock_khz = OCORE_IP_CLK_khz,
+			.bus_khz = OCORE_BUS_CLK_khz,
+			.big_endian = false,
+			.num_devices = 0,
+			.devices = NULL,
+		},
+	},
+	{
+		.id = 15, 
+		.res = cls_i2c_res_15, 
+		.num_res = ARRAY_SIZE(cls_i2c_res_15), 
+		.pdata = {
+			.reg_shift = OCORE_REGSHIFT,
+			.reg_io_width = OCORE_REG_IO_WIDTH,
+			.clock_khz = OCORE_IP_CLK_khz,
+			.bus_khz = OCORE_BUS_CLK_khz,
+			.big_endian = false,
+			.num_devices = 0,
+			.devices = NULL,
+		},
+	},
 	{
 		.id = 3, 
 		.res = cls_i2c_res_3, 
@@ -272,34 +300,6 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		.id = 5, 
 		.res = cls_i2c_res_5, 
 		.num_res = ARRAY_SIZE(cls_i2c_res_5), 
-		.pdata = {
-			.reg_shift = OCORE_REGSHIFT,
-			.reg_io_width = OCORE_REG_IO_WIDTH,
-			.clock_khz = OCORE_IP_CLK_khz,
-			.bus_khz = OCORE_BUS_CLK_khz,
-			.big_endian = false,
-			.num_devices = 0,
-			.devices = NULL,
-		},
-	},
-		{
-		.id = 14,
-		.res = cls_i2c_res_14,
-		.num_res = ARRAY_SIZE(cls_i2c_res_14),
-		.pdata = {
-			.reg_shift = OCORE_REGSHIFT,
-			.reg_io_width = OCORE_REG_IO_WIDTH,
-			.clock_khz = OCORE_IP_CLK_khz,
-			.bus_khz = OCORE_BUS_CLK_khz,
-			.big_endian = false,
-			.num_devices = 0,
-			.devices = NULL,
-		},
-	},
-	{
-		.id = 15, 
-		.res = cls_i2c_res_15, 
-		.num_res = ARRAY_SIZE(cls_i2c_res_15), 
 		.pdata = {
 			.reg_shift = OCORE_REGSHIFT,
 			.reg_io_width = OCORE_REG_IO_WIDTH,
@@ -344,8 +344,8 @@ static struct port_info front_panel_ports[] = {
 	{"QSFPDD4", 28, QSFP},
 	{"QSFPDD5", 29, QSFP},
 	{"QSFPDD6", 30, QSFP},
-	{"SFP1",   31, SFP},
 	{"SFP2",   32, SFP},
+	{"SFP1",   31, SFP},
 	/* END OF LIST */
 };
 
@@ -439,6 +439,8 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 		i2c_bus_configs[i].res[0].start += rstart;
 		i2c_bus_configs[i].res[0].end += rstart;
+
+		printk("start %x ... end %x\n",i2c_bus_configs[i].res[0].start,i2c_bus_configs[i].res[0].end);
 
 		switch (i + 1) {
 		case 1:

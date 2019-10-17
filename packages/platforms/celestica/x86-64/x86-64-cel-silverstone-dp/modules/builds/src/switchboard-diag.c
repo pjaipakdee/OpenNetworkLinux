@@ -54,7 +54,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.1.4"
+#define MOD_VERSION "2.1.6"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -235,9 +235,9 @@ static struct i2c_switch fpga_i2c_bus_dev[] = {
     {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFPDD3"}, {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFPDD4"},
     {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD6"},
     /* BUS1 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_14, 0xFF, 0, SFP, "SFP1"},
+    {I2C_MASTER_CH_15, 0xFF, 0, SFP, "SFP1"},
     /* BUS2 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_15, 0xFF, 0, SFP, "SFP2"},
+    {I2C_MASTER_CH_14, 0xFF, 0, SFP, "SFP2"},
 };
 
 struct fpga_device {
@@ -948,9 +948,9 @@ static ssize_t port_led_color_show(struct device *dev, struct device_attribute *
     if (led_color2 < 0)
         return led_color2;
 
-    return sprintf(buf, "%s %s\n",
+    return sprintf(buf, "CPLD1 %s CPLD2 %s\n",
                    led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "off" : led_color1 == 0x05 ?  "off" : led_color1 == 0x04 ? 
-                    "off" : led_color1 == 0x03 ? "off" : led_color1 == 0x02 ?  "green" : led_color1 == 0x01 ?  "amber" : "off",
+                    "off" : led_color1 == 0x03 ? "off" : led_color1 == 0x02 ?  "amber" : led_color1 == 0x01 ?  "green" : "off",
                    led_color2 == 0x07 ? "off" : led_color2 == 0x06 ? "cyan" : led_color2 == 0x05 ?  "magenta" : led_color2 == 0x04 ? 
                     "blue" : led_color2 == 0x03 ? "red" : led_color2 == 0x02 ?  "green" : led_color2 == 0x01 ?  "amber" : "white");
 }
@@ -980,10 +980,10 @@ static ssize_t port_led_color_store(struct device *dev, struct device_attribute 
         led_color1 = 0x07;
         led_color2 = 0x03;
     } else if (sysfs_streq(buf, "green")) {
-        led_color1 = 0x02;
+        led_color1 = 0x01;
         led_color2 = 0x02;
     } else if (sysfs_streq(buf, "amber")) {
-        led_color1 = 0x01;
+        led_color1 = 0x02;
         led_color2 = 0x01;
     } else if (sysfs_streq(buf, "white")) {
         led_color1 = 0x07;

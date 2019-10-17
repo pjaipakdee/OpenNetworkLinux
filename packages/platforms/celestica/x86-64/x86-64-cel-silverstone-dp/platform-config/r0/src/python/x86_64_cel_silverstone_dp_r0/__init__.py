@@ -40,10 +40,11 @@ class OnlPlatform_x86_64_cel_silverstone_dp_r0(OnlPlatformCelestica,
         self.new_i2c_device('24lc64t', 0x56, 0)
 
         #transceiver device
-        for x in range(sfp_qty):
-            self.new_i2c_device('optoe2',0x50,x+1) #1-2
-            os.system("echo 'SFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(x+1,actual_port_num))
-            actual_port_num += 1
+        self.new_i2c_device('optoe2',0x50,2)
+        os.system("echo 'SFP1' > /sys/bus/i2c/devices/2-0050/port_name")
+
+        self.new_i2c_device('optoe2',0x50,1)
+        os.system("echo 'SFP2' > /sys/bus/i2c/devices/1-0050/port_name")
 
         actual_port_num = 1
 
