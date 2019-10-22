@@ -36,12 +36,18 @@ echo "Hello from preinstall"
 echo "Chroot is $rootdir"
 
 ISDIAG_PLATFORM=0
-DIAG_PLATFORM=('x86_64-cel_silverstone-r0' 'x86_64-cel_silverstone_xp-r0')
-PLATFORM=$(onie-sysinfo)
 
-for ((i=0; i<${#DIAG_PLATFORM[@]}; i++)); do
-  if [[ ${DIAG_PLATFORM[$i]} = $PLATFORM ]]; then
-    expr $ISDIAG_PLATFORM + 1
+#Create Array
+DIAG_PLATFORM0='x86_64-cel_silverstone-r0'
+DIAG_PLATFORM1='x86_64-cel_silverstone_xp-r0'
+
+#Onie-sysinfo is read from /etc/machine.conf (onie_platform attribute)
+CURRENT_PLATFORM=$(onie-sysinfo)
+
+for index in 0 1 ; do
+  eval assign="\$DIAG_PLATFORM$index"
+  if [ $assign == $CURRENT_PLATFORM ]; then
+    ISDIAG_PLATFORM=`expr $ISDIAG_PLATFORM + 1`
   fi
 done
 
