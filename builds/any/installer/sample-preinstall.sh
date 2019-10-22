@@ -46,7 +46,7 @@ for ((i=0; i<${#DIAG_PLATFORM[@]}; i++)); do
 done
 
 #If the platfrom isn't diag installation require then exit.
-if [ $ISDIAG_PLATFORM -gt 0 ]; then
+if [ $ISDIAG_PLATFORM -eq 0 ]; then
 	exit 0
 fi
 
