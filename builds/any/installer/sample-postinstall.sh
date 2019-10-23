@@ -39,6 +39,26 @@ rootdir=$1; shift
 echo "Hello from postinstall"
 echo "Chroot is $rootdir"
 
+ISDIAG_PLATFORM=0
+#Create Array
+DIAG_PLATFORM0='x86_64-cel_silverstone-r0'
+DIAG_PLATFORM1='x86_64-cel_silverstone_xp-r0'
+
+#Onie-sysinfo is read from /etc/machine.conf (onie_platform attribute)
+CURRENT_PLATFORM=$(onie-sysinfo)
+
+for index in 0 1 ; do
+  eval assign="\$DIAG_PLATFORM$index"
+  if [ $assign == $CURRENT_PLATFORM ]; then
+    ISDIAG_PLATFORM=`expr $ISDIAG_PLATFORM + 1`
+  fi
+done
+
+#If the platfrom isn't diag installation require then exit.
+if [ $ISDIAG_PLATFORM -eq 0 ]; then
+	exit 0
+fi
+
 PATH_TMP='/tmp/os'
 EFI_PATH_TMP='/tmp/efi'
 DIAG_GRUB_DATA="function diag_bootcmd {
@@ -97,26 +117,29 @@ echo "$(echo "## Begin grub-extra.cfg" | cat - $rootdir/mnt/onie-boot/onie/grub/
 rm -f $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 
 #Get boot order before create new one.
-CURRENT_BOOT_ORDER=$(efibootmgr | grep BootOrder: | awk '{ print $2 }')
+# CURRENT_BOOT_ORDER=$(efibootmgr | grep BootOrder: | awk '{ print $2 }')
 mkdir -p $EFI_PATH_TMP
 mount -v /dev/sda$(sgdisk -p /dev/sda | grep "EFI System" | awk '{print $1}') $EFI_PATH_TMP
-echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG"
+echo "Update EFI directory for ONL from /boot/efi/EFI/ONL to /boot/efi/EFI/ONL-DIAG for Prevent BIOS create the boot option"
+if [ -d /tmp/efi/EFI/ONL-DIAG ]; then
+    rm -r /tmp/efi/EFI/ONL-DIAG
+fi
 if [ -d /tmp/efi/EFI/ONL ]; then
     mv /tmp/efi/EFI/ONL /tmp/efi/EFI/ONL-DIAG
 fi
 
-boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
-boot_num=${#boot_num}
-if [ $boot_num -eq 0 ]; then
-    efibootmgr -c -L "CLS-DIAG-OS" -l '\EFI\ONL-DIAG\grubx64.efi'
-fi
+# boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+# boot_num=${#boot_num}
+# if [ $boot_num -eq 0 ]; then
+#     efibootmgr -c -L "CLS-DIAG-OS" -l '\EFI\ONL-DIAG\grubx64.efi'
+# fi
 
-#*Reorder* move CLS-DIAG-OS to back of list.
-boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
-boot_num=${boot_num#Boot}
-boot_num=${boot_num%\*}
-new_boot_order="$(echo -n $CURRENT_BOOT_ORDER | sed -e s/,$boot_num// -e s/$boot_num,// -e s/$boot_num//)"
-efibootmgr -o ${new_boot_order},${boot_num}
+# #*Reorder* move CLS-DIAG-OS to back of list.
+# boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+# boot_num=${boot_num#Boot}
+# boot_num=${boot_num%\*}
+# new_boot_order="$(echo -n $CURRENT_BOOT_ORDER | sed -e s/,$boot_num// -e s/$boot_num,// -e s/$boot_num//)"
+# efibootmgr -o ${new_boot_order},${boot_num}
 
 echo "Copy grub-extra.cfg to diag-boocmd.cfg to prevent command disappear after Onie update ..."
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/diag-bootcmd.cfg
@@ -128,15 +151,18 @@ echo "Create dummy partition for CLS Diag OS for prevent being destroy by onie-u
 #     exit 0
 # fi
 START_POS=$(sgdisk -f /dev/sda)
-END_POS=$(($START_POS+2048))
+END_POS=$((($START_POS+2048)*2))
 LAST_PARTITION_NUMBER=$(sgdisk -p /dev/sda | grep $(($START_POS-1)) | awk '{print $1}')
 NEW_PARTITION_NUMBER=$((LAST_PARTITION_NUMBER+1))
 sgdisk -n $NEW_PARTITION_NUMBER:$START_POS:$END_POS -t $NEW_PARTITION_NUMBER:0700 /dev/sda
 sgdisk --change-name=$NEW_PARTITION_NUMBER:"CLS-DIAG" /dev/sda
 sgdisk -A $(sgdisk -p /dev/sda | grep "CLS-DIAG" | awk '{print $1}'):set:0 /dev/sda
-dd if=/dev/zero of=/dev/sda$NEW_PARTITION_NUMBER bs=1M count=1
-mkfs.ext4 /dev/sda$NEW_PARTITION_NUMBER
+sync
 partprobe /dev/sda
-mkfs.ext4 -F -L "CLS-DIAG" /dev/sda$NEW_PARTITION_NUMBER
+mkfs.ext4 -v -O ^huge_file -L CLS-DIAG /dev/sda$NEW_PARTITION_NUMBER || {
+    echo "error using ext2 instead"
+    mkfs.ext2 -v -L CLS-DIAG /dev/sda$NEW_PARTITION_NUMBER 
+}
+partprobe /dev/sda
 
 exit 0
