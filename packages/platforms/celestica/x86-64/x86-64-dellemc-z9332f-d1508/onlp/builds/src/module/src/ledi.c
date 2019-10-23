@@ -6,8 +6,6 @@
 #include "platform.h"
 
 
-uint8_t psu_status_l = 0;
-uint8_t psu_led_result = 0xFF;
 
 enum onlp_led_id
 {
@@ -102,8 +100,8 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
             break;
         case LED_PSU:
         case LED_FAN:
-            hw_control_status = (psu_led_result >> 4) & 0x1;
-            led_color = psu_led_result & 0x1;
+            hw_control_status = (result >> 4) & 0x1;
+            led_color = result & 0x1;
             if(!hw_control_status)
             {
                 if(led_color == 1){
