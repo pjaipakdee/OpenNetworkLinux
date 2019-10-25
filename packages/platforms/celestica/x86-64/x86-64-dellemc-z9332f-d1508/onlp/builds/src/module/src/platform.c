@@ -499,7 +499,11 @@ int get_psu_model_sn(int id, char *model, char *serial_number)
                 index++;
             }
             if(flag == 1){
-                if (strstr(content, "Board Product")) {
+                if (strstr(content, "Device not present")) {
+                    index++;
+                    flag=0;
+                }
+                else if (strstr(content, "Board Product")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
@@ -602,7 +606,11 @@ int get_fan_info(int id, char *model, char *serial, int *isfanb2f)
                 index++;
             }
             if(flag == 1){
-                if (strstr(content, "Board Serial")) {
+                if (strstr(content, "Device not present")) {
+                    index++;
+                    flag=0;
+                }
+                else if (strstr(content, "Board Serial")) {
                     token = strtok(content, ":");
                     token = strtok(NULL, ":");
                     char* trim_token = trim(token);
