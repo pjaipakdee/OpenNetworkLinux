@@ -104,8 +104,21 @@ sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_t
   # initrd /x86-64-dellemc-z9332f-d1508-r0.cpio.gz
 
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
-# Reset onie grub by using grub-common
-cp $rootdir/mnt/onie-boot/onie/grub/grub-common.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+# Reset onie grub remove ONL custom variable
+
+#find "begin: serial console config" in grub.cfg
+POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
+#/mnt/onie-boot/grub/grub.cfg
+#POS_LINE=$(cat /mnt/onie-boot/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
+if [ $POS_LINE -gt 1 ]; then
+  #echo "remove top variable from line 1 to $POS_LINE"
+  sed $((1)),$(($POS_LINE-1))d $rootdir/mnt/onie-boot/onie/grub/grub.cfg > /tmp/new_clean_grub_tmp
+  #sed $((1)),$(($POS_LINE-1))d /mnt/onie-boot/grub/grub.cfg > /tmp/new_clean_grub_tmp
+  cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+else
+  echo "just copy to grubNEW.cfg"
+  cp $rootdir/mnt/onie-boot/onie/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+fi
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
 echo "Installing Diag OS grub to grub.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
@@ -117,7 +130,7 @@ rm -f $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
 cp $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg 2> /dev/null || :
-cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_backup.cfg
+cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grub_extra_backup.cfg
 
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/grubNEW.cfg
 echo "Installing Diag OS grub grub-extra.cfg ....."
