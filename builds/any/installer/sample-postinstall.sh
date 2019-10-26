@@ -92,8 +92,20 @@ EN_GRUB=$(tail $PATH_TMP/grub/grub.cfg -n +$ST_GRUB | grep -n "}" |head -n 1 |cu
 EN_GRUB=$(($EN_GRUB+$ST_GRUB-1))
 
 sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_tmp
+#output of sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg is below
+  # search --no-floppy --label --set=root ONL-BOOT
+  # # Always return to this entry by default.
+  # set saved_entry="0"
+  # save_env saved_entry
+  # echo 'Loading Open Network Linux ...'
+  # insmod gzio
+  # insmod part_msdos
+  # linux /kernel-4.14-lts-x86_64-all nopat console=ttyS0,115200n8 onl_platform=x86-64-dellemc-z9332f-d1508-r0
+  # initrd /x86-64-dellemc-z9332f-d1508-r0.cpio.gz
+
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
-cp $rootdir/mnt/onie-boot/grub/grub-common.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+# Reset onie grub by using grub-common
+cp $rootdir/mnt/onie-boot/onie/grub/grub-common.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
 echo "Installing Diag OS grub to grub.cfg ....."
 echo "$(echo "}" | cat - $rootdir/mnt/onie-boot/grub/grubNEW.cfg)" > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
