@@ -92,31 +92,18 @@ EN_GRUB=$(tail $PATH_TMP/grub/grub.cfg -n +$ST_GRUB | grep -n "}" |head -n 1 |cu
 EN_GRUB=$(($EN_GRUB+$ST_GRUB-1))
 
 sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_tmp
-#output of sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg is below
-  # search --no-floppy --label --set=root ONL-BOOT
-  # # Always return to this entry by default.
-  # set saved_entry="0"
-  # save_env saved_entry
-  # echo 'Loading Open Network Linux ...'
-  # insmod gzio
-  # insmod part_msdos
-  # linux /kernel-4.14-lts-x86_64-all nopat console=ttyS0,115200n8 onl_platform=x86-64-dellemc-z9332f-d1508-r0
-  # initrd /x86-64-dellemc-z9332f-d1508-r0.cpio.gz
 
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
 # Reset onie grub remove ONL custom variable
 
 #find "begin: serial console config" in grub.cfg
 POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
-#/mnt/onie-boot/grub/grub.cfg
-#POS_LINE=$(cat /mnt/onie-boot/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
 if [ $POS_LINE -gt 1 ]; then
   #echo "remove top variable from line 1 to $POS_LINE"
   sed $((1)),$(($POS_LINE-1))d $rootdir/mnt/onie-boot/onie/grub/grub.cfg > /tmp/new_clean_grub_tmp
-  #sed $((1)),$(($POS_LINE-1))d /mnt/onie-boot/grub/grub.cfg > /tmp/new_clean_grub_tmp
   cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 else
-  echo "just copy to grubNEW.cfg"
+  #echo "just copy to grubNEW.cfg"
   cp $rootdir/mnt/onie-boot/onie/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 fi
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
@@ -154,8 +141,8 @@ if [ -d /tmp/efi/EFI/ONL ]; then
 fi
 
 # boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
-# boot_num=${#boot_num}
-# if [ $boot_num -eq 0 ]; then
+# boot_num_len=${#boot_num}
+# if [ $boot_num_len -eq 0 ]; then
 #     efibootmgr -c -L "CLS-DIAG-OS" -l '\EFI\ONL-DIAG\grubx64.efi'
 # fi
 
@@ -165,6 +152,15 @@ fi
 # boot_num=${boot_num%\*}
 # new_boot_order="$(echo -n $CURRENT_BOOT_ORDER | sed -e s/,$boot_num// -e s/$boot_num,// -e s/$boot_num//)"
 # efibootmgr -o ${new_boot_order},${boot_num}
+
+
+#Remove existing CLS-DIAG-OS from boot option following new requirement
+boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+if [ $boot_num_len -gt 0 ]; then
+  boot_num=${boot_num#Boot}
+  boot_num=${boot_num%\*}
+  efibootmgr -b $boot_num -B
+fi
 
 echo "Copy grub-extra.cfg to diag-boocmd.cfg to prevent command disappear after Onie update ..."
 cp $rootdir/mnt/onie-boot/onie/grub/grub-extra.cfg $rootdir/mnt/onie-boot/onie/grub/diag-bootcmd.cfg
