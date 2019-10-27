@@ -156,6 +156,7 @@ fi
 
 #Remove existing CLS-DIAG-OS from boot option following new requirement
 boot_num=$(efibootmgr -v | grep "CLS-DIAG-OS" | grep ')/File(' | tail -n 1 | awk '{ print $1 }')
+boot_num_len=${#boot_num}
 if [ $boot_num_len -gt 0 ]; then
   boot_num=${boot_num#Boot}
   boot_num=${boot_num%\*}
