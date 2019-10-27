@@ -97,14 +97,14 @@ sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_t
 # Reset onie grub remove ONL custom variable
 
 #find "begin: serial console config" in grub.cfg
-POS_LINE=$(cat $rootdir/mnt/onie-boot/onie/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
+POS_LINE=$(cat $rootdir/mnt/onie-boot/grub/grub.cfg | grep -n "begin: serial console config" | head -n 1 | cut -d: -f1)
 if [ $POS_LINE -gt 1 ]; then
   #echo "remove top variable from line 1 to $POS_LINE"
-  sed $((1)),$(($POS_LINE-1))d $rootdir/mnt/onie-boot/onie/grub/grub.cfg > /tmp/new_clean_grub_tmp
+  sed $((1)),$(($POS_LINE-1))d $rootdir/mnt/onie-boot/grub/grub.cfg > /tmp/new_clean_grub_tmp
   cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 else
   #echo "just copy to grubNEW.cfg"
-  cp $rootdir/mnt/onie-boot/onie/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+  cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grubNEW.cfg
 fi
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg
 echo "Installing Diag OS grub to grub.cfg ....."
