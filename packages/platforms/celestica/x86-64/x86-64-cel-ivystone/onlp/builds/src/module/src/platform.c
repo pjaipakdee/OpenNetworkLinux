@@ -506,8 +506,9 @@ int psu_get_info(int id, int *mvin, int *mvout, int *mpin, int *mpout, int *miin
             if (sdr_value[status_pos] != 'n')
             {
                 int v_pos = position + 19;
+                int a = 0;
                 //printf("Map the %s with %c\n",search_psu_sdr_info[str_index].keyword,search_psu_sdr_info[str_index].unit);
-                for (int a = 0; a <= 18; a++)
+                for (; a <= 18; a++)
                 {
                     //printf("%c",sdr_value[v_pos+a]);
                     // 			//if(search_psu_sdr_info[str_index].unit!=NULL){
@@ -580,7 +581,8 @@ int psu_get_model_sn(int id, char *model, char *serial_number)
             
             items = cJSON_GetObjectItem(json, "informations");
             token = cJSON_Print(items);
-            for (int i = 0; i < PSU_COUNT; i++) {  // Presumably "max" can be derived from "items" somehow
+            int i = 0;
+            for (; i < PSU_COUNT; i++) {  // Presumably "max" can be derived from "items" somehow
                 // char *psu_name = NULL;
                 // cJSON *model = NULL;
                 // cJSON *sn = NULL;
