@@ -2,7 +2,7 @@ from onl.platform.base import *
 from onl.platform.celestica import *
 
 class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
-                                            OnlPlatformPortConfig_128x400):
+                                            OnlPlatformPortConfig_128x100):
     PLATFORM='x86-64-cel-ivystone-r0'
     MODEL="Ivystone"
     SYS_OBJECT_ID=".2060.1"
