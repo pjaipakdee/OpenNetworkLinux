@@ -13,12 +13,14 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
         
         print("Initialize Ivystone Platform driver")
 
+        os.system("insmod /lib/modules/4.14.34-OpenNetworkLinux/kernel/drivers/i2c/busses/i2c-ocores.ko")
         self.insmod("dimm-bus.ko")
         #self.insmod("i2c-imc.ko")
         os.system("insmod /lib/modules/`uname -r`/onl/celestica/x86-64-cel-ivystone/i2c-imc.ko allow_unsafe_access=1")
         self.insmod("baseboard_cpld.ko")
         self.insmod("switchboard_fpga.ko")
         self.insmod("mc24lc64t.ko")
+
         
         ###### new configuration for SDK support ########
         # os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
