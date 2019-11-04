@@ -78,6 +78,8 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 {
     int fan_id;
     uint8_t fan_status;
+    uint8_t psu_status;
+    char buffer[64] = {0};
 
     fan_id = ONLP_OID_ID_GET(id);
 
@@ -101,24 +103,48 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
         else
             return ONLP_STATUS_E_MISSING;
 
-        if ((fan_status >> 1) & 0x01)
+        if ((fan_status >> 1) & 0x01){
             info_p->status |= ONLP_FAN_STATUS_B2F;
-        else
+	    info_p->caps |= ONLP_FAN_CAPS_B2F;
+	}
+        else{
             info_p->status |= ONLP_FAN_STATUS_F2B;
+	    info_p->caps |= ONLP_FAN_CAPS_F2B;
+	}
 
         //getFaninfo(fan_id,info_p->model,info_p->serial);
+	info_p->caps |= ONLP_FAN_CAPS_GET_RPM;
 
-        get_rear_fan_pwm(fan_id, &(info_p->rpm));
+        get_rear_fan_rpm(fan_id, &(info_p->rpm));
         get_rear_fan_per(fan_id, &(info_p->percentage));
-        
+	memset(info_p->serial, 0, sizeof(info_p->serial));
+	memset(info_p->model, 0, sizeof(info_p->model));
+        (void)get_fan_board_sn(fan_id, info_p->serial);    
+        (void)get_fan_board_md(fan_id, info_p->model);   
         break;
     case PSU_FAN_1_1:
     case PSU_FAN_1_2:
     case PSU_FAN_2_1:
     case PSU_FAN_2_2:
         /* code */
-        break;
+	psu_status = get_psu_status(fan_id - CHASSIS_FAN_5);
+	if(psu_status != 0xFF){
+	    fan_status = (psu_status >> (fan_id - 1 - CHASSIS_FAN_5)) &0x1;
 
+        if (!fan_status)
+            info_p->status |= ONLP_FAN_STATUS_PRESENT;
+	}
+        
+        psu_status = get_psu_item_content(fan_id - 1 - CHASSIS_FAN_5, "Product Name", buffer);
+        if(!psu_status){
+	    if(strstr(buffer, "FB B")){
+		info_p->status |= ONLP_FAN_STATUS_F2B;
+   	    }else if(strstr(buffer, "B BF")){
+		info_p->status |= ONLP_FAN_STATUS_B2F;
+	    }	
+	} 
+
+	break;
     default:
         break;
     }
