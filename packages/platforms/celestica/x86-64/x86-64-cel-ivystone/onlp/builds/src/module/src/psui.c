@@ -110,7 +110,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "iin", cont_buf);
-    if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
 	int curr = 0;
 	psu_stat = search_current_val(cont_buf, &curr);
         if(psu_stat != 0xFF){
@@ -120,7 +120,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "iout1", cont_buf);
-    if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
         int curr = 0;
         psu_stat = search_current_val(cont_buf, &curr);
 	if(psu_stat != 0xFF){
@@ -129,7 +129,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     }
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "pin", cont_buf);
-    if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
         int watt = 0;
 	psu_stat = search_power_val(cont_buf, &watt);
 	if(psu_stat != 0xFF){
@@ -139,7 +139,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "pout1", cont_buf);
-    if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
         int watt = 0;
         psu_stat = search_power_val(cont_buf, &watt);
 	if(psu_stat != 0xFF){
@@ -148,7 +148,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     }
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "vin", cont_buf);
-    if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
         int volt = 0;
         psu_stat = search_voltage_val(cont_buf, &volt);
 	 if(psu_stat != 0xFF){
@@ -158,7 +158,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     memset(cont_buf, 0, sizeof(cont_buf));
     psu_stat = read_psu_inout(NULL, psu_name, "vout1", cont_buf);
-     if(psu_stat != 0xFF){
+    if(psu_stat != 0xFF && !(strstr(cont_buf,"N/A") != NULL)){
         int volt = 0;
         psu_stat = search_voltage_val(cont_buf, &volt);
          if(psu_stat != 0xFF){
@@ -169,8 +169,8 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 
     //psu_get_info(psu_id,&(info_p->mvin),&(info_p->mvout),&(info_p->mpin),&(info_p->mpout),&(info_p->miin),&(info_p->miout));
 
-    // if ((info_p->mpin) < 0 || (info_p->mvin)<0)
-    //     info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
+    if ((info_p->mpin) <= 0 && (info_p->mvin) <= 0 && (info_p->miin)<=0)
+        info_p->status |= ONLP_PSU_STATUS_UNPLUGGED;
 
     info_p->caps = ONLP_PSU_CAPS_DC12;
     info_p->caps |= ONLP_PSU_CAPS_VIN;

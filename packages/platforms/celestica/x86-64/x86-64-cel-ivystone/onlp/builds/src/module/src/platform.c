@@ -707,7 +707,7 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
             info = info->next;
         }else{
             if(item_ptr == NULL){
-                content = "N\\A";
+                content = "N/A";
             }else{
                 (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
             }
