@@ -2014,8 +2014,9 @@ int read_sensor_temp(const char *adapter, const char *name, const char *item, in
     }else{
         sprintf(command, "cat %s",ONLP_SENSOR_CACHE_FILE);
         tmp = read_tmp_cache(command,ONLP_SENSOR_CACHE_FILE);
+        ret = 1;
     }
-
+    
     if(ret < 0){
         if(tmp){
     	    (void)free(tmp);
