@@ -105,6 +105,58 @@ int write_to_dump(uint8_t dev_reg)
     return ret;
 }
 
+int is_shm_mem_ready(){
+
+    if(USE_SHM_METHOD){
+        const char *sdr_cache_path="/run/shm/onlp-sensor-fru-cache-shared";
+        const char *fru_cache_path="/run/shm/onlp-status-fru-cache-shared";
+
+        if(access(fru_cache_path, F_OK) == -1 || access(sdr_cache_path, F_OK) == -1 ){ //Shared cache files not exist
+            return 0;
+        }
+
+    return 1;
+    }
+    
+    return 0;
+}
+
+char *read_tmp_cache(char *cmd, char *cache_file_path)
+{
+    FILE* pFd = NULL;
+    char *str = NULL;
+    int round = 1;
+
+    for(round = 1;round <= 10;round++){
+        pFd = fopen(cache_file_path, "r");
+        if(pFd != NULL ){
+
+            struct stat st;
+
+            stat(cache_file_path, &st);
+
+            int size = st.st_size;
+            str = (char *)malloc(size + 1);
+            
+            memset (str, 0, size+1);
+
+            fread(str, size+1, 1, pFd);
+
+            fclose(pFd);
+            break;
+        }else{
+            usleep(5000); //Sleep for 5 Microsec for waiting the file operation complete
+        }
+    }
+
+    if(round >= 10 && str == NULL){
+        str = (char *)malloc(1);
+        memset (str, 0, 1);
+    }
+    
+    return str;
+}
+
 /* Parse text to JSON, then render back to text, and print! */
 void doit(char *text)
 {
@@ -458,7 +510,15 @@ int get_fan_present_status(int id)
         cJSON *present = (cJSON *)NULL; 
 	    int len = 0;
     
-       	result = phrase_json_buffer(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, &tmp, &len);
+       	if(is_shm_mem_ready()){
+            result = phrase_json_buffer(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                return ret;
+                }
+        }else{
+            sprintf(command, "cat %s",ONLP_STATUS_CACHE_FILE);
+            tmp = read_tmp_cache(command,ONLP_STATUS_CACHE_FILE);
+        }
 
         if(result){
             if(tmp){
@@ -581,7 +641,15 @@ int get_fan_board_md(int id, char *md)
         char *tmp = NULL;
         int len = 0;
 
-        result = phrase_json_buffer(ONLP_FAN_FRU_CACHE_SHARED, ONLP_FAN_FRU_CACHE_SEM, &tmp, &len);
+        if(is_shm_mem_ready()){
+            result = phrase_json_buffer(ONLP_FAN_FRU_CACHE_SHARED, ONLP_FAN_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                return ret;
+                }
+        }else{
+            sprintf(command, "cat %s",ONLP_FAN_CACHE_FILE);
+            tmp = read_tmp_cache(command,ONLP_FAN_CACHE_FILE);
+        }
         if(result){
 	        return ret;
 	    }
@@ -641,7 +709,19 @@ int get_fan_board_sn(int id, char *sn)
         char *tmp = NULL;
         int len = 0;
 
-        result = phrase_json_buffer(ONLP_FAN_FRU_CACHE_SHARED,ONLP_FAN_FRU_CACHE_SEM, &tmp, &len);
+        if(is_shm_mem_ready()){
+            result = phrase_json_buffer(ONLP_FAN_FRU_CACHE_SHARED, ONLP_FAN_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                return ret;
+                }
+        }else{
+            sprintf(command, "cat %s",ONLP_FAN_CACHE_FILE);
+            tmp = read_tmp_cache(command,ONLP_FAN_CACHE_FILE);
+        }
+        if(result){
+	        return ret;
+	    }
+
         if(result){
             return ret;
         }
@@ -759,7 +839,20 @@ int get_psu_item_content(int id, char *item, char *content)
         char *tmp = NULL;
         int len = 0;
 	    cJSON *root = (cJSON *)NULL;
-        result = phrase_json_buffer(ONLP_PSU_FRU_CACHE_SHARED, ONLP_PSU_FRU_CACHE_SEM, &tmp, &len);
+        
+        if(is_shm_mem_ready()){
+            result = phrase_json_buffer(ONLP_PSU_FRU_CACHE_SHARED, ONLP_PSU_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                return ret;
+                }
+        }else{
+            sprintf(command, "cat %s",ONLP_PSU_CACHE_FILE);
+            tmp = read_tmp_cache(command,ONLP_PSU_CACHE_FILE);
+        }
+        if(result){
+	        return ret;
+	    }
+
         if(result){
             return ret;
         }
@@ -814,7 +907,18 @@ int get_rear_fan_rpm(int id, int *rpm)
 	    return ret;
     }
 
-    result = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+    //result = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+
+    if(is_shm_mem_ready()){
+        result = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+        if(result < 0 || !tmp){
+            return ret;
+        }
+    }else{
+        sprintf(command, "cat %s",ONLP_SENSOR_CACHE_FILE);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_CACHE_FILE);
+    }
+
     if(result){
         return ret;
     }
@@ -1132,7 +1236,16 @@ uint8_t get_fan_led_status(int id)
         cJSON *present = (cJSON *)NULL;
         int len = 0;
 
-        result = phrase_json_buffer(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, &tmp, &len);
+        if(is_shm_mem_ready()){
+            result = phrase_json_buffer(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, &tmp, &len);
+            if(ret < 0 || !tmp){
+                return ret;
+                }
+        }else{
+            sprintf(command, "cat %s",ONLP_STATUS_CACHE_FILE);
+            tmp = read_tmp_cache(command,ONLP_STATUS_CACHE_FILE);
+        }
+        
         char subitem[8] = {0};
         memset(subitem, 0, sizeof(subitem));
         (void)snprintf(subitem, 8, "Fan%d", id);
@@ -1893,7 +2006,15 @@ int read_sensor_temp(const char *adapter, const char *name, const char *item, in
 	return ret;
     }  
 
-    ret = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+    if(is_shm_mem_ready()){
+        ret = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            return ret;
+        }
+    }else{
+        sprintf(command, "cat %s",ONLP_SENSOR_CACHE_FILE);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_CACHE_FILE);
+    }
 
     if(ret < 0){
         if(tmp){
@@ -1946,10 +2067,16 @@ int read_psu_inout(const char *adapter, const char *name, const char *item, char
         return ret;
     }
 
-    ret = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
-    if(ret < 0 || !tmp){
-        return ret;
+    if(is_shm_mem_ready()){
+        ret = phrase_json_buffer(ONLP_SENSOR_FRU_CACHE_SHARED, ONLP_SENSOR_FRU_CACHE_SEM, &tmp, &len);
+        if(ret < 0 || !tmp){
+            return ret;
+        }
+    }else{
+        sprintf(command, "cat %s",ONLP_SENSOR_CACHE_FILE);
+        tmp = read_tmp_cache(command,ONLP_SENSOR_CACHE_FILE);
     }
+    
 
     root = cJSON_Parse(tmp);
     if(!root){

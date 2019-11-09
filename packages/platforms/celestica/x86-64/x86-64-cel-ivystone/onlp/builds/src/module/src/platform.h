@@ -237,4 +237,6 @@ int fill_shared_memory(const char *shm_path, const char *sem_path, const char *c
     #define DEBUG_PRINT(format, ...)
 #endif
 
+#define USE_SHM_METHOD 0
+
 #endif /* _PLATFORM_IVYSTONE_H_ */
