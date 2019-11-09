@@ -692,38 +692,20 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
 {
     int ret = -1;
     char buf[64] = {0};
-    //char tmp[64] = {0};
 
     cJSON *info = information ? information->child : 0;
 
     memset(buf, 0, sizeof(buf));
 
-    // switch(id)
-    // {
-	// case 1:
-	// case 2:
-	// case 4:
-	//     (void)snprintf(buf, 64, "FRU Information");
-	//     break;
-    // case 3:
-	//     (void)snprintf(buf, 64, "PSU%d FRU", id);
-	//     break;
-	// default:
-	//     return ret; 
-    // }
     (void)snprintf(buf, 64, "PSU%d FRU", id);
 
     while(info)
     {
-        printf("buf = %s\n",buf);
         cJSON *psu_ptr = cJSON_GetObjectItem(info, buf);
         cJSON *item_ptr = cJSON_GetObjectItem(info, item);
-        printf("this line\n");
         if(psu_ptr == NULL){
-            printf("NULL case\n ");
             info = info->next;
         }else{
-            printf("this case\n");
             if(item_ptr == NULL){
                 content = "N\\A";
             }else{
@@ -733,31 +715,6 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
             ret = 0;
             return ret;
         }
-
-        
-        // char* test = cJSON_Print(psu_ptr);
-        // printf("%s\n", test);
-
-        //if(psu_ptr && item_ptr){
-            // if(information_attr_exist == 0)
-            // {
-            //     (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
-            //     ret = 0;
-            //     return ret;
-            // }
-            // else
-            // {
-            //     memset(tmp, 0, sizeof(tmp)); 
-            //     (void)snprintf(tmp, 64, "PSU%d", id);
-            //     if(!strncmp(psu_ptr->valuestring, tmp, strlen(tmp)))
-            //     {
-            //         (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring)); 	
-            //         ret = 0;
-            //         return ret;
-            //     }
-            // }
-        //}
-        //info = info->next;
     }
 
     return ret;
