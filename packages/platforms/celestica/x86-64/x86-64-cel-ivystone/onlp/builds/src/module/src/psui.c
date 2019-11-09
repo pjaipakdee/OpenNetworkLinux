@@ -83,7 +83,7 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 	case PSU1_ID: 
 	    (void)strncpy(psu_name, PSU1_SENSOR_MAPPING_NAME, strlen(PSU1_SENSOR_MAPPING_NAME));
 	    break;
-        case PSU2_ID:
+    case PSU2_ID:
 	    (void)strncpy(psu_name, PSU2_SENSOR_MAPPING_NAME, strlen(PSU2_SENSOR_MAPPING_NAME));
 	    break;
 	case PSU3_ID:
@@ -97,20 +97,11 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
     }
 
     memset(cont_buf, 0, 64);
-    if(psu_id == PSU3_ID){
-        psu_stat = get_psu_item_content(psu_id, "Serial Number", cont_buf);
-        if(psu_stat != 0xFF){
+    psu_stat = get_psu_item_content(psu_id, "Serial Number", cont_buf);
+    if(psu_stat != 0xFF){
 	    (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
-        }
     }
-    else
-    {
-        psu_stat = get_psu_item_content(psu_id, "Product Serial", cont_buf);
-        if(psu_stat != 0xFF){
-            (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
-        }
 
-    }
     memset(cont_buf, 0, 64);
     psu_stat = get_psu_item_content(psu_id, "Product Name", cont_buf);
     if(psu_stat != 0xFF){

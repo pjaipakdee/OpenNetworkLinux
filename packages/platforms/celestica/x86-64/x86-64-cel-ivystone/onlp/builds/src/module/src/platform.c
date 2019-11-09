@@ -692,51 +692,72 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
 {
     int ret = -1;
     char buf[64] = {0};
-    char tmp[64] = {0};
+    //char tmp[64] = {0};
 
     cJSON *info = information ? information->child : 0;
 
     memset(buf, 0, sizeof(buf));
 
-    switch(id)
-    {
-	case 1:
-	case 2:
-	case 4:
-	    (void)snprintf(buf, 64, "FRU Information");
-	    break;
-        case 3:
-	    (void)snprintf(buf, 64, "PSU%d FRU", id);
-	    break;
-	default:
-	    return ret; 
-    }
+    // switch(id)
+    // {
+	// case 1:
+	// case 2:
+	// case 4:
+	//     (void)snprintf(buf, 64, "FRU Information");
+	//     break;
+    // case 3:
+	//     (void)snprintf(buf, 64, "PSU%d FRU", id);
+	//     break;
+	// default:
+	//     return ret; 
+    // }
+    (void)snprintf(buf, 64, "PSU%d FRU", id);
 
     while(info)
     {
+        printf("buf = %s\n",buf);
         cJSON *psu_ptr = cJSON_GetObjectItem(info, buf);
         cJSON *item_ptr = cJSON_GetObjectItem(info, item);
-
-        if(psu_ptr && item_ptr){
-            if(id == 3)
-            {
+        printf("this line\n");
+        if(psu_ptr == NULL){
+            printf("NULL case\n ");
+            info = info->next;
+        }else{
+            printf("this case\n");
+            if(item_ptr == NULL){
+                content = "N\\A";
+            }else{
                 (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
-                ret = 0;
-                return ret;
             }
-            else
-            {
-                memset(tmp, 0, sizeof(tmp)); 
-                (void)snprintf(tmp, 64, "PSU%d", id);
-                if(!strncmp(psu_ptr->valuestring, tmp, strlen(tmp)))
-                {
-                    (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring)); 	
-                    ret = 0;
-                    return ret;
-                }
-            }
+            
+            ret = 0;
+            return ret;
         }
-        info = info->next;
+
+        
+        // char* test = cJSON_Print(psu_ptr);
+        // printf("%s\n", test);
+
+        //if(psu_ptr && item_ptr){
+            // if(information_attr_exist == 0)
+            // {
+            //     (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
+            //     ret = 0;
+            //     return ret;
+            // }
+            // else
+            // {
+            //     memset(tmp, 0, sizeof(tmp)); 
+            //     (void)snprintf(tmp, 64, "PSU%d", id);
+            //     if(!strncmp(psu_ptr->valuestring, tmp, strlen(tmp)))
+            //     {
+            //         (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring)); 	
+            //         ret = 0;
+            //         return ret;
+            //     }
+            // }
+        //}
+        //info = info->next;
     }
 
     return ret;
@@ -809,7 +830,6 @@ int get_psu_item_content(int id, char *item, char *content)
             cJSON_Delete(root);
             return ret;
         } 
-
         result = parse_psu_array(information, id, item, content); 
         cJSON_Delete(root);
         ret = result;
