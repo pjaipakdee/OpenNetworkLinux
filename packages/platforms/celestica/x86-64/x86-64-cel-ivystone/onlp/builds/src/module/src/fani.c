@@ -74,6 +74,11 @@ int onlp_fani_percentage_set(onlp_oid_t id, int p)
     return ONLP_STATUS_OK;
 }
 
+int calculate_fan_per(int rpm, int *per){
+    *per = (int)((rpm * 100) / 18000);
+    return 0;
+}
+
 int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 {
     int fan_id;
@@ -116,7 +121,8 @@ int onlp_fani_info_get(onlp_oid_t id, onlp_fan_info_t *info_p)
 	info_p->caps |= ONLP_FAN_CAPS_GET_RPM;
 
         get_rear_fan_rpm(fan_id, &(info_p->rpm));
-        get_rear_fan_per(fan_id, &(info_p->percentage));
+        calculate_fan_per(info_p->rpm, &(info_p->percentage));
+
 	memset(info_p->serial, 0, sizeof(info_p->serial));
 	memset(info_p->model, 0, sizeof(info_p->model));
         (void)get_fan_board_sn(fan_id, info_p->serial);    
