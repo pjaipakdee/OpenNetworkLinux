@@ -980,6 +980,10 @@ int get_rear_fan_rpm(int id, int *rpm)
         return ret;
     }
 
+    if(tmp){
+        (void)free(tmp);
+        tmp = (char *)NULL;
+	}
     cJSON_Delete(root);
     return ret;
 }
