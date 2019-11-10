@@ -563,7 +563,7 @@ int phrase_fan_array(cJSON *information, int id, const char *item, char *content
     int ret = -1;
     char buf[64] = {0};
     int size = 0;
-    char *array = (char *)NULL;  
+    char *array = (char *)NULL;
 
     cJSON *info = information ? information->child : 0;
 
@@ -571,56 +571,74 @@ int phrase_fan_array(cJSON *information, int id, const char *item, char *content
 
     (void)snprintf(buf, 64, "Fantray%d", id);
 
-    while(info)
+    while (info)
     {
-        char *tmp = cJSON_Print(info); 
+        char *tmp = cJSON_Print(info);
 
-        if(tmp){
-            size = strlen(tmp) + 1;	    
+        if (tmp)
+        {
+            size = strlen(tmp) + 1;
             array = (char *)malloc(size);
-            if(array){
+            if (array)
+            {
                 memset(array, 0, size);
-            (void)strncpy(array, tmp, strlen(tmp));	
-            if(!strstr(array, buf)){
-                (void)free(array);
-                array = (char *)NULL;
-                (void)free(tmp);
-                tmp = (char *)NULL;
-                info = info->next;
-                continue;
-            }
-            
-            char *token = (char *)NULL;
-            char *p = (char *)NULL;
-            char *ptr = array; 
-            token = strtok_r(ptr, ",", &p);
-                while(token != NULL){
+                (void)strncpy(array, tmp, strlen(tmp));
+                if (!strstr(array, buf))
+                {
+                    
+                    (void)free(array);
+                    array = (char *)NULL;
+                    (void)free(tmp);
+                    tmp = (char *)NULL;
+
+                    info = info->next;
+                    continue;
+                }
+
+                char *token = (char *)NULL;
+                char *p = (char *)NULL;
+                char *ptr = array;
+                token = strtok_r(ptr, ",", &p);
+                while (token != NULL)
+                {
                     token = strtok_r(NULL, ",", &p);
-                    if(token){
+                    if (token)
+                    {
                         char *item_p = strstr(token, item);
                         char *target = NULL;
-                        if(item_p){
+                        if (item_p)
+                        {
                             item_p = strtok_r(token, ":", &target);
-                            if(item_p){
-                                ret = 0;
-                                if(target){
-                                    /* last char " delete */	
+                            if (item_p)
+                            {
+                                if (target)
+                                {
+                                    /* last char " delete */
                                     (void)strncpy(content, target, strlen(target) - 1);
-                                }else{
-                                    (void)strncpy(content, "Unkown", strlen("Unkown"));
+                                    ret = 0;
                                 }
-                                return ret;
-                            } 
-                        }		
+                                else
+                                {
+                                    (void)strncpy(content, "Unkown", strlen("Unkown"));
+                                    ret = 0;
+                                }
+                            }
+                        }
                     }
-                } 
-            (void)free(array);
-            array = (char *)NULL;
+                }
+                if(ptr){
+                    ptr = (char *)NULL;
+                }
+                if(p){
+                    p = (char *)NULL;
+                }
+                (void)free(array);
+                array = (char *)NULL;
             }
 
             (void)free(tmp);
             tmp = (char *)NULL;
-	    }
+        }
 
         info = info->next;
     }
