@@ -11,7 +11,9 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
     def baseconfig(self):
         onlp_interval_time = 30 #second
         file_path = "/var/opt/interval_time.txt"
-        
+        qsfp_qty = 128
+        qsfp_offset = 9
+
         print("Initialize Ivystone Platform driver")
 
         os.system("insmod /lib/modules/4.14.34-OpenNetworkLinux/kernel/drivers/i2c/busses/i2c-ocores.ko")
@@ -23,7 +25,13 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
         self.insmod("mc24lc64t.ko")
         os.system("insmod /lib/modules/`uname -r`/onl/onl/common/optoe.ko")
 
-        
+        actual_port_num = 1
+
+        for y in range(qsfp_qty):
+            os.system("echo 'QSFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+y+1,actual_port_num))
+            actual_port_num += 1
+
+        os.system("echo '3' > /proc/sys/kernel/printk")
         ###### new configuration for SDK support ########
         # os.system("insmod /lib/modules/`uname -r`/kernel/net/core/pktgen.ko")
         # os.system("insmod /lib/modules/`uname -r`/kernel/net/core/drop_monitor.ko")
