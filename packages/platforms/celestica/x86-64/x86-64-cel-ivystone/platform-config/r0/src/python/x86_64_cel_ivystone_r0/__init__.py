@@ -1,5 +1,6 @@
 from onl.platform.base import *
 from onl.platform.celestica import *
+import time
 
 class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
                                             OnlPlatformPortConfig_128x100):
@@ -44,13 +45,18 @@ class OnlPlatform_x86_64_cel_ivystone_r0(OnlPlatformCelestica,
                 f.write("{0}\r\n".format(onlp_interval_time))
             f.close()
 
+        while os.system("ping -c 1 240.1.1.1")!=0:
+            print "Initialize and Checking OpenBMC protocols , retry in 1 sec."
+            time.sleep(1)
+        print "OpenBMC Protocols ready ..."
+
         #initialize onlp cache files
         print("Initialize ONLP Cache files")
-        os.system("curl -g http://240.1.1.1:8080/api/sys/sensors |python -m json.tool > /tmp/onlp-sensor-cache.tmp; sync; rm -f /tmp/onlp-sensor-cache.txt; mv /tmp/onlp-sensor-cache.tmp /tmp/onlp-sensor-cache.txt")
-        os.system("curl -g http://240.1.1.1:8080/api/sys/fruid/psu | python -m json.tool > /tmp/onlp-psu-fru-cache.tmp; sync; rm -f /tmp/onlp-psu-fru-cache.txt; mv /tmp/onlp-psu-fru-cache.tmp /tmp/onlp-psu-fru-cache.txt")
-        os.system("curl -g http://240.1.1.1:8080/api/sys/fruid/fan | python -m json.tool > /tmp/onlp-fan-fru-cache.tmp; sync; rm -f /tmp/onlp-fan-fru-cache.txt; mv /tmp/onlp-fan-fru-cache.tmp /tmp/onlp-fan-fru-cache.txt")
-        os.system("curl -g http://240.1.1.1:8080/api/sys/fruid/sys | python -m json.tool > /tmp/onlp-sys-fru-cache.tmp; sync; rm -f /tmp/onlp-sys-fru-cache.txt; mv /tmp/onlp-sys-fru-cache.tmp /tmp/onlp-sys-fru-cache.txt")
-        os.system("curl -g http://240.1.1.1:8080/api/sys/fruid/status | python -m json.tool > /tmp/onlp-status-fru-cache.tmp; sync; rm -f /tmp/onlp-status-fru-cache.txt; mv /tmp/onlp-status-fru-cache.tmp /tmp/onlp-status-fru-cache.txt")
-        os.system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.tmp; sync; rm -f /tmp/onlp-psu-led-cache.txt; mv /tmp/onlp-psu-led-cache.tmp /tmp/onlp-psu-led-cache.txt")
-        os.system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.tmp; sync; rm -f /tmp/onlp-fan-led-cache.txt; mv /tmp/onlp-fan-led-cache.tmp /tmp/onlp-fan-led-cache.txt")
+        os.system("curl -gs http://240.1.1.1:8080/api/sys/sensors |python -m json.tool > /tmp/onlp-sensor-cache.tmp; sync; rm -f /tmp/onlp-sensor-cache.txt; mv /tmp/onlp-sensor-cache.tmp /tmp/onlp-sensor-cache.txt")
+        os.system("curl -gs http://240.1.1.1:8080/api/sys/fruid/psu | python -m json.tool > /tmp/onlp-psu-fru-cache.tmp; sync; rm -f /tmp/onlp-psu-fru-cache.txt; mv /tmp/onlp-psu-fru-cache.tmp /tmp/onlp-psu-fru-cache.txt")
+        os.system("curl -gs http://240.1.1.1:8080/api/sys/fruid/fan | python -m json.tool > /tmp/onlp-fan-fru-cache.tmp; sync; rm -f /tmp/onlp-fan-fru-cache.txt; mv /tmp/onlp-fan-fru-cache.tmp /tmp/onlp-fan-fru-cache.txt")
+        os.system("curl -gs http://240.1.1.1:8080/api/sys/fruid/sys | python -m json.tool > /tmp/onlp-sys-fru-cache.tmp; sync; rm -f /tmp/onlp-sys-fru-cache.txt; mv /tmp/onlp-sys-fru-cache.tmp /tmp/onlp-sys-fru-cache.txt")
+        os.system("curl -gs http://240.1.1.1:8080/api/sys/fruid/status | python -m json.tool > /tmp/onlp-status-fru-cache.tmp; sync; rm -f /tmp/onlp-status-fru-cache.txt; mv /tmp/onlp-status-fru-cache.tmp /tmp/onlp-status-fru-cache.txt")
+        os.system("curl -ds \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.tmp; sync; rm -f /tmp/onlp-psu-led-cache.txt; mv /tmp/onlp-psu-led-cache.tmp /tmp/onlp-psu-led-cache.txt")
+        os.system("curl -ds \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.tmp; sync; rm -f /tmp/onlp-fan-led-cache.txt; mv /tmp/onlp-fan-led-cache.tmp /tmp/onlp-fan-led-cache.txt")
         return True
