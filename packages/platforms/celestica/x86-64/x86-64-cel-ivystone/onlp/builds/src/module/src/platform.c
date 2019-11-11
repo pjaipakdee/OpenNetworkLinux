@@ -438,59 +438,65 @@ int phrase_json_buffer(const char *shm_path, const char *sem_path, char **cache_
 
 int phrase_json_key_word(char *content, char *key, char *sub, int id, cJSON **output)
 {
-    cJSON *root =(cJSON *)NULL;
+    cJSON *root = (cJSON *)NULL;
     int res = -1;
-    int i = 0;   
+    int i = 0;
     cJSON *tmp = (cJSON *)NULL;
 
-    if(!content)
-	return res;
+    if (!content)
+        return res;
 
     root = cJSON_Parse(content);
-    if(!root)
-	return res;
+    if (!root)
+        return res;
 
     cJSON *item = cJSON_GetObjectItem(root, key);
-    if(!item){
-	cJSON_Delete(root);
-	return res;
-    }
-
-    if(id > cJSON_GetArraySize(item)){
-	cJSON_Delete(root);
-	return res;
-    }
-
-    for(i = 0; i < cJSON_GetArraySize(item); i++)
+    if (!item)
     {
-	cJSON *subitem = cJSON_GetArrayItem(item, i);
-        if(!subitem){
-	    continue;
-	}
- 
-   	tmp = cJSON_GetObjectItem(subitem, sub); 
-        if(!tmp){
-	    continue;
-	}
-  	
-	cJSON *object = (cJSON *)malloc(sizeof(cJSON)); 
-        if(!object){
-	    cJSON_Delete(root);
-	    return res;
-	}
-	    
-	if(tmp->valuestring){
-	    object->valuestring = malloc(strlen(tmp->valuestring));
-            memset(object->valuestring, 0, strlen(tmp->valuestring));
-	    memcpy(object->valuestring, tmp->valuestring, strlen(tmp->valuestring));
+        cJSON_Delete(root);
+        return res;
+    }
+
+    if (id > cJSON_GetArraySize(item))
+    {
+        cJSON_Delete(root);
+        return res;
+    }
+
+    for (i = 0; i < cJSON_GetArraySize(item); i++)
+    {
+        cJSON *subitem = cJSON_GetArrayItem(item, i);
+        if (!subitem)
+        {
+            continue;
         }
 
-    	object->valueint = tmp->valueint;        
-   	object->valuedouble = tmp->valuedouble;
-	*output = object;
+        tmp = cJSON_GetObjectItem(subitem, sub);
+        if (!tmp)
+        {
+            continue;
+        }
 
-	break; 
-    } 
+        cJSON *object = (cJSON *)malloc(sizeof(cJSON));
+        if (!object)
+        {
+            cJSON_Delete(root);
+            return res;
+        }
+
+        if (tmp->valuestring)
+        {
+            object->valuestring = malloc(strlen(tmp->valuestring));
+            memset(object->valuestring, 0, strlen(tmp->valuestring));
+            memcpy(object->valuestring, tmp->valuestring, strlen(tmp->valuestring));
+        }
+
+        object->valueint = tmp->valueint;
+        object->valuedouble = tmp->valuedouble;
+        *output = object;
+
+        break;
+    }
 
     /* may be memory leak, i mean the root */
     cJSON_Delete(root);
@@ -551,6 +557,7 @@ int get_fan_present_status(int id)
                 tmp = (char *)NULL;
             }
 
+        free(present->valuestring);
 	    free(present);
 	    }
     }
@@ -1285,7 +1292,7 @@ uint8_t get_fan_led_status(int id)
                 ret = -1;
                 printf("\nMismatch\n");
             }
-
+            free(present->valuestring);
             free(present);
         }
 
