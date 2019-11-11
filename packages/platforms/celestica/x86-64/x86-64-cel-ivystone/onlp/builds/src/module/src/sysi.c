@@ -194,8 +194,8 @@ onlp_sysi_platform_info_get(onlp_platform_info_t* platform_info)
 	return ONLP_STATUS_E_PARAM;
 
     if(!platform_info->other_versions){
-	platform_info->other_versions = aim_zmalloc(strlen(tmp) + 1);
-	strncpy(platform_info->other_versions, tmp, strlen(tmp));
+        platform_info->other_versions = aim_zmalloc(strlen(tmp) + 1);
+        strncpy(platform_info->other_versions, tmp, strlen(tmp));
     }
     
     if(!platform_info->cpld_versions){
@@ -210,9 +210,15 @@ onlp_sysi_platform_info_get(onlp_platform_info_t* platform_info)
 	}
         
 	aim_free(cpld_versions);
-    	cpld_versions = NULL;
+    cpld_versions = NULL;
 	return ONLP_STATUS_E_INTERNAL;
     }
   
     return ONLP_STATUS_OK;
+}
+
+void onlp_sysi_platform_info_free(onlp_platform_info_t *pi)
+{
+    aim_free(pi->cpld_versions);
+    aim_free(pi->other_versions);
 }
