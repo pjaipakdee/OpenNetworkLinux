@@ -68,8 +68,8 @@ static void update_shm_mem(void)
     (void)fill_shared_memory(ONLP_FAN_FRU_CACHE_SHARED, ONLP_FAN_FRU_CACHE_SEM, ONLP_FAN_CACHE_FILE);
     (void)fill_shared_memory(ONLP_SYS_FRU_CACHE_SHARED, ONLP_SYS_FRU_CACHE_SEM, ONLP_SYS_CACHE_FILE);
     (void)fill_shared_memory(ONLP_STATUS_FRU_CACHE_SHARED, ONLP_STATUS_FRU_CACHE_SEM, ONLP_STATUS_CACHE_FILE);
-    (void)fill_shared_memory(ONLP_PSU_LED_CACHE_SHARED, ONLP_PSU_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
-    (void)fill_shared_memory(ONLP_FAN_LED_CACHE_SHARED, ONLP_FAN_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
+    //(void)fill_shared_memory(ONLP_PSU_LED_CACHE_SHARED, ONLP_PSU_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
+    //(void)fill_shared_memory(ONLP_FAN_LED_CACHE_SHARED, ONLP_FAN_LED_CACHE_SEM, ONLP_PSU_LED_CACHE_FILE);
 }
 
 static int create_cache(){
@@ -89,8 +89,8 @@ static int create_cache(){
     (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/fan | python -m json.tool > /tmp/onlp-fan-fru-cache.tmp; sync; rm -f /tmp/onlp-fan-fru-cache.txt; mv /tmp/onlp-fan-fru-cache.tmp /tmp/onlp-fan-fru-cache.txt");
     (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/sys | python -m json.tool > /tmp/onlp-sys-fru-cache.tmp; sync; rm -f /tmp/onlp-sys-fru-cache.txt; mv /tmp/onlp-sys-fru-cache.tmp /tmp/onlp-sys-fru-cache.txt");
     (void)system("curl -g http://240.1.1.1:8080/api/sys/fruid/status | python -m json.tool > /tmp/onlp-status-fru-cache.tmp; sync; rm -f /tmp/onlp-status-fru-cache.txt; mv /tmp/onlp-status-fru-cache.tmp /tmp/onlp-status-fru-cache.txt");
-    (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.tmp; sync; rm -f /tmp/onlp-psu-led-cache.txt; mv /tmp/onlp-psu-led-cache.tmp /tmp/onlp-psu-led-cache.txt");
-    (void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.tmp; sync; rm -f /tmp/onlp-fan-led-cache.txt; mv /tmp/onlp-fan-led-cache.tmp /tmp/onlp-fan-led-cache.txt");
+    //(void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/psu_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-psu-led-cache.tmp; sync; rm -f /tmp/onlp-psu-led-cache.txt; mv /tmp/onlp-psu-led-cache.tmp /tmp/onlp-psu-led-cache.txt");
+    //(void)system("curl -d \'{\"data\":\"cat /sys/bus/i2c/devices/i2c-0/0-000d/fan_led_ctrl_en 2>/dev/null | head -n 1\"}\' http://240.1.1.1:8080/api/sys/raw | python -m json.tool > /tmp/onlp-fan-led-cache.tmp; sync; rm -f /tmp/onlp-fan-led-cache.txt; mv /tmp/onlp-fan-led-cache.tmp /tmp/onlp-fan-led-cache.txt");
     
     if(USE_SHM_METHOD){
         update_shm_mem();
