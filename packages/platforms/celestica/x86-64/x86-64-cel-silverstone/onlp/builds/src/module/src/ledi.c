@@ -35,12 +35,12 @@ static onlp_led_info_t led_info[] =
     {
         { ONLP_LED_ID_CREATE(LED_PSU), "PSU LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN,
     },
     {
         { ONLP_LED_ID_CREATE(LED_FAN), "FAN LED (Front)", 0 },
         ONLP_LED_STATUS_PRESENT,
-        ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_ORANGE | ONLP_LED_CAPS_GREEN,
+        ONLP_LED_CAPS_ON_OFF | ONLP_LED_CAPS_AUTO | ONLP_LED_CAPS_YELLOW | ONLP_LED_CAPS_GREEN,
     }
 };
 
@@ -99,13 +99,15 @@ onlp_ledi_info_get(onlp_oid_t id, onlp_led_info_t* info_p)
         case LED_PSU:
         case LED_FAN:
             hw_control_status = (result >> 4) & 0x1;
-            led_color = result & 0x1;
+            led_color = result & 0x3;
             if(!hw_control_status)
             {
                 if(led_color == 1){
-                    info_p->mode = ONLP_LED_MODE_ORANGE;
-                }else{
+                    info_p->mode = ONLP_LED_MODE_YELLOW;
+                }else if(led_color == 2){
                     info_p->mode = ONLP_LED_MODE_GREEN;
+                }else if(led_color == 3){
+                    info_p->mode = ONLP_LED_MODE_OFF;
                 }
             }else{
                 info_p->mode = ONLP_LED_MODE_AUTO;
