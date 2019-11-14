@@ -709,6 +709,19 @@ int get_fan_board_md(int id, char *md)
    	    strncpy(md, model, strlen(model)); 
             ret = 0;
         }
+
+        if(strlen(md)<=0){
+            (void)snprintf(subitem, 32, "Board Part Number");
+
+            result = phrase_fan_array(information, id, subitem, model);
+            if(result){
+                ret = -1;
+            }
+            else{
+            strncpy(md, model, strlen(model)); 
+                ret = 0;
+            }
+        }
     
 	if(tmp){
     	(void)free(tmp);
@@ -782,6 +795,19 @@ int get_fan_board_sn(int id, char *sn)
             strncpy(sn, serial, strlen(serial));
             ret = 0;
         }
+
+        if(strlen(sn)<=0){
+            (void)snprintf(subitem, 32, "Board Serial");
+            result = phrase_fan_array(information, id, subitem, serial);
+            if(result){
+                ret = -1;
+            }
+            else{
+                strncpy(sn, serial, strlen(serial));
+                ret = 0;
+            }
+        }
+        
 
         if(tmp){
     	    (void)free(tmp);
