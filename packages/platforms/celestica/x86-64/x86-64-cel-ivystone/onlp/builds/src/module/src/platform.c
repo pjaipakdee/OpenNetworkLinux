@@ -797,12 +797,16 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
 {
     int ret = -1;
     char buf[64] = {0};
+    char buf2[64] = {0};
+    char tmp[64] = {0};
 
     cJSON *info = information ? information->child : 0;
 
     memset(buf, 0, sizeof(buf));
+    memset(buf, 0, sizeof(buf2));
 
     (void)snprintf(buf, 64, "PSU%d FRU", id);
+    (void)snprintf(buf2, 64, "FRU Information");
 
     while(info)
     {
@@ -811,14 +815,45 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
         if(psu_ptr == NULL){
             info = info->next;
         }else{
-            if(item_ptr == NULL){
-                content = "N/A";
-            }else{
+            if(item_ptr != NULL){
                 (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
             }
             
             ret = 0;
-            return ret;
+            //return ret;
+            break;
+        }
+    }
+
+    //Use second method to check second FRU format for PSU.
+    if (strlen(content) <= 0)
+    {
+        cJSON *info = information ? information->child : 0;
+
+        while (info)
+        {
+            cJSON *psu_ptr2 = cJSON_GetObjectItem(info, buf2);
+            cJSON *item_ptr2 = cJSON_GetObjectItem(info, item);
+            if (psu_ptr2 != NULL)
+            {
+                if (item_ptr2 == NULL)
+                {
+                    content = "";
+                }
+                else
+                {
+                    memset(tmp, 0, sizeof(tmp)); 
+                    (void)snprintf(tmp, 64, "PSU%d", id);
+                    if(!strncmp(psu_ptr2->valuestring, tmp, strlen(tmp)))
+                    {
+                        (void)strncpy(content, item_ptr2->valuestring, strlen(item_ptr2->valuestring)); 	
+                    }
+                }
+
+                ret = 0;
+
+            }
+            info = info->next;
         }
     }
 
