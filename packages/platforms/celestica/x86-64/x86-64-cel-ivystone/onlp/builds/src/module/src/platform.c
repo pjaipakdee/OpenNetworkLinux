@@ -709,6 +709,19 @@ int get_fan_board_md(int id, char *md)
    	    strncpy(md, model, strlen(model)); 
             ret = 0;
         }
+
+        if(strlen(md)<=0){
+            (void)snprintf(subitem, 32, "Board Part Number");
+
+            result = phrase_fan_array(information, id, subitem, model);
+            if(result){
+                ret = -1;
+            }
+            else{
+            strncpy(md, model, strlen(model)); 
+                ret = 0;
+            }
+        }
     
 	if(tmp){
     	(void)free(tmp);
@@ -783,6 +796,19 @@ int get_fan_board_sn(int id, char *sn)
             ret = 0;
         }
 
+        if(strlen(sn)<=0){
+            (void)snprintf(subitem, 32, "Board Serial");
+            result = phrase_fan_array(information, id, subitem, serial);
+            if(result){
+                ret = -1;
+            }
+            else{
+                strncpy(sn, serial, strlen(serial));
+                ret = 0;
+            }
+        }
+        
+
         if(tmp){
     	    (void)free(tmp);
 	        tmp = (char *)NULL;
@@ -797,12 +823,16 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
 {
     int ret = -1;
     char buf[64] = {0};
+    char buf2[64] = {0};
+    char tmp[64] = {0};
 
     cJSON *info = information ? information->child : 0;
 
     memset(buf, 0, sizeof(buf));
+    memset(buf, 0, sizeof(buf2));
 
     (void)snprintf(buf, 64, "PSU%d FRU", id);
+    (void)snprintf(buf2, 64, "FRU Information");
 
     while(info)
     {
@@ -811,14 +841,45 @@ int parse_psu_array(cJSON *information, int id, const char *item, char *content)
         if(psu_ptr == NULL){
             info = info->next;
         }else{
-            if(item_ptr == NULL){
-                content = "N/A";
-            }else{
+            if(item_ptr != NULL){
                 (void)strncpy(content, item_ptr->valuestring, strlen(item_ptr->valuestring));
             }
             
             ret = 0;
-            return ret;
+            //return ret;
+            break;
+        }
+    }
+
+    //Use second method to check second FRU format for PSU.
+    if (strlen(content) <= 0)
+    {
+        cJSON *info = information ? information->child : 0;
+
+        while (info)
+        {
+            cJSON *psu_ptr2 = cJSON_GetObjectItem(info, buf2);
+            cJSON *item_ptr2 = cJSON_GetObjectItem(info, item);
+            if (psu_ptr2 != NULL)
+            {
+                if (item_ptr2 == NULL)
+                {
+                    content = "";
+                }
+                else
+                {
+                    memset(tmp, 0, sizeof(tmp)); 
+                    (void)snprintf(tmp, 64, "PSU%d", id);
+                    if(!strncmp(psu_ptr2->valuestring, tmp, strlen(tmp)))
+                    {
+                        (void)strncpy(content, item_ptr2->valuestring, strlen(item_ptr2->valuestring)); 	
+                    }
+                }
+
+                ret = 0;
+
+            }
+            info = info->next;
         }
     }
 

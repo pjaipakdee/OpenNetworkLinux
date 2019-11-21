@@ -43,11 +43,12 @@ ISDIAG_PLATFORM=0
 #Create Array
 DIAG_PLATFORM0='x86_64-cel_silverstone-r0'
 DIAG_PLATFORM1='x86_64-dellemc_z9332f_d1508-r0'
+DIAG_PLATFORM2='x86_64-cel_silverstone_2-r0'
 
 #Onie-sysinfo is read from /etc/machine.conf (onie_platform attribute)
 CURRENT_PLATFORM=$(onie-sysinfo)
 
-for index in 0 1 ; do
+for index in 0 1 2 ; do
   eval assign="\$DIAG_PLATFORM$index"
   if [ $assign == $CURRENT_PLATFORM ]; then
     ISDIAG_PLATFORM=`expr $ISDIAG_PLATFORM + 1`
@@ -86,11 +87,10 @@ sgdisk -A $(sgdisk -p /dev/sda | grep "ONL-DATA" | awk '{print $1}'):set:0 /dev/
 
 ### Read grub config and set back to ONIE Diag grub.
 mkdir -p $PATH_TMP
-mount -v /dev/sda$(sgdisk -p /dev/sda | grep "ONL-BOOT-DIAG" | awk '{print $1}') $PATH_TMP
+mount -v /dev/sda$(sgdisk -p /dev/sda | grep "ONL-BOOT" | awk '{print $1}') $PATH_TMP
 ST_GRUB=$(cat $PATH_TMP/grub/grub.cfg | grep -n "menuentry \"Open Network Linux\" {" | head -n 1 | cut -d: -f1)
-EN_GRUB=$(tail $PATH_TMP/grub/grub.cfg -n +$ST_GRUB | grep -n "}" |head -n 1 |cut -d: -f1)
+EN_GRUB=$(tail $PATH_TMP/grub/grub.cfg -n +$ST_GRUB | grep -n "}" | head -n 1 | cut -d: -f1)
 EN_GRUB=$(($EN_GRUB+$ST_GRUB-1))
-
 sed -n -e $(($ST_GRUB+1)),$(($EN_GRUB-1))p $PATH_TMP/grub/grub.cfg > /tmp/grub_tmp
 
 # DIAG_GRUB="${DIAG_GRUB_DATA/"\$diag_grub_custom"/\"$DIAG_GRUB\"}"
@@ -111,8 +111,14 @@ fi
 STARTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/grub/grubNEW.cfg | grep -n "# begin: diag boot command" | head -n 1 | cut -d: -f1)
 LASTEX_POS_LINE=$(cat $rootdir/mnt/onie-boot/grub/grubNEW.cfg | grep -n "# end: diag boot command" | head -n 1 | cut -d: -f1)
 if [ $STARTEX_POS_LINE -gt 1 ]; then
-  sed $(($STARTEX_POS_LINE+1)),$(($LASTEX_POS_LINE-1))d $rootdir/mnt/onie-boot/grub/grubNEW.cfg > /tmp/new_clean_grub_tmp
-  cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+    RESULT=`expr $LASTEX_POS_LINE - $STARTEX_POS_LINE` || {
+        echo "This case is created for fix bug from previous version please ignore above error message"
+        RESULT=0
+    }
+    if [ $RESULT -gt 1 ]; then
+        sed $(($STARTEX_POS_LINE+1)),$(($LASTEX_POS_LINE-1))d $rootdir/mnt/onie-boot/grub/grubNEW.cfg > /tmp/new_clean_grub_tmp
+        cat /tmp/new_clean_grub_tmp > $rootdir/mnt/onie-boot/grub/grubNEW.cfg
+    fi
 fi
 
 cp $rootdir/mnt/onie-boot/grub/grub.cfg $rootdir/mnt/onie-boot/grub/grub_backup.cfg

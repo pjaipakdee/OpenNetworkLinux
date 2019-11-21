@@ -102,6 +102,13 @@ int onlp_psui_info_get(onlp_oid_t id, onlp_psu_info_t *info_p)
 	    (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
     }
 
+    if(strlen(info_p->serial) == 0){
+        psu_stat = get_psu_item_content(psu_id, "Product Serial", cont_buf);
+        if(psu_stat != 0xFF){
+            (void)strncpy(info_p->serial, cont_buf, strlen(cont_buf));
+        }
+    }
+
     memset(cont_buf, 0, 64);
     psu_stat = get_psu_item_content(psu_id, "Product Name", cont_buf);
     if(psu_stat != 0xFF){
