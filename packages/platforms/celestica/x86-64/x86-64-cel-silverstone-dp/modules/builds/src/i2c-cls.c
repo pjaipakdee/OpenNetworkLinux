@@ -23,7 +23,7 @@
 #include <linux/log2.h>
 #include <linux/spinlock.h>
 #include <linux/jiffies.h>
-#include <linux/sched/signal.h>
+#include <linux/signal.h>
 #include "i2c-cls.h"
 
 /* The registers for one core */
