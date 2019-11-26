@@ -3,7 +3,7 @@
  *
  *
  *****************************************************************************/
-#include <x86_64_cel_silverstone/x86_64_cel_silverstone_config.h>
+#include <x86_64_cel_silverstone_2/x86_64_cel_silverstone_2_config.h>
 
 /* <--auto.start.xmacro(ALL).define> */
 /* <auto.end.xmacro(ALL).define> */

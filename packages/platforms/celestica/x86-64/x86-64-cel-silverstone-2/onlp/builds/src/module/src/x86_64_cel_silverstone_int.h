@@ -1,11 +1,11 @@
 /**************************************************************************//**
  *
- * x86_64_cel_silverstone Internal Header
+ * x86_64_cel_silverstone_2 Internal Header
  *
  *****************************************************************************/
-#ifndef __X86_64_CEL_SILVERSTONE_INT_H__
-#define __X86_64_CEL_SILVERSTONE_INT_H__
+#ifndef __X86_64_CEL_SILVERSTONE_2_INT_H__
+#define __X86_64_CEL_SILVERSTONE_2_INT_H__
 
-#include <x86_64_cel_silverstone/x86_64_cel_silverstone_config.h>
+#include <x86_64_cel_silverstone_2/x86_64_cel_silverstone_2_config.h>
 
-#endif /* __X86_64_CEL_SILVERSTONE_INT_H__ */
+#endif /* __X86_64_CEL_SILVERSTONE_2_INT_H__ */

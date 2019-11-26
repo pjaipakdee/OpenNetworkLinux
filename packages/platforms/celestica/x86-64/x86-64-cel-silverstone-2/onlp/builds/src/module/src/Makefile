@@ -5,5 +5,5 @@
 ###############################################################################
 
 ucli:
-	@../../../../tools/uclihandlers.py x86_64_cel_silverstone_ucli.c
+	@../../../../tools/uclihandlers.py x86_64_cel_silverstone_2_ucli.c
 

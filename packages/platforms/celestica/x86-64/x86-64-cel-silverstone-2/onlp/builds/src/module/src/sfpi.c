@@ -22,8 +22,8 @@
  *
  ********************************************************** */
 #include <onlp/platformi/sfpi.h>
-#include <x86_64_cel_silverstone/x86_64_cel_silverstone_config.h>
-#include "x86_64_cel_silverstone_log.h"
+#include <x86_64_cel_silverstone_2/x86_64_cel_silverstone_2_config.h>
+#include "x86_64_cel_silverstone_2_log.h"
 #include "platform.h"
 
 static int qsfp_count__ = 32;
@@ -34,7 +34,7 @@ char command[256];
 char buf[256];
 FILE *fp;
 
-static int cel_silverstone_qsfp_sfp_node_read_int(char *path, int *value, int data_len)
+static int cel_silverstone_2_qsfp_sfp_node_read_int(char *path, int *value, int data_len)
 {
     int ret = 0;
     char buf[8];
@@ -51,7 +51,7 @@ static int cel_silverstone_qsfp_sfp_node_read_int(char *path, int *value, int da
     return ret;
 }
 
-static char * cel_silverstone_sfp_qsfp_get_port_path(int port, char *node_name)
+static char * cel_silverstone_2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
     if (port <= qsfp_count__ + sfp_count__)
     {
@@ -73,7 +73,7 @@ static char * cel_silverstone_sfp_qsfp_get_port_path(int port, char *node_name)
     return node_path;
 }
 
-static char * cel_silverstone_sfp_qsfp_get_eeprom_path(int port, char *node_name)
+static char * cel_silverstone_2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
     if (port <= qsfp_count__ + sfp_count__)
     {
@@ -95,7 +95,7 @@ static char * cel_silverstone_sfp_qsfp_get_eeprom_path(int port, char *node_name
     return node_path;
 }
 
-static uint64_t cel_silverstone_sfp_qsfp_get_all_ports_present(void)
+static uint64_t cel_silverstone_2_sfp_qsfp_get_all_ports_present(void)
 {
     int i, ret;
     uint64_t present = 0;
@@ -103,8 +103,8 @@ static uint64_t cel_silverstone_sfp_qsfp_get_all_ports_present(void)
 
     for (i = 0; i < (qsfp_count__ + sfp_count__); i++)
     {
-        path = cel_silverstone_sfp_qsfp_get_port_path(i + 1, "present");
-        if (cel_silverstone_qsfp_sfp_node_read_int(path, &ret, 0) != 0)
+        path = cel_silverstone_2_sfp_qsfp_get_port_path(i + 1, "present");
+        if (cel_silverstone_2_qsfp_sfp_node_read_int(path, &ret, 0) != 0)
         {
             ret = 0;
         }
@@ -140,8 +140,8 @@ int onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t *bmap)
 int onlp_sfpi_is_present(int port)
 {
     int present;
-    char *path = cel_silverstone_sfp_qsfp_get_port_path(port + 1, "present");
-    if (cel_silverstone_qsfp_sfp_node_read_int(path, &present, 0) != 0)
+    char *path = cel_silverstone_2_sfp_qsfp_get_port_path(port + 1, "present");
+    if (cel_silverstone_2_qsfp_sfp_node_read_int(path, &present, 0) != 0)
     {
         if (port <= qsfp_count__)
         {
@@ -162,7 +162,7 @@ int onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t *dst)
     int i = 0;
     uint64_t presence_all = 0;
 
-    presence_all = cel_silverstone_sfp_qsfp_get_all_ports_present();
+    presence_all = cel_silverstone_2_sfp_qsfp_get_all_ports_present();
 
     /* Populate bitmap */
     for (i = 0; presence_all; i++)
@@ -181,7 +181,7 @@ int onlp_sfpi_eeprom_read(int port, uint8_t data[256])
 {
     char *path;
 
-    path = cel_silverstone_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
+    path = cel_silverstone_2_sfp_qsfp_get_eeprom_path(port + 1, "eeprom");
 
     /*
      * Read the SFP eeprom into data[]
