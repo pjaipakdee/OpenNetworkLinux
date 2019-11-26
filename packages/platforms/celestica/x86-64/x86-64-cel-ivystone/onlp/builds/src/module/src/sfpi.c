@@ -92,22 +92,21 @@ cel_ivystone_sfp_qsfp_get_eeprom_path(int port, char *node_name)
     return node_path;
 }
 
-static uint64_t
-cel_ivystone_sfp_qsfp_get_all_ports_present(void)
+void
+cel_ivystone_sfp_qsfp_get_all_ports_present(uint64_t *present)
 {
 	int i, ret;
-	uint64_t present = 0;
     char* path;
 
+    memset(present,0,16);
 	for(i = 0; i < (qsfp_count__+sfp_count__); i++) {
 		path = cel_ivystone_sfp_qsfp_get_port_path(i + 1, "present");
 	    if (cel_ivystone_qsfp_sfp_node_read_int(path, &ret, 0) != 0) {
 	        ret = 0;
 	    }
-		present |= ((uint64_t)ret << i);
+		present[i/64] |= ((uint64_t)ret << (i%64));
 	}
 
-    return present;
 }
 
 int
@@ -157,14 +156,18 @@ onlp_sfpi_presence_bitmap_get(onlp_sfp_bitmap_t* dst)
 {
     //AIM_BITMAP_CLR_ALL(dst);
     int i = 0;
-    uint64_t presence_all = 0;
+    uint64_t presence_all[2] = {0,0};
 
-	presence_all = cel_ivystone_sfp_qsfp_get_all_ports_present();
+	cel_ivystone_sfp_qsfp_get_all_ports_present(presence_all);
 
     /* Populate bitmap */
-    for(i = 0; presence_all; i++) {
-        AIM_BITMAP_MOD(dst, i, (presence_all & 1));
-        presence_all >>= 1;
+    for(i = 0; presence_all[0]; i++) {
+        AIM_BITMAP_MOD(dst, i, (presence_all[0] & 1));
+        presence_all[0] >>= 1;
+    }
+    for(i = 64; presence_all[1]; i++) {
+        AIM_BITMAP_MOD(dst, i, (presence_all[1] & 1));
+        presence_all[1] >>= 1;
     }
     return ONLP_STATUS_OK;
 }
