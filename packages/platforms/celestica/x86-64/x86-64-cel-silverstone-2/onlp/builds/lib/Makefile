@@ -23,15 +23,15 @@
 ############################################################
 include $(ONL)/make/config.amd64.mk
 
-MODULE := libonlp-x86-64-cel-silverstone
+MODULE := libonlp-x86-64-cel-silverstone-2
 include $(BUILDER)/standardinit.mk
 
-DEPENDMODULES := AIM IOF x86_64_cel_silverstone onlplib
+DEPENDMODULES := AIM IOF x86_64_cel_silverstone_2 onlplib
 DEPENDMODULE_HEADERS := sff
 
 include $(BUILDER)/dependmodules.mk
 
-SHAREDLIB := libonlp-x86-64-cel-silverstone.so
+SHAREDLIB := libonlp-x86-64-cel-silverstone-2.so
 $(SHAREDLIB)_TARGETS := $(ALL_TARGETS)
 include $(BUILDER)/so.mk
 .DEFAULT_GOAL := $(SHAREDLIB)

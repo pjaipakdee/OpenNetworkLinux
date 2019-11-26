@@ -29,7 +29,7 @@ include $(ONL)/make/config.amd64.mk
 MODULE := onlpdump
 include $(BUILDER)/standardinit.mk
 
-DEPENDMODULES := AIM IOF onlp x86_64_cel_silverstone onlplib onlp_platform_defaults sff cjson cjson_util timer_wheel OS
+DEPENDMODULES := AIM IOF onlp x86_64_cel_silverstone_2 onlplib onlp_platform_defaults sff cjson cjson_util timer_wheel OS
 
 include $(BUILDER)/dependmodules.mk
 

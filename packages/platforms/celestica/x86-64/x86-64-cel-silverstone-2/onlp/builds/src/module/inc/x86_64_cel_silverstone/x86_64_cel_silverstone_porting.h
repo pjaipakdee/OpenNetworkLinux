@@ -1,18 +1,18 @@
 /**************************************************************************//**
  *
  * @file
- * @brief x86_64_cel_silverstone Porting Macros.
+ * @brief x86_64_cel_silverstone_2 Porting Macros.
  *
- * @addtogroup x86_64_cel_silverstone-porting
+ * @addtogroup x86_64_cel_silverstone_2-porting
  * @{
  *
  *****************************************************************************/
-#ifndef __X86_64_CEL_SILVERSTONE_PORTING_H__
-#define __X86_64_CEL_SILVERSTONE_PORTING_H__
+#ifndef __X86_64_CEL_SILVERSTONE_2_PORTING_H__
+#define __X86_64_CEL_SILVERSTONE_2_PORTING_H__
 
 
 /* <auto.start.portingmacro(ALL).define> */
-#if X86_64_CEL_SILVERSTONE_CONFIG_PORTING_INCLUDE_STDLIB_HEADERS == 1
+#if X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_INCLUDE_STDLIB_HEADERS == 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,88 +20,88 @@
 #include <memory.h>
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_MALLOC
+#ifndef X86_64_CEL_SILVERSTONE_2_MALLOC
     #if defined(GLOBAL_MALLOC)
-        #define X86_64_CEL_SILVERSTONE_MALLOC GLOBAL_MALLOC
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_MALLOC malloc
+        #define X86_64_CEL_SILVERSTONE_2_MALLOC GLOBAL_MALLOC
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_MALLOC malloc
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_MALLOC is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_MALLOC is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_FREE
+#ifndef X86_64_CEL_SILVERSTONE_2_FREE
     #if defined(GLOBAL_FREE)
-        #define X86_64_CEL_SILVERSTONE_FREE GLOBAL_FREE
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_FREE free
+        #define X86_64_CEL_SILVERSTONE_2_FREE GLOBAL_FREE
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_FREE free
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_FREE is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_FREE is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_MEMSET
+#ifndef X86_64_CEL_SILVERSTONE_2_MEMSET
     #if defined(GLOBAL_MEMSET)
-        #define X86_64_CEL_SILVERSTONE_MEMSET GLOBAL_MEMSET
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_MEMSET memset
+        #define X86_64_CEL_SILVERSTONE_2_MEMSET GLOBAL_MEMSET
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_MEMSET memset
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_MEMSET is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_MEMSET is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_MEMCPY
+#ifndef X86_64_CEL_SILVERSTONE_2_MEMCPY
     #if defined(GLOBAL_MEMCPY)
-        #define X86_64_CEL_SILVERSTONE_MEMCPY GLOBAL_MEMCPY
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_MEMCPY memcpy
+        #define X86_64_CEL_SILVERSTONE_2_MEMCPY GLOBAL_MEMCPY
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_MEMCPY memcpy
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_MEMCPY is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_MEMCPY is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_STRNCPY
+#ifndef X86_64_CEL_SILVERSTONE_2_STRNCPY
     #if defined(GLOBAL_STRNCPY)
-        #define X86_64_CEL_SILVERSTONE_STRNCPY GLOBAL_STRNCPY
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_STRNCPY strncpy
+        #define X86_64_CEL_SILVERSTONE_2_STRNCPY GLOBAL_STRNCPY
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_STRNCPY strncpy
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_STRNCPY is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_STRNCPY is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_VSNPRINTF
+#ifndef X86_64_CEL_SILVERSTONE_2_VSNPRINTF
     #if defined(GLOBAL_VSNPRINTF)
-        #define X86_64_CEL_SILVERSTONE_VSNPRINTF GLOBAL_VSNPRINTF
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_VSNPRINTF vsnprintf
+        #define X86_64_CEL_SILVERSTONE_2_VSNPRINTF GLOBAL_VSNPRINTF
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_VSNPRINTF vsnprintf
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_VSNPRINTF is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_VSNPRINTF is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_SNPRINTF
+#ifndef X86_64_CEL_SILVERSTONE_2_SNPRINTF
     #if defined(GLOBAL_SNPRINTF)
-        #define X86_64_CEL_SILVERSTONE_SNPRINTF GLOBAL_SNPRINTF
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_SNPRINTF snprintf
+        #define X86_64_CEL_SILVERSTONE_2_SNPRINTF GLOBAL_SNPRINTF
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_SNPRINTF snprintf
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_SNPRINTF is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_SNPRINTF is required but cannot be defined.
     #endif
 #endif
 
-#ifndef X86_64_CEL_SILVERSTONE_STRLEN
+#ifndef X86_64_CEL_SILVERSTONE_2_STRLEN
     #if defined(GLOBAL_STRLEN)
-        #define X86_64_CEL_SILVERSTONE_STRLEN GLOBAL_STRLEN
-    #elif X86_64_CEL_SILVERSTONE_CONFIG_PORTING_STDLIB == 1
-        #define X86_64_CEL_SILVERSTONE_STRLEN strlen
+        #define X86_64_CEL_SILVERSTONE_2_STRLEN GLOBAL_STRLEN
+    #elif X86_64_CEL_SILVERSTONE_2_CONFIG_PORTING_STDLIB == 1
+        #define X86_64_CEL_SILVERSTONE_2_STRLEN strlen
     #else
-        #error The macro X86_64_CEL_SILVERSTONE_STRLEN is required but cannot be defined.
+        #error The macro X86_64_CEL_SILVERSTONE_2_STRLEN is required but cannot be defined.
     #endif
 #endif
 
 /* <auto.end.portingmacro(ALL).define> */
 
 
-#endif /* __X86_64_CEL_SILVERSTONE_PORTING_H__ */
+#endif /* __X86_64_CEL_SILVERSTONE_2_PORTING_H__ */
 /* @} */

@@ -5,10 +5,10 @@
 #include <onlp/platformi/thermali.h>
 #include <onlp/platformi/fani.h>
 #include <onlp/platformi/sysi.h>
-#include <x86_64_cel_silverstone/x86_64_cel_silverstone_config.h>
+#include <x86_64_cel_silverstone_2/x86_64_cel_silverstone_2_config.h>
 
-#include "x86_64_cel_silverstone_int.h"
-#include "x86_64_cel_silverstone_log.h"
+#include "x86_64_cel_silverstone_2_int.h"
+#include "x86_64_cel_silverstone_2_log.h"
 #include "platform.h"
 //Below include add for support Cache system
 #include <sys/stat.h>
@@ -23,7 +23,7 @@ static char arr_cplddev_name[NUM_OF_CPLD][10] =
 
 const char *onlp_sysi_platform_get(void)
 {
-    return "x86-64-cel-silverstone-r0";
+    return "x86-64-cel-silverstone-2-r0";
 }
 
 int onlp_sysi_init(void)
