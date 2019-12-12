@@ -61,6 +61,9 @@ Multistrap:
     omitdebsrc: true
 
 Configure:
+  commands:
+    - 'sudo chroot %(__rfs__)s pip install PyYAML'
+    - 'sudo chroot %(__rfs__)s pip install filelock'
   overlays:
     - ${ONL}/builds/any/rootfs/${ONL_DEBIAN_SUITE}/common/overlay
 
