@@ -26,7 +26,7 @@
 #include "i2c-ocores.h"
 #include "xcvr-cls.h"
 
-#define MOD_VERSION "2.2.3"
+#define MOD_VERSION "2.2.4"
 #define DRV_NAME "cls-switchboard"
 
 #define I2C_MUX_CHANNEL(_ch, _adap_id, _deselect) \
@@ -95,6 +95,11 @@ static int bus_clock_master_5 = 100;
 module_param(bus_clock_master_5, int, 0660);
 MODULE_PARM_DESC(bus_clock_master_5, 
 	"I2C master 5 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_6 = 100;
+module_param(bus_clock_master_6, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_6, 
+	"I2C master 6 bus speed in KHz 50/80/100/200/400");
 
 // NOTE:  Silverstone i2c channel mapping is very wierd!!!
 /* PCA9548 channel config on MASTER BUS 3 */
@@ -181,6 +186,7 @@ static struct i2c_board_info i2c_info_3[] = {
 	},
 };
 
+
 /* RESOURCE SEPERATES BY FUNCTION */
 /* Resource IOMEM for i2c bus 3 */
 static struct resource  cls_i2c_res_3[] = {
@@ -202,6 +208,15 @@ static struct resource  cls_i2c_res_5[] = {
 		.start = 0x880, .end = 0x89F,
 		.flags = IORESOURCE_MEM,}, 
 };
+
+/* Resource IOMEM for i2c bus 11 */
+static struct resource  cls_i2c_res_11[] = {
+	{
+		.start = 0x940, .end = 0x95F,
+		.flags = IORESOURCE_MEM,}, 
+};
+
+
 
 /* Resource IOMEM for i2c bus 14 for SFP2*/
 static struct resource  cls_i2c_res_14[] = {
@@ -310,6 +325,20 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 			.devices = NULL,
 		},
 	},
+	{
+		.id = 11, 
+		.res = cls_i2c_res_11, 
+		.num_res = ARRAY_SIZE(cls_i2c_res_11), 
+		.pdata = {
+			.reg_shift = OCORE_REGSHIFT,
+			.reg_io_width = OCORE_REG_IO_WIDTH,
+			.clock_khz = OCORE_IP_CLK_khz,
+			.bus_khz = OCORE_BUS_CLK_khz,
+			.big_endian = false,
+			.num_devices = 0,
+			.devices = NULL,
+		},
+	},
 };
 
 /* xcvr front panel mapping */
@@ -344,8 +373,8 @@ static struct port_info front_panel_ports[] = {
 	{"QSFPDD4", 28, QSFP},
 	{"QSFPDD5", 29, QSFP},
 	{"QSFPDD6", 30, QSFP},
-	{"SFP2",   32, SFP},
-	{"SFP1",   31, SFP},
+	{"SFP2",   34, SFP},
+	{"SFP1",   33, SFP},
 	/* END OF LIST */
 };
 
@@ -458,6 +487,9 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		case 5:
 			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_5;
 			break;
+		case 6:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_6;
+			break;
 		default:
 			i2c_bus_configs[i].pdata.bus_khz = OCORE_BUS_CLK_khz;
 		}
@@ -538,6 +570,7 @@ static struct pci_driver clsswbrd_pci_driver = {
 module_pci_driver(clsswbrd_pci_driver);
 
 MODULE_AUTHOR("Pradchaya P.<pphuchar@celestica.com>");
+MODULE_AUTHOR("Pariwat L.<pleamsum@celestica.com>");
 MODULE_DESCRIPTION("Celestica Silverstone switchboard driver");
 MODULE_VERSION(MOD_VERSION);
 MODULE_LICENSE("GPL");

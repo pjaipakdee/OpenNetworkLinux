@@ -59,7 +59,10 @@ class OnlPlatform_x86_64_cel_silverstone_dp_r0(OnlPlatformCelestica,
             self.new_i2c_device('optoe3',0x50,qsfp_offset+qsfp_qty+z+1) #34-39
             os.system("echo 'QSFPDD{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+qsfp_qty+z+1,actual_port_num))
             actual_port_num += 1
-            
+        
+        # max31730 device doesn't require to add new device driver already probe.
+        # self.new_i2c_device('max31730', 0x4c, 7)
+
         os.system("echo '3' > /proc/sys/kernel/printk")
 
         if os.path.exists(file_path):

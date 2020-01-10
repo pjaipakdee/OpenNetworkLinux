@@ -39,4 +39,22 @@ rootdir=$1; shift
 echo "Hello from postinstall"
 echo "Chroot is $rootdir"
 
+# Enable NOS mode using onie-nos-mode command to set the mode to not change the boot order.
+# https://github.com/opencomputeproject/onie/pull/706#issuecomment-372457702
+echo "Unmount onie-boot from Chroot"
+umount $rootdir/mnt/onie-boot
+
+echo "Mount ONIE-BOOT on /mnt/onie-boot for support onie-nos-mode to execute"
+mkdir /mnt/onie-boot
+mount -v /dev/sda$(sgdisk -p /dev/sda | grep "ONIE-BOOT" | awk '{print $1}') /mnt/onie-boot
+
+echo "Enable onie NOS installed mode"
+onie-nos-mode -s
+
+echo "Umount /mnt/onie-boot"
+umount /mnt/onie-boot
+
+echo "Mount onie-boot back to Chroot at $rootdir/mnt/onie-boot"
+mount -v /dev/sda$(sgdisk -p /dev/sda | grep "ONIE-BOOT" | awk '{print $1}') $rootdir/mnt/onie-boot
+
 exit 0

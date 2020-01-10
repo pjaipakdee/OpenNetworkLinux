@@ -54,7 +54,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.1.6"
+#define MOD_VERSION "2.1.7"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -845,7 +845,6 @@ static ssize_t sfp_txdisable_store(struct device *dev, struct device_attribute *
     struct sff_device_data *dev_data = dev_get_drvdata(dev);
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
-
     mutex_lock(&fpga_data->fpga_lock);
     status = kstrtol(buf, 0, &value);
     if (status == 0) {
@@ -1026,6 +1025,10 @@ static struct device * silverstone_sff_init(int portid) {
     }
     /* The QSFP port ID start from 1 */
     new_data->portid = portid + 1;
+    /* For SFP+ port 1 and 2 it's act as port 33 and 34 not 31 and 32 */
+    if(portid == 30 || portid == 31){
+        new_data->portid = new_data->portid+2;
+    }
     new_data->port_type = fpga_i2c_bus_dev[portid].port_type;
     new_device = device_create_with_groups(fpgafwclass, 
                                            sff_dev, 
