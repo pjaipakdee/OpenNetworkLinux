@@ -12,7 +12,7 @@ x86-64-dellemc-z9332f-d1508-r0:
 
     serial: >-
       --port=0x3f8
-      --speed=115200
+      --speed=9600
       --word=8
       --parity=no
       --stop=1
@@ -22,7 +22,7 @@ x86-64-dellemc-z9332f-d1508-r0:
 
     args: >-
       nopat
-      console=ttyS0,115200n8
+      console=ttyS0,9600n8
 
   installer:
   - ONL-BOOT:
