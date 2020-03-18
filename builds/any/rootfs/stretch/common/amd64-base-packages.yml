@@ -8,8 +8,11 @@
 - smartmontools
 - grub2
 - onl-upgrade
-- hw-management
+# - hw-management
 - onl-kernel-4.9-lts-x86-64-all-modules
 - onl-kernel-4.14-lts-x86-64-all-modules
 - efibootmgr
 - gdisk
+- ipmitool
+- tree
+- valgrind
