@@ -822,7 +822,7 @@ static struct platform_driver ocores_i2c_driver = {
 	.probe   = ocores_i2c_probe,
 	.remove  = ocores_i2c_remove,
 	.driver  = {
-		.name = "cls-ocores-i2c",
+		.name = "ocores-i2c",
 		.of_match_table = ocores_i2c_match,
 		.pm = OCORES_I2C_PM,
 	},
@@ -833,4 +833,4 @@ module_platform_driver(ocores_i2c_driver);
 MODULE_AUTHOR("Peter Korsgaard <peter@korsgaard.com>");
 MODULE_DESCRIPTION("OpenCores I2C bus driver");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("platform:cls-ocores-i2c");
+MODULE_ALIAS("platform:ocores-i2c");

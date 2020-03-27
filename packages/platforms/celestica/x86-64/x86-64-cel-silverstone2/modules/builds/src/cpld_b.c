@@ -36,6 +36,8 @@
 #define VERSION_ADDR 0xA100
 #define SCRATCH_ADDR 0xA101
 #define SYS_LED_ADDR 0xA162
+#define ALM_LED_ADDR 0xA163
+#define PSU_LED_ADDR 0xA161
 #define CPLD_REGISTER_SIZE 0x77
 
 struct cpld_b_data {
@@ -304,6 +306,165 @@ static ssize_t sys_led_color_store(struct device *dev, struct device_attribute *
 }
 static DEVICE_ATTR_RW(sys_led_color);
 
+/**
+ * Show psu led status - auto/amber
+ * @param  dev     kernel device
+ * @param  devattr kernel device attribute
+ * @param  buf     buffer for get value
+ * @return         Hex string read from scratch register.
+ */
+static ssize_t psu_led_show(struct device *dev, struct device_attribute *devattr,
+                char *buf)
+{
+    unsigned char data = 0;
+    mutex_lock(&cpld_data->cpld_lock);
+    data = inb(PSU_LED_ADDR);
+    mutex_unlock(&cpld_data->cpld_lock);
+    data = data & 0x3;
+    return sprintf(buf, "%s\n",
+            data == 0x03 ? "L:Amber R:Amber" : data == 0x02 ? "L:Auto R:Amber" : data ==0x01 ? "L:Amber R:Auto": "L:Auto R:Auto");
+}
+/**
+ * Set the status of psu led
+ * @param  dev     kernel device
+ * @param  devattr kernel device attribute
+ * @param  buf     buffer of set value
+ * @param  count   number of bytes in buffer
+ * @return         number of bytes written, or error code < 0.
+ */
+static ssize_t psu_led_store(struct device *dev, struct device_attribute *devattr,
+                const char *buf, size_t count)
+{
+    char clone[count];
+    char *pclone = clone;
+    char *tok;
+    char *last;
+    unsigned char psu_name,status,data;
+
+    strcpy(clone, buf);
+
+    mutex_lock(&cpld_data->cpld_lock);
+    tok = strsep((char**)&pclone, " ");
+    if(tok == NULL){
+        mutex_unlock(&cpld_data->cpld_lock);
+        return -EINVAL;
+    }
+    psu_name = tok;
+
+    tok = strsep((char**)&pclone, " ");
+    if(tok == NULL){
+        mutex_unlock(&cpld_data->cpld_lock);
+        return -EINVAL;
+    }
+    status = tok;
+
+    mutex_lock(&cpld_data->cpld_lock);
+    data = inb(PSU_LED_ADDR);
+    mutex_unlock(&cpld_data->cpld_lock);
+
+    data = data & 0x03;
+
+    //00 = both auto
+    //01 = left amber right auto
+    //10 = left auto right amber
+    //11 = both amber
+
+    if(sysfs_streq(psu_name,"right")){
+        if(sysfs_streq(status,"amber")){
+            data |= (1 << 1);
+        }else if(sysfs_streq(status,"auto")){
+            data |= (0 << 0);
+        }else{
+            count = -EINVAL;
+            return count;
+        }
+    }else if(sysfs_streq(psu_name,"left")){
+        if(sysfs_streq(status,"amber")){
+            data |= (1 << 0);
+        }else if(sysfs_streq(status,"auto")){
+            data |= (0 << 1);
+        }else{
+            count = -EINVAL;
+            return count;
+        }
+    }else if(sysfs_streq(psu_name,"both")){
+        if(sysfs_streq(status,"amber")){
+            data = 3;
+        }else if(sysfs_streq(status,"auto")){
+            data = 0;
+        }else{
+            count = -EINVAL;
+            return count;
+        }
+    }else{
+        count = -EINVAL;
+        return count;
+    }
+
+    
+
+    mutex_lock(&cpld_data->cpld_lock);
+    outb(data, PSU_LED_ADDR);
+    mutex_unlock(&cpld_data->cpld_lock);
+    return count;
+}
+static DEVICE_ATTR_RW(psu_led);
+
+static ssize_t led_control_store(struct device *dev, struct device_attribute *devattr,
+                const char *buf, size_t count)
+{
+    // CPLD register is one byte
+    uint8_t value;
+    uint16_t addr;
+    char *tok;
+    char clone[count];
+    char *pclone = clone;
+    char *last;
+
+    strcpy(clone, buf);
+
+    mutex_lock(&cpld_data->cpld_lock);
+    tok = strsep((char**)&pclone, " ");
+    if(tok == NULL){
+        mutex_unlock(&cpld_data->cpld_lock);
+        return -EINVAL;
+    }
+    if(sysfs_streq(tok, "psu")){
+        addr = PSU_LED_ADDR;
+    }else if(sysfs_streq(tok, "alarm")){
+        addr = ALM_LED_ADDR;
+    }else if(sysfs_streq(tok, "sys")){
+        addr = SYS_LED_ADDR;
+    }else{
+        count = -EINVAL;
+        return count;
+    }
+    // addr = (uint16_t)strtoul(addr,&last,16);
+    // if(addr == 0 && tok == last){
+    //     mutex_unlock(&cpld_data->cpld_lock);
+    //     return -EINVAL;
+    // }
+
+
+    tok = strsep((char**)&pclone, " ");
+    if(tok == NULL){
+        mutex_unlock(&cpld_data->cpld_lock);
+        return -EINVAL;
+    }
+    value = (uint8_t)strtoul(tok,&last,16);
+    if(value == 0 && tok == last){
+        mutex_unlock(&cpld_data->cpld_lock);
+        return -EINVAL;
+    }
+    printk(KERN_ERR "value = %x\n",value);
+    printk(KERN_ERR "addr = %x\n",addr);
+
+    outb(value,addr);
+    mutex_unlock(&cpld_data->cpld_lock);
+    return count;
+}
+static DEVICE_ATTR_WO(led_control);
+
 static struct attribute *cpld_b_attrs[] = {
     &dev_attr_version.attr,
     &dev_attr_scratch.attr,
@@ -311,6 +472,8 @@ static struct attribute *cpld_b_attrs[] = {
     &dev_attr_setreg.attr,
     &dev_attr_sys_led.attr,
     &dev_attr_sys_led_color.attr,
+    &dev_attr_led_control.attr,
+    &dev_attr_psu_led.attr,
     NULL,
 };
 
@@ -409,6 +572,6 @@ module_exit(cpld_b_exit);
 
 
 MODULE_AUTHOR("Celestica Inc.");
-MODULE_DESCRIPTION("CELESTICA SILVERSTONE WHITEBOX CPLD baseboard driver");
-MODULE_VERSION("0.0.2");
+MODULE_DESCRIPTION("Celestica Silverstone2 CPLD baseboard driver");
+MODULE_VERSION("1.0.0");
 MODULE_LICENSE("GPL");

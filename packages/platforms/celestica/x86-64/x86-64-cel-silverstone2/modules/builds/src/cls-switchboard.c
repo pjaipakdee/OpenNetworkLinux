@@ -26,7 +26,7 @@
 #include "i2c-ocores.h"
 #include "xcvr-cls.h"
 
-#define MOD_VERSION "2.1.1"
+#define MOD_VERSION "1.0.0"
 #define DRV_NAME "cls-switchboard"
 
 #define I2C_MUX_CHANNEL(_ch, _adap_id, _deselect) \
@@ -34,7 +34,7 @@
 
 #define FPGA_PCIE_DEVICE_ID	0x7021
 #define MMIO_BAR		0
-#define I2C_BUS_OFS		9
+#define I2C_BUS_OFS		12
 
 /* I2C ocore configurations */
 #define OCORE_REGSHIFT      	      2
@@ -46,6 +46,8 @@
 #define XCVR_REG_SHIFT		2
 #define XCVR_NUM_PORT		34
 #define XCVR_PORT_REG_SIZE	0x10
+
+#define SILVERSTONE2_BSP 1
 
 /* i2c_bus_config - an i2c-core resource and platform data
  *  @id - I2C bus device ID, for identification.
@@ -96,51 +98,104 @@ module_param(bus_clock_master_5, int, 0660);
 MODULE_PARM_DESC(bus_clock_master_5, 
 	"I2C master 5 bus speed in KHz 50/80/100/200/400");
 
+static int bus_clock_master_6 = 100;
+module_param(bus_clock_master_6, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_6, 
+	"I2C master 6 bus speed in KHz 50/80/100/200/400");
+
 // NOTE:  Silverstone i2c channel mapping is very wierd!!!
-/* PCA9548 channel config on MASTER BUS 3 */
+/* PCA9548 channel config on MASTER BUS 3/6 */
+
+#ifdef SILVERSTONE2_BSP
 static struct pca954x_platform_mode i2c_mux_70_modes[] = {
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 27, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 32, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 29, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 31, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 30, true),
 	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 23, true),
 	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 26, true),
-	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 27, true),
 	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 28, true),
-	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 29, true),
-	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 30, true),
-	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 31, true),
-	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 32, true),
 };
 
 static struct pca954x_platform_mode i2c_mux_71_modes[] = {
-	I2C_MUX_CHANNEL(2, I2C_BUS_OFS +  1, true),
-	I2C_MUX_CHANNEL(3, I2C_BUS_OFS +  2, true),
-	I2C_MUX_CHANNEL(0, I2C_BUS_OFS +  3, true),
-	I2C_MUX_CHANNEL(1, I2C_BUS_OFS +  4, true),
-	I2C_MUX_CHANNEL(6, I2C_BUS_OFS +  5, true),
-	I2C_MUX_CHANNEL(5, I2C_BUS_OFS +  6, true),
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 3, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 4, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 1, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 2, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 8, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 6, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 5, true),
 	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 15, true),
-	I2C_MUX_CHANNEL(4, I2C_BUS_OFS +  8, true),
 };
 
 static struct pca954x_platform_mode i2c_mux_72_modes[] = {
-	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 17, true),
-	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 18, true),
-	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 19, true),
 	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 20, true),
-	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 21, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 17, true),
 	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 22, true),
 	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 25, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 19, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 21, true),
 	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 24, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 18, true),
 };
 
 static struct pca954x_platform_mode i2c_mux_73_modes[] = {
-	I2C_MUX_CHANNEL(4, I2C_BUS_OFS +  9, true),
-	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 10, true),
-	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 11, true),
-	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 12, true),
-	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 13, true),
-	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 14, true),
-	I2C_MUX_CHANNEL(7, I2C_BUS_OFS +  7, true),
 	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 16, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 13, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 12, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 10, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 9, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 14, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 11, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 7, true),
 };
+#else
+static struct pca954x_platform_mode i2c_mux_70_modes[] = {
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 1, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 2, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 3, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 4, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 5, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 6, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 7, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 8, true),
+};
+
+static struct pca954x_platform_mode i2c_mux_71_modes[] = {
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS +  9, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 10, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 11, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 12, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 13, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 14, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 15, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 16, true),
+};
+
+static struct pca954x_platform_mode i2c_mux_72_modes[] = {
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 17, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 18, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 19, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 20, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 21, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 22, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 23, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 24, true),
+};
+
+static struct pca954x_platform_mode i2c_mux_73_modes[] = {
+	I2C_MUX_CHANNEL(0, I2C_BUS_OFS + 25, true),
+	I2C_MUX_CHANNEL(1, I2C_BUS_OFS + 26, true),
+	I2C_MUX_CHANNEL(2, I2C_BUS_OFS + 27, true),
+	I2C_MUX_CHANNEL(3, I2C_BUS_OFS + 28, true),
+	I2C_MUX_CHANNEL(4, I2C_BUS_OFS + 29, true),
+	I2C_MUX_CHANNEL(5, I2C_BUS_OFS + 30, true),
+	I2C_MUX_CHANNEL(6, I2C_BUS_OFS + 31, true),
+	I2C_MUX_CHANNEL(7, I2C_BUS_OFS + 32, true),
+};
+#endif
+
 
 static struct pca954x_platform_data om_muxes[] = {
 	{
@@ -164,16 +219,8 @@ static struct pca954x_platform_data om_muxes[] = {
 /* Optical Module bus 3 i2c muxes info */
 static struct i2c_board_info i2c_info_3[] = {
 	{
-		I2C_BOARD_INFO("pca9548", 0x70),
-		.platform_data = &om_muxes[0],
-	},
-	{
 		I2C_BOARD_INFO("pca9548", 0x71),
 		.platform_data = &om_muxes[1],
-	},
-	{
-		I2C_BOARD_INFO("pca9548", 0x72),
-		.platform_data = &om_muxes[2],
 	},
 	{
 		I2C_BOARD_INFO("pca9548", 0x73),
@@ -181,39 +228,58 @@ static struct i2c_board_info i2c_info_3[] = {
 	},
 };
 
+/* Optical Module bus 6 i2c muxes info */
+static struct i2c_board_info i2c_info_6[] = {
+	{
+		I2C_BOARD_INFO("pca9548", 0x70),
+		.platform_data = &om_muxes[0],
+	},
+	{
+		I2C_BOARD_INFO("pca9548", 0x72),
+		.platform_data = &om_muxes[2],
+	},
+};
 /* RESOURCE SEPERATES BY FUNCTION */
-/* Resource IOMEM for i2c bus 1 */
-static struct resource cls_i2c_res_1[] = {
+/* Resource IOMEM for i2c bus 1 for SFP1*/
+static struct resource  cls_i2c_res_1[] = {
 	{
 		.start = 0x800, .end = 0x81F,
 		.flags = IORESOURCE_MEM,}, 
 };
-
-/* Resource IOMEM for i2c bus 2 */
+/* Resource IOMEM for i2c bus 2 for SFP2*/
 static struct resource  cls_i2c_res_2[] = {
 	{
 		.start = 0x820, .end = 0x83F,
 		.flags = IORESOURCE_MEM,}, 
 };
-
-/* Resource IOMEM for i2c bus 3 */
+/* Resource IOMEM for i2c bus 3 for PCA9548*/
 static struct resource  cls_i2c_res_3[] = {
 	{
 		.start = 0x840, .end = 0x85F,
 		.flags = IORESOURCE_MEM,}, 
 };
-
-/* Resource IOMEM for i2c bus 4 */
-static struct  resource cls_i2c_res_4[] = {
+/* Resource IOMEM for i2c bus 4 for switchboard CPPLD1/CPLD2*/		
+static struct resource  cls_i2c_res_4[] = {
 	{
 		.start = 0x860, .end = 0x87F,
 		.flags = IORESOURCE_MEM,}, 
-};
-
-/* Resource IOMEM for i2c bus 5 */
+};	
+/* Resource IOMEM for i2c bus 5*/	
 static struct resource  cls_i2c_res_5[] = {
 	{
 		.start = 0x880, .end = 0x89F,
+		.flags = IORESOURCE_MEM,}, 
+};
+/* Resource IOMEM for i2c bus 6 for PCA9548*/	
+static struct resource  cls_i2c_res_6[] = {
+	{
+		.start = 0x8A0, .end = 0x8BF,
+		.flags = IORESOURCE_MEM,}, 
+};		
+/* Resource IOMEM for i2c bus 11 for si5395B*/
+static struct resource  cls_i2c_res_11[] = {
+	{
+		.start = 0x900, .end = 0x91F,
 		.flags = IORESOURCE_MEM,}, 
 };
 
@@ -238,6 +304,9 @@ static struct resource xcvr_res[] = {
 		.flags = IORESOURCE_MEM,},
 };
 
+/* if have i2c-mux pca9548, .num_devices=ARRAY_SIZE(i2c_info_X); .devices = i2c_info_X.
+* if not, .num_devices = 0; .devices = NULL,
+*/
 static struct i2c_bus_config i2c_bus_configs[] = {
 	{
 		.id = 1,
@@ -254,9 +323,9 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 2, 
-		.res = cls_i2c_res_2, 
-		.num_res = ARRAY_SIZE(cls_i2c_res_2), 
+		.id = 2,
+		.res = cls_i2c_res_2,
+		.num_res = ARRAY_SIZE(cls_i2c_res_2),
 		.pdata = {
 			.reg_shift = OCORE_REGSHIFT,
 			.reg_io_width = OCORE_REG_IO_WIDTH,
@@ -268,9 +337,9 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 3, 
-		.res = cls_i2c_res_3, 
-		.num_res = ARRAY_SIZE(cls_i2c_res_3), 
+		.id = 3,
+		.res = cls_i2c_res_3,
+		.num_res = ARRAY_SIZE(cls_i2c_res_3),
 		.pdata = {
 			.reg_shift = OCORE_REGSHIFT,
 			.reg_io_width = OCORE_REG_IO_WIDTH,
@@ -282,9 +351,9 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 4, 
-		.res = cls_i2c_res_4, 
-		.num_res = ARRAY_SIZE(cls_i2c_res_4), 
+		.id = 4,
+		.res = cls_i2c_res_4,
+		.num_res = ARRAY_SIZE(cls_i2c_res_4),
 		.pdata = {
 			.reg_shift = OCORE_REGSHIFT,
 			.reg_io_width = OCORE_REG_IO_WIDTH,
@@ -296,9 +365,37 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 5, 
-		.res = cls_i2c_res_5, 
-		.num_res = ARRAY_SIZE(cls_i2c_res_5), 
+		.id = 5,
+		.res = cls_i2c_res_5,
+		.num_res = ARRAY_SIZE(cls_i2c_res_5),
+		.pdata = {
+			.reg_shift = OCORE_REGSHIFT,
+			.reg_io_width = OCORE_REG_IO_WIDTH,
+			.clock_khz = OCORE_IP_CLK_khz,
+			.bus_khz = OCORE_BUS_CLK_khz,
+			.big_endian = false,
+			.num_devices = 0,
+			.devices = NULL,
+		},
+	},
+	{
+		.id = 6,
+		.res = cls_i2c_res_6,
+		.num_res = ARRAY_SIZE(cls_i2c_res_6),
+		.pdata = {
+			.reg_shift = OCORE_REGSHIFT,
+			.reg_io_width = OCORE_REG_IO_WIDTH,
+			.clock_khz = OCORE_IP_CLK_khz,
+			.bus_khz = OCORE_BUS_CLK_khz,
+			.big_endian = false,
+			.num_devices = ARRAY_SIZE(i2c_info_6),
+			.devices = i2c_info_6,
+		},
+	},
+	{
+		.id = 7, 
+		.res = cls_i2c_res_11, 
+		.num_res = ARRAY_SIZE(cls_i2c_res_11), 
 		.pdata = {
 			.reg_shift = OCORE_REGSHIFT,
 			.reg_io_width = OCORE_REG_IO_WIDTH,
@@ -312,44 +409,44 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 };
 
 /* xcvr front panel mapping */
+
 static struct port_info front_panel_ports[] = {
-	{"QSFP1",   1, QSFP},
-	{"QSFP2",   2, QSFP},
-	{"QSFP3",   3, QSFP},
-	{"QSFP4",   4, QSFP},
-	{"QSFP5",   5, QSFP},
-	{"QSFP6",   6, QSFP},
-	{"QSFP7",   7, QSFP},
-	{"QSFP8",   8, QSFP},
-	{"QSFP9",   9, QSFP},
-	{"QSFP10", 10, QSFP},
-	{"QSFP11", 11, QSFP},
-	{"QSFP12", 12, QSFP},
-	{"QSFP13", 13, QSFP},
-	{"QSFP14", 14, QSFP},
-	{"QSFP15", 15, QSFP},
-	{"QSFP16", 16, QSFP},
-	{"QSFP17", 17, QSFP},
-	{"QSFP18", 18, QSFP},
-	{"QSFP19", 19, QSFP},
-	{"QSFP20", 20, QSFP},
-	{"QSFP21", 21, QSFP},
-	{"QSFP22", 22, QSFP},
-	{"QSFP23", 23, QSFP},
-	{"QSFP24", 24, QSFP},
-	{"QSFP25", 25, QSFP},
-	{"QSFP26", 26, QSFP},
-	{"QSFP27", 27, QSFP},
-	{"QSFP28", 28, QSFP},
-	{"QSFP29", 29, QSFP},
-	{"QSFP30", 30, QSFP},
-	{"QSFP31", 31, QSFP},
-	{"QSFP32", 32, QSFP},
-	{"SFP1",   33, SFP},
-	{"SFP2",   34, SFP},
+	{"QSFPDD1",   1, QSFP},
+	{"QSFPDD2",   2, QSFP},
+	{"QSFPDD3",   3, QSFP},
+	{"QSFPDD4",   4, QSFP},
+	{"QSFPDD5",   5, QSFP},
+	{"QSFPDD6",   6, QSFP},
+	{"QSFPDD7",   7, QSFP},
+	{"QSFPDD8",   8, QSFP},
+	{"QSFPDD9",   13, QSFP},
+	{"QSFPDD10", 10, QSFP},
+	{"QSFPDD11", 11, QSFP},
+	{"QSFPDD12", 12, QSFP},
+	{"QSFPDD13", 9, QSFP},
+	{"QSFPDD14", 14, QSFP},
+	{"QSFPDD15", 15, QSFP},
+	{"QSFPDD16", 16, QSFP},
+	{"QSFPDD17", 17, QSFP},
+	{"QSFPDD18", 18, QSFP},
+	{"QSFPDD19", 19, QSFP},
+	{"QSFPDD20", 20, QSFP},
+	{"QSFPDD21", 21, QSFP},
+	{"QSFPDD22", 22, QSFP},
+	{"QSFPDD23", 23, QSFP},
+	{"QSFPDD24", 24, QSFP},
+	{"QSFPDD25", 25, QSFP},
+	{"QSFPDD26", 26, QSFP},
+	{"QSFPDD27", 27, QSFP},
+	{"QSFPDD28", 28, QSFP},
+	{"QSFPDD29", 29, QSFP},
+	{"QSFPDD30", 30, QSFP},
+	{"QSFPDD31", 31, QSFP},
+	{"QSFPDD32", 32, QSFP},
+	{"SFP+1",   33, SFP},
+	{"SFP+2",   34, SFP},
 	/* END OF LIST */
 };
-
 static struct cls_xcvr_platform_data xcvr_data = {
 	.port_reg_size = 0x10,
 	.num_ports = ARRAY_SIZE(front_panel_ports),
@@ -441,6 +538,8 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		i2c_bus_configs[i].res[0].start += rstart;
 		i2c_bus_configs[i].res[0].end += rstart;
 
+		printk("start %x ... end %x\n",i2c_bus_configs[i].res[0].start,i2c_bus_configs[i].res[0].end);
+
 		switch (i + 1) {
 		case 1:
 			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_1;
@@ -457,6 +556,9 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		case 5:
 			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_5;
 			break;
+		case 6:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_6;
+			break;
 		default:
 			i2c_bus_configs[i].pdata.bus_khz = OCORE_BUS_CLK_khz;
 		}
@@ -467,7 +569,7 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 			i2c_bus_configs[i].res[0].end);
 
 		i2cbuses_pdev[i] = platform_device_register_resndata(
-					&dev->dev, "cls-ocores-i2c", 
+					&dev->dev, "ocores-i2c", 
 					i2c_bus_configs[i].id,
 					i2c_bus_configs[i].res, 
 					i2c_bus_configs[i].num_res,
@@ -537,6 +639,7 @@ static struct pci_driver clsswbrd_pci_driver = {
 module_pci_driver(clsswbrd_pci_driver);
 
 MODULE_AUTHOR("Pradchaya P.<pphuchar@celestica.com>");
-MODULE_DESCRIPTION("Celestica Silverstone switchboard driver");
+MODULE_AUTHOR("Pariwat L.<pleamsum@celestica.com>");
+MODULE_DESCRIPTION("Celestica Silverstone2 switchboard driver");
 MODULE_VERSION(MOD_VERSION);
 MODULE_LICENSE("GPL");
