@@ -26,7 +26,7 @@
 #include "x86_64_cel_silverstone2_log.h"
 #include "platform.h"
 
-static int qsfp_count__ = 32;
+static int qsfpdd_count__ = 32;
 static int sfp_count__ = 2;
 static int i2c_bus_offset = 9;
 static char node_path[PREFIX_PATH_LEN] = {0};
@@ -53,15 +53,15 @@ static int cel_silverstone2_qsfp_sfp_node_read_int(char *path, int *value, int d
 
 static char * cel_silverstone2_sfp_qsfp_get_port_path(int port, char *node_name)
 {
-    if (port <= qsfp_count__ + sfp_count__)
+    if (port <= qsfpdd_count__ + sfp_count__)
     {
-        if (port <= qsfp_count__)
+        if (port <= qsfpdd_count__)
         {
-            sprintf(node_path, "%s/QSFP%d/qsfp_modprsL", PLATFORM_PATH, port);
+            sprintf(node_path, "%s/QSFPDD%d/qsfp_modprsL", PLATFORM_PATH, port);
         }
         else
         {
-            sprintf(node_path, "%s/SFP%d/sfp_modabs", PLATFORM_PATH, port - qsfp_count__);
+            sprintf(node_path, "%s/SFP+%d/sfp_modabs", PLATFORM_PATH, port - qsfpdd_count__);
         }
     }
     else
@@ -75,15 +75,15 @@ static char * cel_silverstone2_sfp_qsfp_get_port_path(int port, char *node_name)
 
 static char * cel_silverstone2_sfp_qsfp_get_eeprom_path(int port, char *node_name)
 {
-    if (port <= qsfp_count__ + sfp_count__)
+    if (port <= qsfpdd_count__ + sfp_count__)
     {
-        if (port <= qsfp_count__)
+        if (port <= qsfpdd_count__)
         {
             sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset); //QSFP 10 - 41
         }
         else
         {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfp_count__); //SFP 1 - 2
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port - qsfpdd_count__); //SFP 1 - 2
         }
     }
     else
@@ -101,7 +101,7 @@ static uint64_t cel_silverstone2_sfp_qsfp_get_all_ports_present(void)
     uint64_t present = 0;
     char *path;
 
-    for (i = 0; i < (qsfp_count__ + sfp_count__); i++)
+    for (i = 0; i < (qsfpdd_count__ + sfp_count__); i++)
     {
         path = cel_silverstone2_sfp_qsfp_get_port_path(i + 1, "present");
         if (cel_silverstone2_qsfp_sfp_node_read_int(path, &ret, 0) != 0)
@@ -124,7 +124,7 @@ int onlp_sfpi_bitmap_get(onlp_sfp_bitmap_t *bmap)
     int p;
     AIM_BITMAP_CLR_ALL(bmap);
 
-    for (p = 0; p < (qsfp_count__ + sfp_count__); p++)
+    for (p = 0; p < (qsfpdd_count__ + sfp_count__); p++)
     {
         AIM_BITMAP_SET(bmap, p);
     }
@@ -143,13 +143,13 @@ int onlp_sfpi_is_present(int port)
     char *path = cel_silverstone2_sfp_qsfp_get_port_path(port + 1, "present");
     if (cel_silverstone2_qsfp_sfp_node_read_int(path, &present, 0) != 0)
     {
-        if (port <= qsfp_count__)
+        if (port <= qsfpdd_count__)
         {
             AIM_LOG_ERROR("Unable to read present status from qsfp port(%d)\r\n", port);
         }
         else
         {
-            AIM_LOG_ERROR("Unable to read present status from sfp port(%d)\r\n", port - qsfp_count__);
+            AIM_LOG_ERROR("Unable to read present status from sfp port(%d)\r\n", port - qsfpdd_count__);
         }
 
         return ONLP_STATUS_E_INTERNAL;
