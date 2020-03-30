@@ -51,7 +51,7 @@ class OnlPlatform_x86_64_cel_silverstone2_r0(OnlPlatformCelestica,
 
         for y in range(qsfp_qty):
             self.new_i2c_device('optoe1',0x50,qsfp_offset+y)
-            os.system("echo 'QSFPDD{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+y+1,actual_port_num))
+            os.system("echo 'QSFPDD{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+y,actual_port_num))
             actual_port_num += 1
 
         os.system("echo '3' > /proc/sys/kernel/printk")
