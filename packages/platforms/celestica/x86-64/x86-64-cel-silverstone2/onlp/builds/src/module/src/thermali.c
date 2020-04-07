@@ -31,15 +31,15 @@ static onlp_thermal_info_t thermal_info[] = {
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
-    { { ONLP_THERMAL_ID_CREATE(7), "Power IC IR3215 internal temperature",   0}, // SW_U71_Temp1
+    { { ONLP_THERMAL_ID_CREATE(7), "Power IC IR3215 internal temperature (U71_1)",   0}, // SW_U71_Temp1
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
-    { { ONLP_THERMAL_ID_CREATE(8), "Power IC IR3215 internal temperature",   0}, // SW_U78_Temp
+    { { ONLP_THERMAL_ID_CREATE(8), "Power IC IR3215 internal temperature (U78)",   0}, // SW_U78_Temp
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
-    { { ONLP_THERMAL_ID_CREATE(9), "Power IC IR3215 internal temperature",   0},// SW_U71_temp2
+    { { ONLP_THERMAL_ID_CREATE(9), "Power IC IR3215 internal temperature (U71_2)",   0},// SW_U71_temp2
                 ONLP_THERMAL_STATUS_PRESENT,
                 ONLP_THERMAL_CAPS_ALL, 0, ONLP_THERMAL_THRESHOLD_INIT_DEFAULTS
             },
