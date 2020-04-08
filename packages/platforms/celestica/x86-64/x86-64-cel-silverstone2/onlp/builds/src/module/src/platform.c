@@ -674,9 +674,9 @@ int get_sensor_info(int id, int *temp, int *warn, int *error, int *shutdown)
     char strTmp[10][128] = {{0}, {0}};
     char *token = NULL;
     char *Thermal_sensor_name[14] = {
-        "TEMP_CPU", "TEMP_BB_U3", "TEMP_SW_U16", "TEMP_SW_U52",
+        "TEMP_CPU", "TEMP_BB_U3","TEMP_SW_Internal", "TEMP_SW_U16", "TEMP_SW_U52",
         "TEMP_FAN_U17", "TEMP_FAN_U52","SW_U71_Temp1","SW_U78_Temp1","SW_U71_Temp2",
-        "TEMP_SW_Internal","PSU1_Temp1", "PSU1_Temp2","PSU2_Temp1", "PSU2_Temp2"};
+        "PSU1_Temp1", "PSU1_Temp2","PSU2_Temp1", "PSU2_Temp2"};
 
 	if((NULL == temp) || (NULL == warn) || (NULL == error) || (NULL == shutdown))
 	{
