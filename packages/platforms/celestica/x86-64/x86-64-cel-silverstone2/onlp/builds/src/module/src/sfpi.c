@@ -28,7 +28,7 @@
 
 static int qsfpdd_count__ = 32;
 static int sfp_count__ = 2;
-static int i2c_bus_offset = 9;
+static int i2c_bus_offset = 12;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];
@@ -79,7 +79,7 @@ static char * cel_silverstone2_sfp_qsfp_get_eeprom_path(int port, char *node_nam
     {
         if (port <= qsfpdd_count__)
         {
-            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset); //QSFP 10 - 41
+            sprintf(node_path, "%s/%d-0050/eeprom", I2C_DEVICE_PATH, port + i2c_bus_offset); //QSFP 13 - 44
         }
         else
         {
