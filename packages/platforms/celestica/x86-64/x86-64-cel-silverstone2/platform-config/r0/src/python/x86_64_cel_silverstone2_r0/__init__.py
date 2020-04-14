@@ -14,7 +14,7 @@ class OnlPlatform_x86_64_cel_silverstone2_r0(OnlPlatformCelestica,
         print("Initialize Silverstone driver")
 
         qsfp_qty = 32
-        # sfp_qty = 2
+        sfp_qty = 2
         qsfp_offset = 13
         actual_port_num = 1
 
@@ -42,15 +42,16 @@ class OnlPlatform_x86_64_cel_silverstone2_r0(OnlPlatformCelestica,
         self.new_i2c_device('24lc64t', 0x56, 0)
 
         # #transceiver device
-        # for x in range(sfp_qty):
-        #     self.new_i2c_device('optoe2',0x50,x+1)
-        #     os.system("echo 'SFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(x+1,actual_port_num))
-        #     actual_port_num += 1
+        # initialize for 2 SFP+
+        for x in range(sfp_qty):
+            self.new_i2c_device('optoe2',0x50,x+1)
+            os.system("echo 'SFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(x+1,actual_port_num))
+            actual_port_num += 1
         
-        # actual_port_num = 1
-
+        actual_port_num = 1
+        # initialize for 32 QSFPDD.
         for y in range(qsfp_qty):
-            self.new_i2c_device('optoe1',0x50,qsfp_offset+y)
+            self.new_i2c_device('optoe3',0x50,qsfp_offset+y)
             os.system("echo 'QSFPDD{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(qsfp_offset+y,actual_port_num))
             actual_port_num += 1
 
