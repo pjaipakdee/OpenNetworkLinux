@@ -44,7 +44,7 @@ class OnlPlatform_x86_64_cel_silverstone2_r0(OnlPlatformCelestica,
         # #transceiver device
         # initialize for 2 SFP+
         for x in range(sfp_qty):
-            self.new_i2c_device('optoe2',0x50,x+1)
+            self.new_i2c_device('optoe1',0x50,x+1)
             os.system("echo 'SFP{1}' > /sys/bus/i2c/devices/{0}-0050/port_name".format(x+1,actual_port_num))
             actual_port_num += 1
         

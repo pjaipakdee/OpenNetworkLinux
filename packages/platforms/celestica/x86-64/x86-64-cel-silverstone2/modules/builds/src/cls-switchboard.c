@@ -34,7 +34,8 @@
 
 #define FPGA_PCIE_DEVICE_ID	0x7021
 #define MMIO_BAR		0
-#define I2C_BUS_OFS		12
+/* Reserve some bus numbers for CPU or FPGA */
+#define I2C_BUS_OFS		14
 
 /* I2C ocore configurations */
 #define OCORE_REGSHIFT      	      2
@@ -102,6 +103,41 @@ static int bus_clock_master_6 = 100;
 module_param(bus_clock_master_6, int, 0660);
 MODULE_PARM_DESC(bus_clock_master_6, 
 	"I2C master 6 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_7 = 100;
+module_param(bus_clock_master_7, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_7, 
+	"I2C master 7 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_8 = 100;
+module_param(bus_clock_master_8, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_8, 
+	"I2C master 8 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_9 = 100;
+module_param(bus_clock_master_9, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_9, 
+	"I2C master 9 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_10 = 100;
+module_param(bus_clock_master_10, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_10, 
+	"I2C master 10 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_11 = 100;
+module_param(bus_clock_master_11, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_11, 
+	"I2C master 11 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_12 = 100;
+module_param(bus_clock_master_12, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_12, 
+	"I2C master 12 bus speed in KHz 50/80/100/200/400");
+
+static int bus_clock_master_13 = 100;
+module_param(bus_clock_master_13, int, 0660);
+MODULE_PARM_DESC(bus_clock_master_13, 
+	"I2C master 13 bus speed in KHz 50/80/100/200/400");
 
 // NOTE:  Silverstone i2c channel mapping is very wierd!!!
 /* PCA9548 channel config on MASTER BUS 3/6 */
@@ -275,14 +311,45 @@ static struct resource  cls_i2c_res_6[] = {
 	{
 		.start = 0x8A0, .end = 0x8BF,
 		.flags = IORESOURCE_MEM,}, 
-};		
-/* Resource IOMEM for i2c bus 11 for si5395B*/
-static struct resource  cls_i2c_res_11[] = {
+};	
+
+static struct resource  cls_i2c_res_7[] = {
+	{
+		.start = 0x8C0, .end = 0x8DF,
+		.flags = IORESOURCE_MEM,}, 
+};	
+static struct resource  cls_i2c_res_8[] = {
+	{
+		.start = 0x8E0, .end = 0x8FF,
+		.flags = IORESOURCE_MEM,}, 
+};	
+static struct resource  cls_i2c_res_9[] = {
 	{
 		.start = 0x900, .end = 0x91F,
 		.flags = IORESOURCE_MEM,}, 
+};	
+static struct resource  cls_i2c_res_10[] = {
+	{
+		.start = 0x920, .end = 0x93F,
+		.flags = IORESOURCE_MEM,}, 
+};	
+/* Resource IOMEM for i2c bus 11 for si5344D*/
+static struct resource  cls_i2c_res_11[] = {
+	{
+		.start = 0x940, .end = 0x95F,
+		.flags = IORESOURCE_MEM,}, 
 };
-
+static struct resource  cls_i2c_res_12[] = {
+	{
+		.start = 0x960, .end = 0x97F,
+		.flags = IORESOURCE_MEM,}, 
+};	
+/* Resource IOMEM for i2c bus 13 for VDDCORE_12V_DCDC*/
+static struct resource  cls_i2c_res_13[] = {
+	{
+		.start = 0x980, .end = 0x99F,
+		.flags = IORESOURCE_MEM,}, 
+};
 /* Resource IOMEM for reg access */
 static struct resource reg_io_res[] = {
 	{       
@@ -305,7 +372,10 @@ static struct resource xcvr_res[] = {
 };
 
 /* if have i2c-mux pca9548, .num_devices=ARRAY_SIZE(i2c_info_X); .devices = i2c_info_X.
-* if not, .num_devices = 0; .devices = NULL,
+* if not, .num_devices = 0; .devices = NULL
+*
+* Notes: Some FPGA_I2C_Master buses are shared with BMC, 
+* 		these buses need to be uninitialized because it interfere the BMC activity
 */
 static struct i2c_bus_config i2c_bus_configs[] = {
 	{
@@ -365,20 +435,6 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 5,
-		.res = cls_i2c_res_5,
-		.num_res = ARRAY_SIZE(cls_i2c_res_5),
-		.pdata = {
-			.reg_shift = OCORE_REGSHIFT,
-			.reg_io_width = OCORE_REG_IO_WIDTH,
-			.clock_khz = OCORE_IP_CLK_khz,
-			.bus_khz = OCORE_BUS_CLK_khz,
-			.big_endian = false,
-			.num_devices = 0,
-			.devices = NULL,
-		},
-	},
-	{
 		.id = 6,
 		.res = cls_i2c_res_6,
 		.num_res = ARRAY_SIZE(cls_i2c_res_6),
@@ -393,7 +449,7 @@ static struct i2c_bus_config i2c_bus_configs[] = {
 		},
 	},
 	{
-		.id = 7, 
+		.id = 11, 
 		.res = cls_i2c_res_11, 
 		.num_res = ARRAY_SIZE(cls_i2c_res_11), 
 		.pdata = {
@@ -419,11 +475,11 @@ static struct port_info front_panel_ports[] = {
 	{"QSFPDD6",   6, QSFP},
 	{"QSFPDD7",   7, QSFP},
 	{"QSFPDD8",   8, QSFP},
-	{"QSFPDD9",   13, QSFP},
+	{"QSFPDD9",   9, QSFP},
 	{"QSFPDD10", 10, QSFP},
 	{"QSFPDD11", 11, QSFP},
 	{"QSFPDD12", 12, QSFP},
-	{"QSFPDD13", 9, QSFP},
+	{"QSFPDD13", 13, QSFP},
 	{"QSFPDD14", 14, QSFP},
 	{"QSFPDD15", 15, QSFP},
 	{"QSFPDD16", 16, QSFP},
@@ -558,6 +614,27 @@ static int cls_fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
 			break;
 		case 6:
 			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_6;
+			break;
+		case 7:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_7;
+			break;
+		case 8:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_8;
+			break;
+		case 9:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_9;
+			break;
+		case 10:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_10;
+			break;
+		case 11:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_11;
+			break;
+		case 12:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_12;
+			break;
+		case 13:
+			i2c_bus_configs[i].pdata.bus_khz = bus_clock_master_13;
 			break;
 		default:
 			i2c_bus_configs[i].pdata.bus_khz = OCORE_BUS_CLK_khz;
