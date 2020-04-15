@@ -28,7 +28,7 @@
 
 static int qsfpdd_count__ = 32;
 static int sfp_count__ = 2;
-static int i2c_bus_offset = 12;
+static int i2c_bus_offset = 14;
 static char node_path[PREFIX_PATH_LEN] = {0};
 char command[256];
 char buf[256];

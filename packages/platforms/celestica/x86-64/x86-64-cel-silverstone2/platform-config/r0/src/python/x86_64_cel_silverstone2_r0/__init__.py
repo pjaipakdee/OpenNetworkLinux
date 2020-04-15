@@ -15,7 +15,7 @@ class OnlPlatform_x86_64_cel_silverstone2_r0(OnlPlatformCelestica,
 
         qsfp_qty = 32
         sfp_qty = 2
-        qsfp_offset = 13
+        qsfp_offset = 15
         actual_port_num = 1
 
         self.insmod("cpld_b.ko")
