@@ -1,5 +1,5 @@
 /*
- * switchboard-diag.c - driver for Silverstone Switch board FPGA/CPLD diag.
+ * switchboard-diag.c - driver for Silverstone DP Switch board FPGA/CPLD sysfs for diag.
  *
  * Author: Pradchaya Phucharoen
  *
@@ -15,7 +15,7 @@
  * THE PCI MEMORY REGION 0 OF THE FPGA PCI DEVICE, YOU CAN SEE THE 
  * WARNING MESSAGE IN KERNEL LOG. PLEASE *DO NOT* FOLLOW THIS DESIGN.
  *  
- *  /
+ *   /
  *   \--sys
  *       \--devices
  *            \--platform
@@ -24,8 +24,10 @@
  *                    |--CPLD1
  *                    |--CPLD2
  *                    \--SFF
- *                        |--QSFP[1..32]
- *                        \--SFP[1..2]
+ *                        |--QSFP[1..24]
+ *                        |--SFP[1..2]
+ *                        \--QSFPDD[1..6]
+ * 
  *
  */
 
@@ -52,7 +54,7 @@
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
 
-#define MOD_VERSION "2.0.3"
+#define MOD_VERSION "1.0.0"
 #define FPGA_PCI_DEVICE_ID      0x7021
 #define FPGA_PCI_BAR_NUM        0
 #define SWITCH_CPLD_ADAP_NUM    4
@@ -84,6 +86,8 @@ I2C_CH10        0x00000A00 - 0x00000A10.
 I2C_CH11        0x00000B00 - 0x00000B10.
 I2C_CH12        0x00000C00 - 0x00000C10.
 I2C_CH13        0x00000D00 - 0x00000D10.
+I2C_CH14        0x000009A0 - 0x000009B0.
+I2C_CH15        0x000009C0 - 0x000009D0.
 SPI Master      0x00001200 - 0x00001300.
 DPLL SPI Master 0x00001320 - 0x0000132F.
 PORT XCVR       0x00004000 - 0x00004FFF.
@@ -99,6 +103,16 @@ PORT XCVR       0x00004000 - 0x00004FFF.
 #define I2C_MASTER_CH_1             1
 #define I2C_MASTER_CH_2             2
 #define I2C_MASTER_CH_3             3
+#define I2C_MASTER_CH_4             4
+#define I2C_MASTER_CH_5             5
+#define I2C_MASTER_CH_6             6
+#define I2C_MASTER_CH_7             7
+#define I2C_MASTER_CH_8             8
+#define I2C_MASTER_CH_9             9
+#define I2C_MASTER_CH_10            10
+#define I2C_MASTER_CH_11            11
+#define I2C_MASTER_CH_12            12
+#define I2C_MASTER_CH_13            13
 
 /* FPGA FRONT PANEL PORT MGMT */
 #define SFF_PORT_CTRL_BASE          0x4000
@@ -212,30 +226,34 @@ struct i2c_dev_data {
 /* PREDEFINED I2C SWITCH DEVICE TOPOLOGY */
 static struct i2c_switch fpga_i2c_bus_dev[] = {
     /* BUS3 QSFP Exported as virtual bus */
-    {I2C_MASTER_CH_3, 0x71, 2, QSFP, "QSFP1"}, {I2C_MASTER_CH_3, 0x71, 3, QSFP, "QSFP2"},
-    {I2C_MASTER_CH_3, 0x71, 0, QSFP, "QSFP3"}, {I2C_MASTER_CH_3, 0x71, 1, QSFP, "QSFP4"},
-    {I2C_MASTER_CH_3, 0x71, 6, QSFP, "QSFP5"}, {I2C_MASTER_CH_3, 0x71, 5, QSFP, "QSFP6"},
-    {I2C_MASTER_CH_3, 0x73, 7, QSFP, "QSFP7"}, {I2C_MASTER_CH_3, 0x71, 4, QSFP, "QSFP8"},
+    {I2C_MASTER_CH_6, 0x70, 0, QSFP, "QSFPDD27"}, {I2C_MASTER_CH_6, 0x70, 1, QSFP, "QSFPDD32"},
+    {I2C_MASTER_CH_6, 0x70, 2, QSFP, "QSFPDD29"}, {I2C_MASTER_CH_6, 0x70, 3, QSFP, "QSFPDD31"},
+    {I2C_MASTER_CH_6, 0x70, 4, QSFP, "QSFPDD30"}, {I2C_MASTER_CH_6, 0x70, 5, QSFP, "QSFPDD23"},
+    {I2C_MASTER_CH_6, 0x70, 6, QSFP, "QSFPDD26"}, {I2C_MASTER_CH_6, 0x70, 7, QSFP, "QSFPDD28"},
 
-    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFP9"},  {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFP10"},
-    {I2C_MASTER_CH_3, 0x73, 6, QSFP, "QSFP11"}, {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFP12"},
-    {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFP13"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFP14"},
-    {I2C_MASTER_CH_3, 0x71, 7, QSFP, "QSFP15"}, {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFP16"},
+    {I2C_MASTER_CH_3, 0x71, 0, QSFP, "QSFPDD3"},  {I2C_MASTER_CH_3, 0x71, 1, QSFP, "QSFPDD4"},
+    {I2C_MASTER_CH_3, 0x71, 2, QSFP, "QSFPDD1"}, {I2C_MASTER_CH_3, 0x71, 3, QSFP, "QSFPDD2"},
+    {I2C_MASTER_CH_3, 0x71, 4, QSFP, "QSFPDD8"}, {I2C_MASTER_CH_3, 0x71, 5, QSFP, "QSFPDD6"},
+    {I2C_MASTER_CH_3, 0x71, 6, QSFP, "QSFPDD5"}, {I2C_MASTER_CH_3, 0x71, 7, QSFP, "QSFPDD15"},
 
-    {I2C_MASTER_CH_3, 0x72, 1, QSFP, "QSFP17"}, {I2C_MASTER_CH_3, 0x72, 7, QSFP, "QSFP18"},
-    {I2C_MASTER_CH_3, 0x72, 4, QSFP, "QSFP19"}, {I2C_MASTER_CH_3, 0x72, 0, QSFP, "QSFP20"},
-    {I2C_MASTER_CH_3, 0x72, 5, QSFP, "QSFP21"}, {I2C_MASTER_CH_3, 0x72, 2, QSFP, "QSFP22"},
-    {I2C_MASTER_CH_3, 0x70, 5, QSFP, "QSFP23"}, {I2C_MASTER_CH_3, 0x72, 6, QSFP, "QSFP24"},
+    {I2C_MASTER_CH_6, 0x72, 0, QSFP, "QSFPDD20"}, {I2C_MASTER_CH_6, 0x72, 1, QSFP, "QSFPDD17"},
+    {I2C_MASTER_CH_6, 0x72, 2, QSFP, "QSFPDD22"}, {I2C_MASTER_CH_6, 0x72, 3, QSFP, "QSFPDD25"},
+    {I2C_MASTER_CH_6, 0x72, 4, QSFP, "QSFPDD19"}, {I2C_MASTER_CH_6, 0x72, 5, QSFP, "QSFPDD21"},
+    {I2C_MASTER_CH_6, 0x72, 6, QSFP, "QSFPDD24"}, {I2C_MASTER_CH_6, 0x72, 7, QSFP, "QSFPDD18"},
 
-    {I2C_MASTER_CH_3, 0x72, 3, QSFP, "QSFP25"}, {I2C_MASTER_CH_3, 0x70, 6, QSFP, "QSFP26"},
-    {I2C_MASTER_CH_3, 0x70, 0, QSFP, "QSFP27"}, {I2C_MASTER_CH_3, 0x70, 7, QSFP, "QSFP28"},
-    {I2C_MASTER_CH_3, 0x70, 2, QSFP, "QSFP29"}, {I2C_MASTER_CH_3, 0x70, 4, QSFP, "QSFP30"},
-    {I2C_MASTER_CH_3, 0x70, 3, QSFP, "QSFP31"}, {I2C_MASTER_CH_3, 0x70, 1, QSFP, "QSFP32"},
+    {I2C_MASTER_CH_3, 0x73, 0, QSFP, "QSFPDD16"}, {I2C_MASTER_CH_3, 0x73, 1, QSFP, "QSFPDD13"},
+    {I2C_MASTER_CH_3, 0x73, 2, QSFP, "QSFPDD12"}, {I2C_MASTER_CH_3, 0x73, 3, QSFP, "QSFPDD10"},
+    {I2C_MASTER_CH_3, 0x73, 4, QSFP, "QSFPDD9"}, {I2C_MASTER_CH_3, 0x73, 5, QSFP, "QSFPDD14"},
+    {I2C_MASTER_CH_3, 0x73, 6, QSFP, "QSFPDD11"}, {I2C_MASTER_CH_3, 0x73, 7, QSFP, "QSFPDD7"},
     /* BUS1 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP1"},
+    {I2C_MASTER_CH_1, 0xFF, 0, SFP, "SFP+1"},
     /* BUS2 SFP+ Exported as virtual bus */
-    {I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP2"},
+    {I2C_MASTER_CH_2, 0xFF, 0, SFP, "SFP+2"},
+    {I2C_MASTER_CH_4, 0xFF, 0, NONE, "CPLD1"},
+    {I2C_MASTER_CH_4, 0xFF, 0, NONE, "CPLD2"},
+    
 };
+
 
 struct fpga_device {
     /* data mmio region */
@@ -842,7 +860,6 @@ static ssize_t sfp_txdisable_store(struct device *dev, struct device_attribute *
     struct sff_device_data *dev_data = dev_get_drvdata(dev);
     unsigned int portid = dev_data->portid;
     unsigned int REGISTER = SFF_PORT_CTRL_BASE + (portid - 1) * 0x10;
-
     mutex_lock(&fpga_data->fpga_lock);
     status = kstrtol(buf, 0, &value);
     if (status == 0) {
@@ -945,47 +962,56 @@ static ssize_t port_led_color_show(struct device *dev, struct device_attribute *
     if (led_color2 < 0)
         return led_color2;
 
-    return sprintf(buf, "%s %s\n",
-                   led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "green" : led_color1 == 0x05 ?  "red" : led_color1 == 0x04 ? 
-                    "yellow" : led_color1 == 0x03 ? "blue" : led_color1 == 0x02 ?  "cyan" : led_color1 == 0x01 ?  "magenta" : "white",
-                   led_color2 == 0x07 ? "off" : led_color2 == 0x06 ? "green" : led_color2 == 0x05 ?  "red" : led_color2 == 0x04 ? 
-                    "yellow" : led_color2 == 0x03 ? "blue" : led_color2 == 0x02 ?  "cyan" : led_color2 == 0x01 ?  "magenta" : "white");
+    return sprintf(buf, "CPLD1 %s CPLD2 %s\n",
+                   led_color1 == 0x07 ? "off" : led_color1 == 0x06 ? "off" : led_color1 == 0x05 ?  "off" : led_color1 == 0x04 ? 
+                    "off" : led_color1 == 0x03 ? "off" : led_color1 == 0x02 ?  "amber" : led_color1 == 0x01 ?  "green" : "off",
+                   led_color2 == 0x07 ? "off" : led_color2 == 0x06 ? "cyan" : led_color2 == 0x05 ?  "magenta" : led_color2 == 0x04 ? 
+                    "blue" : led_color2 == 0x03 ? "red" : led_color2 == 0x02 ?  "green" : led_color2 == 0x01 ?  "amber" : "white");
 }
 
 static ssize_t port_led_color_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
     ssize_t status;
-    u8 led_color;
+    u8 led_color1;
+    u8 led_color2;
 
     struct i2c_client *cpld1 = fpga_data->cpld_i2c_clients[0];
     struct i2c_client *cpld2 = fpga_data->cpld_i2c_clients[1];
 
     if (sysfs_streq(buf, "off")) {
-        led_color = 0x07;
-    } else if (sysfs_streq(buf, "green")) {
-        led_color = 0x06;
-    } else if (sysfs_streq(buf, "red")) {
-        led_color = 0x05;
-    } else if (sysfs_streq(buf, "yellow")) {
-        led_color = 0x04;
-    } else if (sysfs_streq(buf, "blue")) {
-        led_color = 0x03;
+        led_color1 = 0x07;
+        led_color2 = 0x07;
     } else if (sysfs_streq(buf, "cyan")) {
-        led_color = 0x02;
+        led_color1 = 0x07;
+        led_color2 = 0x06;
     } else if (sysfs_streq(buf, "magenta")) {
-        led_color = 0x01;
+        led_color1 = 0x07;
+        led_color2 = 0x05;
+    } else if (sysfs_streq(buf, "blue")) {
+        led_color1 = 0x07;
+        led_color2 = 0x04;
+    } else if (sysfs_streq(buf, "red")) {
+        led_color1 = 0x07;
+        led_color2 = 0x03;
+    } else if (sysfs_streq(buf, "green")) {
+        led_color1 = 0x01;
+        led_color2 = 0x02;
+    } else if (sysfs_streq(buf, "amber")) {
+        led_color1 = 0x02;
+        led_color2 = 0x01;
     } else if (sysfs_streq(buf, "white")) {
-        led_color = 0x00;
+        led_color1 = 0x07;
+        led_color2 = 0x00;
     } else {
         status = -EINVAL;
         return status;
     }
 
-    status = i2c_smbus_write_byte_data(cpld1, 0x0A, led_color);
+    status = i2c_smbus_write_byte_data(cpld1, 0x0A, led_color1);
     if (status < 0)
         return status;
 
-    status = i2c_smbus_write_byte_data(cpld2, 0x0A, led_color);
+    status = i2c_smbus_write_byte_data(cpld2, 0x0A, led_color2);
     if (status < 0)
         return status;
 
@@ -1014,6 +1040,10 @@ static struct device * silverstone_sff_init(int portid) {
     }
     /* The QSFP port ID start from 1 */
     new_data->portid = portid + 1;
+    /* For SFP+ port 1 and 2 it's act as port 33 and 34 not 31 and 32 */
+    if(portid == 30 || portid == 31){
+        new_data->portid = new_data->portid+2;
+    }
     new_data->port_type = fpga_i2c_bus_dev[portid].port_type;
     new_device = device_create_with_groups(fpgafwclass, 
                                            sff_dev, 
@@ -1182,6 +1212,8 @@ err_free_cli_clpd2:
     i2c_unregister_device(cpld2_client);
 err_free_cli_clpd1:
     i2c_unregister_device(cpld1_client);
+err_free_adap:
+    i2c_put_adapter(cpld_bus_adap);
 err_exit:
     return ret;
 
@@ -1305,6 +1337,6 @@ module_init(silverstone_init);
 module_exit(silverstone_exit);
 
 MODULE_AUTHOR("Celestica Inc.");
-MODULE_DESCRIPTION("Silverstone Sysfs Nodes for Diagnostic Tool");
+MODULE_DESCRIPTION("Silverstone2 Sysfs Nodes for Diagnostic Tool");
 MODULE_VERSION(MOD_VERSION);
 MODULE_LICENSE("GPL");
