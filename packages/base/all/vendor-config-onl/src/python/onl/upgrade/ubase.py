@@ -380,7 +380,7 @@ If you choose not to perform this upgrade booting cannot continue.""" % self.aty
 
 class BaseOnieUpgrade(BaseUpgrade):
 
-    ONIE_UPDATER_CONTEXT = "ONL-IMAGES"
+    ONIE_UPDATER_CONTEXT = "DEMO-ONL-IMAGES"
     ONIE_UPDATER_PATH    = "/mnt/onl/images"
 
     def install_onie_updater(self, src_dir, updater):

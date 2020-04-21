@@ -177,7 +177,7 @@ class Base:
         base = swis[0]
 
         self.log.info("Installing ONL Software Image (%s)...", base)
-        dev = self.blkidParts['ONL-IMAGES']
+        dev = self.blkidParts['DEMO-ONL-IMAGES']
         with MountContext(dev.device, log=self.log) as ctx:
             dst = os.path.join(ctx.dir, base)
             self.installerCopy(base, dst)
@@ -970,7 +970,7 @@ class UBIfsCreater(SubprocessMixin, Base):
         base = swis[0]
         
         self.log.info("Installing ONL Software Image (%s)...", base)
-        dev = "ONL-IMAGES"
+        dev = "DEMO-ONL-IMAGES"
         dstDir = "/tmp/ubifs"
         code = self.ubi_mount(dstDir,dev)
         if code :

@@ -88,7 +88,7 @@ default:
   - DEMO-ONL-CONFIG:
       =: 128MiB
       format: ext4
-  - ONL-IMAGES:
+  - DEMO-ONL-IMAGES:
       =: 1GiB
       format: ext4
   - ONL-DATA:
@@ -99,7 +99,7 @@ default:
   ##installer:
   ##- DEMO-ONL-BOOT: 128MiB
   ##- DEMO-ONL-CONFIG: 128MiB
-  ##- ONL-IMAGES: 384MiB
+  ##- DEMO-ONL-IMAGES: 384MiB
   ##- ONL-DATA: 100%
 
   network:

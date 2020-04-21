@@ -159,10 +159,10 @@ default:
       format: ext2
       ##format: raw
 
-  - ONL-CONFIG:
+  - DEMO-ONL-CONFIG:
       =: 128MiB
       format: ext4
-  - ONL-IMAGES:
+  - DEMO-ONL-IMAGES:
       =: 1GiB
       format: ext4
   - ONL-DATA:
