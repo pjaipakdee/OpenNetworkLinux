@@ -8,7 +8,7 @@ mounts:
     mount: rw
     dir: /mnt/onl/data
 
-  ONL-CONFIG:
+  DEMO-ONL-CONFIG:
     mount: ro
     dir: /mnt/onl/config
     fsck: true

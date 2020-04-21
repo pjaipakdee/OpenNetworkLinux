@@ -28,7 +28,7 @@ x86-64-cel-silverstone2-r0:
   - DEMO-ONL-BOOT:
       =: 128MiB
       format: ext4
-  - ONL-CONFIG:
+  - DEMO-ONL-CONFIG:
       =: 128MiB
       format: ext4
   - ONL-IMAGES:

@@ -91,7 +91,7 @@ class Base:
         # parted state
 
         self.configArchive = None
-        # backup of ONL-CONFIG during re-partitioning
+        # backup of DEMO-ONL-CONFIG during re-partitioning
 
         self.zf = None
         # zipfile handle to installer archive
@@ -185,10 +185,10 @@ class Base:
         return 0
 
     def backupConfig(self, dev):
-        """Back up the ONL-CONFIG partition for later restore."""
-        self.configArchive = tempfile.mktemp(prefix="onl-config-",
+        """Back up the DEMO-ONL-CONFIG partition for later restore."""
+        self.configArchive = tempfile.mktemp(prefix="demo-onl-config-",
                                              suffix=".tar.gz")
-        self.log.info("backing up ONL-CONFIG partition %s to %s",
+        self.log.info("backing up DEMO-ONL-CONFIG partition %s to %s",
                       dev, self.configArchive)
         with MountContext(dev, log=self.log) as ctx:
             self.log.debug("+ tar -zcf %s -C %s .",
@@ -198,12 +198,12 @@ class Base:
             pipe.communicate()
             code = pipe.wait()
         if code:
-            raise SystemExit("backup of ONL-CONFIG failed")
+            raise SystemExit("backup of DEMO-ONL-CONFIG failed")
 
     def restoreConfig(self, dev):
-        """Restore the saved ONL-CONFIG."""
+        """Restore the saved DEMO-ONL-CONFIG."""
         archive, self.configArchive = self.configArchive, None
-        self.log.info("restoring ONL-CONFIG archive %s to %s",
+        self.log.info("restoring DEMO-ONL-CONFIG archive %s to %s",
                       archive, dev)
         with MountContext(dev, log=self.log) as ctx:
             self.log.debug("+ tar -zxf %s -C %s",
@@ -213,7 +213,7 @@ class Base:
             pipe.communicate()
             code = pipe.wait()
         if code:
-            raise SystemExit("backup of ONL-CONFIG failed")
+            raise SystemExit("backup of DEMO-ONL-CONFIG failed")
         self.unlink(archive)
 
     def deletePartitions(self):
@@ -355,7 +355,7 @@ class Base:
 
             devices[label] = part.path
 
-            if label == 'ONL-CONFIG' and self.configArchive is not None:
+            if label == 'DEMO-ONL-CONFIG' and self.configArchive is not None:
                 self.restoreConfig(part.path)
 
         self.blkidParts = BlkidParser(log=self.log.getChild("blkid"))
@@ -394,9 +394,9 @@ class Base:
     def installOnlConfig(self):
 
         try:
-            dev = self.blkidParts['ONL-CONFIG']
+            dev = self.blkidParts['DEMO-ONL-CONFIG']
         except IndexError as ex:
-            self.log.warn("cannot find ONL-CONFIG partition : %s", str(ex))
+            self.log.warn("cannot find DEMO-ONL-CONFIG partition : %s", str(ex))
             return 1
 
         with MountContext(dev.device, log=self.log) as ctx:
@@ -606,7 +606,7 @@ class GrubInstaller(SubprocessMixin, Base):
         # if it's on the boot device
         for part in self.blkidParts:
             dev, partno = part.splitDev()
-            if dev == self.device and part.label == 'ONL-CONFIG':
+            if dev == self.device and part.label == 'DEMO-ONL-CONFIG':
                 self.backupConfig(part.device)
 
         self.partedDevice = parted.getDevice(self.device)
@@ -1032,8 +1032,8 @@ class UBIfsCreater(SubprocessMixin, Base):
 
     def ubi_installOnlConfig(self):
         
-        self.log.info("Installing onl-config to ONL-CONFIG partion")
-        dev = "ONL-CONFIG"
+        self.log.info("Installing demo-onl-config to DEMO-ONL-CONFIG partion")
+        dev = "DEMO-ONL-CONFIG"
         dstDir = "/tmp/ubionlconfig"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1126,7 +1126,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
         # if it's on the boot device
         for part in self.blkidParts:
             dev, partno = part.splitDev()
-            if dev == self.device and part.label == 'ONL-CONFIG':
+            if dev == self.device and part.label == 'DEMO-ONL-CONFIG':
                 self.backupConfig(part.device)
 
         self.minPart = -1

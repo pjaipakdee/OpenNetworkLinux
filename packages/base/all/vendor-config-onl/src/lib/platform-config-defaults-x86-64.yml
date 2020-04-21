@@ -85,7 +85,7 @@ default:
   - DEMO-ONL-BOOT:
       =: 128MiB
       format: ext4
-  - ONL-CONFIG:
+  - DEMO-ONL-CONFIG:
       =: 128MiB
       format: ext4
   - ONL-IMAGES:
@@ -98,7 +98,7 @@ default:
   ### Sample partitioning scheme experiencing disk space pressure
   ##installer:
   ##- DEMO-ONL-BOOT: 128MiB
-  ##- ONL-CONFIG: 128MiB
+  ##- DEMO-ONL-CONFIG: 128MiB
   ##- ONL-IMAGES: 384MiB
   ##- ONL-DATA: 100%
 

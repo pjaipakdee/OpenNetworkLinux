@@ -9,7 +9,7 @@ mounts:
     dir: /mnt/onl/data
     fsck: true
 
-  ONL-CONFIG:
+  DEMO-ONL-CONFIG:
     mount: ro
     dir: /mnt/onl/config
     fsck: true

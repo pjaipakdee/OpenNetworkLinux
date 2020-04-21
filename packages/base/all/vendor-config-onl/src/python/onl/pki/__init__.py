@@ -21,15 +21,15 @@ from onl.util import *
 
 class OnlPkiContextReadWrite(OnlMountContextReadWrite):
     def __init__(self, logger):
-        OnlMountContextReadWrite.__init__(self, "ONL-CONFIG", logger)
+        OnlMountContextReadWrite.__init__(self, "DEMO-ONL-CONFIG", logger)
 
 class OnlPkiContextReadOnly(OnlMountContextReadOnly):
     def __init__(self, logger):
-        OnlMountContextReadOnly.__init__(self, "ONL-CONFIG", logger)
+        OnlMountContextReadOnly.__init__(self, "DEMO-ONL-CONFIG", logger)
 
 
 class OnlPki(OnlServiceMixin):
-    """Initialize the ONL-CONFIG::PKI credentials."""
+    """Initialize the DEMO-ONL-CONFIG::PKI credentials."""
 
     CONFIG_PKI_DIR="/mnt/onl/config/pki"
 
