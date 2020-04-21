@@ -4,7 +4,7 @@ mounts:
     dir: /mnt/onl/images
     fsck: true
 
-  ONL-DATA:
+  DEMO-ONL-DATA:
     mount: rw
     dir: /mnt/onl/data
     fsck: true

@@ -34,7 +34,7 @@ x86-64-cel-silverstone2-r0:
   - DEMO-ONL-IMAGES:
       =: 1GiB
       format: ext4
-  - ONL-DATA:
+  - DEMO-ONL-DATA:
       =: 3GiB
       format: ext4
 
