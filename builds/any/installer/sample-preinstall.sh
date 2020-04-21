@@ -40,12 +40,11 @@ ISDIAG_PLATFORM=0
 #Create Array
 DIAG_PLATFORM0='x86_64-cel_silverstone-r0'
 DIAG_PLATFORM1='x86_64-dellemc_z9332f_d1508-r0'
-DIAG_PLATFORM2='x86_64-cel_silverstone2-r0'
 
 #Onie-sysinfo is read from /etc/machine.conf (onie_platform attribute)
 CURRENT_PLATFORM=$(onie-sysinfo)
 
-for index in 0 1 2 ; do
+for index in 0 1 ; do
   eval assign="\$DIAG_PLATFORM$index"
   if [ $assign == $CURRENT_PLATFORM ]; then
     ISDIAG_PLATFORM=`expr $ISDIAG_PLATFORM + 1`
