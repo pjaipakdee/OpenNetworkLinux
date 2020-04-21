@@ -14,7 +14,7 @@ mounts:
     dir: /mnt/onl/config
     fsck: true
 
-  ONL-BOOT:
+  DEMO-ONL-BOOT:
     mount: rw
     dir: /mnt/onl/boot
     fsck: true

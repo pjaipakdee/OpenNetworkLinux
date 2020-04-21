@@ -332,7 +332,7 @@ class Loader(AppBase):
     def runGrub(self):
 
         try:
-            dev = self.blkid['ONL-BOOT'].device
+            dev = self.blkid['DEMO-ONL-BOOT'].device
         except KeyError:
             pass
         if dev is None:
@@ -372,12 +372,12 @@ class Loader(AppBase):
         bootPartno = None
         for idx, part in enumerate(self.pc['installer']):
             label, pdata = list(part.items())[0]
-            if label == 'ONL-BOOT':
+            if label == 'DEMO-ONL-BOOT':
                 bootPart = pdata
                 bootPartno = idx + 1
                 break
         if bootPart is None:
-            self.log.info("cannot find ONL-BOOT declaration")
+            self.log.info("cannot find DEMO-ONL-BOOT declaration")
             return 1
 
         fmt = bootPart.get('format', 'ext2')

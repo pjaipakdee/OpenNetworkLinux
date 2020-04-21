@@ -82,7 +82,7 @@ default:
   # data --> rest of disk
   # default format (as shown) is ext4
   installer:
-  - ONL-BOOT:
+  - DEMO-ONL-BOOT:
       =: 128MiB
       format: ext4
   - ONL-CONFIG:
@@ -97,7 +97,7 @@ default:
 
   ### Sample partitioning scheme experiencing disk space pressure
   ##installer:
-  ##- ONL-BOOT: 128MiB
+  ##- DEMO-ONL-BOOT: 128MiB
   ##- ONL-CONFIG: 128MiB
   ##- ONL-IMAGES: 384MiB
   ##- ONL-DATA: 100%

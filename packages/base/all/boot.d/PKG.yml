@@ -6,7 +6,7 @@ common:
   support: opennetworklinux@googlegroups.com
 
 packages:
-  - name: onl-bootd
+  - name: demo-onl-bootd
     version: 1.0.0
     summary: Open Network Linux Boot Stage
 

@@ -152,7 +152,7 @@ class App(SubprocessMixin):
 
             #
             # Disable until a system for boot-config upgrade is implemented.
-            # with OnlMountContextReadWrite('ONL-BOOT', logger=self.log) as octx:
+            # with OnlMountContextReadWrite('DEMO-ONL-BOOT', logger=self.log) as octx:
             #     src = os.path.join(octx.directory, "boot-config")
             #     dst = os.path.join(abs_idir, "boot-config")
             #     self.log.debug("+ /bin/cp %s %s", src, dst)

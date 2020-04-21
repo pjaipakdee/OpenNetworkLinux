@@ -366,9 +366,9 @@ class Base:
     def installBootConfig(self):
 
         try:
-            dev = self.blkidParts['ONL-BOOT']
+            dev = self.blkidParts['DEMO-ONL-BOOT']
         except IndexError as ex:
-            self.log.warn("cannot find ONL-BOOT partition (maybe raw?) : %s", str(ex))
+            self.log.warn("cannot find DEMO-ONL-BOOT partition (maybe raw?) : %s", str(ex))
             return 1
 
         self.log.info("Installing boot-config to %s", dev.device)
@@ -503,7 +503,7 @@ if [ "${saved_entry}" ] ; then
 fi
 
 menuentry %(boot_menu_entry)s {
-  search --no-floppy --label --set=root ONL-BOOT
+  search --no-floppy --label --set=root DEMO-ONL-BOOT
   # Always return to this entry by default.
   set saved_entry="0"
   save_env saved_entry
@@ -693,7 +693,7 @@ class GrubInstaller(SubprocessMixin, Base):
                     initrd = i
                     break
 
-        dev = self.blkidParts['ONL-BOOT']
+        dev = self.blkidParts['DEMO-ONL-BOOT']
 
         self.log.info("Installing kernel to %s", dev.device)
 
@@ -710,7 +710,7 @@ class GrubInstaller(SubprocessMixin, Base):
 
     def installGrubCfg(self):
 
-        dev = self.blkidParts['ONL-BOOT']
+        dev = self.blkidParts['DEMO-ONL-BOOT']
 
         self.log.info("Installing grub.cfg to %s", dev.device)
 
@@ -798,9 +798,9 @@ class GrubInstaller(SubprocessMixin, Base):
         code = self.partitionParted()
         if code: return code
 
-        # once we assign the ONL-BOOT partition,
+        # once we assign the DEMO-ONL-BOOT partition,
         # we can re-target the grub environment
-        dev = self.blkidParts['ONL-BOOT']
+        dev = self.blkidParts['DEMO-ONL-BOOT']
         self.im.grubEnv.__dict__['bootPart'] = dev.device
         self.im.grubEnv.__dict__['bootDir'] = None
 
@@ -994,7 +994,7 @@ class UBIfsCreater(SubprocessMixin, Base):
             return 1
 
         self.log.info("Installing the ONL loader from %s...", loaderBasename)
-        dev = "ONL-BOOT"
+        dev = "DEMO-ONL-BOOT"
         dstDir = "/tmp/ubiloader"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1010,8 +1010,8 @@ class UBIfsCreater(SubprocessMixin, Base):
         
         basename = 'boot-config'
 
-        self.log.info("Installing boot-config to ONL-BOOT partion")
-        dev = "ONL-BOOT"
+        self.log.info("Installing boot-config to DEMO-ONL-BOOT partion")
+        dev = "DEMO-ONL-BOOT"
         dstDir = "/tmp/ubibootcon"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1156,7 +1156,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
             self.installerDd(loaderBasename, self.rawLoaderDevice)
             return 0
 
-        dev = self.blkidParts['ONL-BOOT']
+        dev = self.blkidParts['DEMO-ONL-BOOT']
         self.log.info("Installing ONL loader %s --> %s:%s...",
                       loaderBasename, dev.device, loaderBasename)
         with MountContext(dev.device, log=self.log) as ctx:
@@ -1272,7 +1272,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
         for item in self.im.platformConf['installer']:
             partIdx, partData = list(item.items())[0]
             label, part = list(partData.items())[0]
-            if label == 'ONL-BOOT' and part['format'] == 'raw':
+            if label == 'DEMO-ONL-BOOT' and part['format'] == 'raw':
                 self.rawLoaderDevice = self.device + str(partIdx+1)
                 break
 
@@ -1286,7 +1286,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
             code = self.installBootConfig()
             if code: return code
         else:
-            self.log.info("ONL-BOOT is a raw partition (%s), skipping boot-config",
+            self.log.info("DEMO-ONL-BOOT is a raw partition (%s), skipping boot-config",
                           self.rawLoaderDevice)
 
 

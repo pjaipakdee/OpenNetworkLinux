@@ -132,7 +132,7 @@ default:
     #ubifs to boot onl
     flash_bootcmds: &flash_bootcmds
     - ubi part open
-    - ubifsmount ONL-BOOT
+    - ubifsmount DEMO-ONL-BOOT
     - ubifsload $loadaddr  $onl_itb
     - "bootm $onl_loadaddr#$onl_platform"
 
@@ -153,7 +153,7 @@ default:
   # data --> rest of disk
   # default format (as shown) is ext4
   installer:
-  - ONL-BOOT:
+  - DEMO-ONL-BOOT:
       =: 128MiB
       # NOTE that u-boot wants the boot partition ext2, not ext4
       format: ext2
