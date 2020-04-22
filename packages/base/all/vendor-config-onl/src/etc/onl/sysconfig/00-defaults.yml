@@ -6,8 +6,8 @@
 #
 ############################################################
 installer:
-  menu_name: "\"Open Network Linux\""
-  os_name: Open Network Linux
+  menu_name: "\"DEMO OS\""
+  os_name: DEMO OS
   grub:
     - $PLATFORM.cpio.gz
     - onl-loader-initrd-$PARCH.cpio.gz

@@ -21,7 +21,7 @@ class OnlVersionImplementation(object):
             self.PRODUCTS[0]['version'] = branch
 
     def V_OS_NAME(self, data):
-        return "Open Network Linux OS"
+        return "DEMO OS"
 
     def V_BUILD_SHA1(self, data):
         return data['build_sha1']

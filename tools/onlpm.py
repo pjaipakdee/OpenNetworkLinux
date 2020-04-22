@@ -125,7 +125,7 @@ class OnlPackage(object):
 
     # These are built-in defaults for some package keys
     DEFAULTS = {
-        'vendor' : 'Open Network Linux',
+        'vendor' : 'DEMO OS',
         'url' : 'http://opennetlinux.org',
         'license' : 'unknown',
 
