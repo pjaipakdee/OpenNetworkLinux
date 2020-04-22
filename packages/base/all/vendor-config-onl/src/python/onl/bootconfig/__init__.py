@@ -24,7 +24,7 @@ class OnlBootConfig(object):
             self._readf(bc)
         else:
             from onl.mounts import OnlMountContextReadOnly
-            with OnlMountContextReadOnly("DEMO-ONL-BOOT", logger=None):
+            with OnlMountContextReadOnly("DEMO-OS-BOOT", logger=None):
                 self._readf(self.BOOT_CONFIG_DEFAULT)
 
     def set(self, k, v):
@@ -51,7 +51,7 @@ class OnlBootConfig(object):
             return True
         else:
             from onl.mounts import OnlMountContextReadWrite
-            with OnlMountContextReadWrite("DEMO-ONL-BOOT", logger=None):
+            with OnlMountContextReadWrite("DEMO-OS-BOOT", logger=None):
                 if not os.path.exists(self.BOOT_CONFIG_DEFAULT) or force_overwrite:
                     self._writef(self.BOOT_CONFIG_DEFAULT)
                     return True
@@ -260,4 +260,4 @@ class OnlBootConfigNet(OnlBootConfig):
 
 if __name__ == '__main__':
     bc = OnlBootConfigNet()
-    bc.main("demo-onl-boot-config")
+    bc.main("demo-os-boot-config")

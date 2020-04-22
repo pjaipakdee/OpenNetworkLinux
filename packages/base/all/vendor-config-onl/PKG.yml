@@ -1,9 +1,9 @@
 prerequisites:
-  packages: [ 'demo-onl-bootd:all' ]
+  packages: [ 'demo-os-bootd:all' ]
 
 packages:
   - name: onl-vendor-config-onl
-    depends: [ python-yaml, demo-onl-bootd, python-dmidecode ]
+    depends: [ python-yaml, demo-os-bootd, python-dmidecode ]
     version: 1.0.0
     arch: all
     copyright: Copyright 2013, 2014, 2015 Big Switch Networks

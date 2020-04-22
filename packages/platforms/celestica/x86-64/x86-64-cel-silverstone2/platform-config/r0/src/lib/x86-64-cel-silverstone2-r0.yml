@@ -25,16 +25,16 @@ x86-64-cel-silverstone2-r0:
       console=ttyS0,115200n8
     
   installer:
-  - DEMO-ONL-BOOT:
+  - DEMO-OS-BOOT:
       =: 128MiB
       format: ext4
-  - DEMO-ONL-CONFIG:
+  - DEMO-OS-CONFIG:
       =: 128MiB
       format: ext4
-  - DEMO-ONL-IMAGES:
+  - DEMO-OS-IMAGES:
       =: 1GiB
       format: ext4
-  - DEMO-ONL-DATA:
+  - DEMO-OS-DATA:
       =: 3GiB
       format: ext4
 

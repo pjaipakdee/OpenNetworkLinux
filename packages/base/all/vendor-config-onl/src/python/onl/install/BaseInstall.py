@@ -91,7 +91,7 @@ class Base:
         # parted state
 
         self.configArchive = None
-        # backup of DEMO-ONL-CONFIG during re-partitioning
+        # backup of DEMO-OS-CONFIG during re-partitioning
 
         self.zf = None
         # zipfile handle to installer archive
@@ -177,7 +177,7 @@ class Base:
         base = swis[0]
 
         self.log.info("Installing ONL Software Image (%s)...", base)
-        dev = self.blkidParts['DEMO-ONL-IMAGES']
+        dev = self.blkidParts['DEMO-OS-IMAGES']
         with MountContext(dev.device, log=self.log) as ctx:
             dst = os.path.join(ctx.dir, base)
             self.installerCopy(base, dst)
@@ -185,10 +185,10 @@ class Base:
         return 0
 
     def backupConfig(self, dev):
-        """Back up the DEMO-ONL-CONFIG partition for later restore."""
-        self.configArchive = tempfile.mktemp(prefix="demo-onl-config-",
+        """Back up the DEMO-OS-CONFIG partition for later restore."""
+        self.configArchive = tempfile.mktemp(prefix="demo-os-config-",
                                              suffix=".tar.gz")
-        self.log.info("backing up DEMO-ONL-CONFIG partition %s to %s",
+        self.log.info("backing up DEMO-OS-CONFIG partition %s to %s",
                       dev, self.configArchive)
         with MountContext(dev, log=self.log) as ctx:
             self.log.debug("+ tar -zcf %s -C %s .",
@@ -198,12 +198,12 @@ class Base:
             pipe.communicate()
             code = pipe.wait()
         if code:
-            raise SystemExit("backup of DEMO-ONL-CONFIG failed")
+            raise SystemExit("backup of DEMO-OS-CONFIG failed")
 
     def restoreConfig(self, dev):
-        """Restore the saved DEMO-ONL-CONFIG."""
+        """Restore the saved DEMO-OS-CONFIG."""
         archive, self.configArchive = self.configArchive, None
-        self.log.info("restoring DEMO-ONL-CONFIG archive %s to %s",
+        self.log.info("restoring DEMO-OS-CONFIG archive %s to %s",
                       archive, dev)
         with MountContext(dev, log=self.log) as ctx:
             self.log.debug("+ tar -zxf %s -C %s",
@@ -213,7 +213,7 @@ class Base:
             pipe.communicate()
             code = pipe.wait()
         if code:
-            raise SystemExit("backup of DEMO-ONL-CONFIG failed")
+            raise SystemExit("backup of DEMO-OS-CONFIG failed")
         self.unlink(archive)
 
     def deletePartitions(self):
@@ -355,7 +355,7 @@ class Base:
 
             devices[label] = part.path
 
-            if label == 'DEMO-ONL-CONFIG' and self.configArchive is not None:
+            if label == 'DEMO-OS-CONFIG' and self.configArchive is not None:
                 self.restoreConfig(part.path)
 
         self.blkidParts = BlkidParser(log=self.log.getChild("blkid"))
@@ -366,9 +366,9 @@ class Base:
     def installBootConfig(self):
 
         try:
-            dev = self.blkidParts['DEMO-ONL-BOOT']
+            dev = self.blkidParts['DEMO-OS-BOOT']
         except IndexError as ex:
-            self.log.warn("cannot find DEMO-ONL-BOOT partition (maybe raw?) : %s", str(ex))
+            self.log.warn("cannot find DEMO-OS-BOOT partition (maybe raw?) : %s", str(ex))
             return 1
 
         self.log.info("Installing boot-config to %s", dev.device)
@@ -394,9 +394,9 @@ class Base:
     def installOnlConfig(self):
 
         try:
-            dev = self.blkidParts['DEMO-ONL-CONFIG']
+            dev = self.blkidParts['DEMO-OS-CONFIG']
         except IndexError as ex:
-            self.log.warn("cannot find DEMO-ONL-CONFIG partition : %s", str(ex))
+            self.log.warn("cannot find DEMO-OS-CONFIG partition : %s", str(ex))
             return 1
 
         with MountContext(dev.device, log=self.log) as ctx:
@@ -503,7 +503,7 @@ if [ "${saved_entry}" ] ; then
 fi
 
 menuentry %(boot_menu_entry)s {
-  search --no-floppy --label --set=root DEMO-ONL-BOOT
+  search --no-floppy --label --set=root DEMO-OS-BOOT
   # Always return to this entry by default.
   set saved_entry="0"
   save_env saved_entry
@@ -606,7 +606,7 @@ class GrubInstaller(SubprocessMixin, Base):
         # if it's on the boot device
         for part in self.blkidParts:
             dev, partno = part.splitDev()
-            if dev == self.device and part.label == 'DEMO-ONL-CONFIG':
+            if dev == self.device and part.label == 'DEMO-OS-CONFIG':
                 self.backupConfig(part.device)
 
         self.partedDevice = parted.getDevice(self.device)
@@ -693,7 +693,7 @@ class GrubInstaller(SubprocessMixin, Base):
                     initrd = i
                     break
 
-        dev = self.blkidParts['DEMO-ONL-BOOT']
+        dev = self.blkidParts['DEMO-OS-BOOT']
 
         self.log.info("Installing kernel to %s", dev.device)
 
@@ -710,7 +710,7 @@ class GrubInstaller(SubprocessMixin, Base):
 
     def installGrubCfg(self):
 
-        dev = self.blkidParts['DEMO-ONL-BOOT']
+        dev = self.blkidParts['DEMO-OS-BOOT']
 
         self.log.info("Installing grub.cfg to %s", dev.device)
 
@@ -798,9 +798,9 @@ class GrubInstaller(SubprocessMixin, Base):
         code = self.partitionParted()
         if code: return code
 
-        # once we assign the DEMO-ONL-BOOT partition,
+        # once we assign the DEMO-OS-BOOT partition,
         # we can re-target the grub environment
-        dev = self.blkidParts['DEMO-ONL-BOOT']
+        dev = self.blkidParts['DEMO-OS-BOOT']
         self.im.grubEnv.__dict__['bootPart'] = dev.device
         self.im.grubEnv.__dict__['bootDir'] = None
 
@@ -970,7 +970,7 @@ class UBIfsCreater(SubprocessMixin, Base):
         base = swis[0]
         
         self.log.info("Installing ONL Software Image (%s)...", base)
-        dev = "DEMO-ONL-IMAGES"
+        dev = "DEMO-OS-IMAGES"
         dstDir = "/tmp/ubifs"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -994,7 +994,7 @@ class UBIfsCreater(SubprocessMixin, Base):
             return 1
 
         self.log.info("Installing the ONL loader from %s...", loaderBasename)
-        dev = "DEMO-ONL-BOOT"
+        dev = "DEMO-OS-BOOT"
         dstDir = "/tmp/ubiloader"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1010,8 +1010,8 @@ class UBIfsCreater(SubprocessMixin, Base):
         
         basename = 'boot-config'
 
-        self.log.info("Installing boot-config to DEMO-ONL-BOOT partion")
-        dev = "DEMO-ONL-BOOT"
+        self.log.info("Installing boot-config to DEMO-OS-BOOT partion")
+        dev = "DEMO-OS-BOOT"
         dstDir = "/tmp/ubibootcon"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1032,8 +1032,8 @@ class UBIfsCreater(SubprocessMixin, Base):
 
     def ubi_installOnlConfig(self):
         
-        self.log.info("Installing demo-onl-config to DEMO-ONL-CONFIG partion")
-        dev = "DEMO-ONL-CONFIG"
+        self.log.info("Installing demo-os-config to DEMO-OS-CONFIG partion")
+        dev = "DEMO-OS-CONFIG"
         dstDir = "/tmp/ubionlconfig"
         code = self.ubi_mount(dstDir,dev)
         if code :
@@ -1126,7 +1126,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
         # if it's on the boot device
         for part in self.blkidParts:
             dev, partno = part.splitDev()
-            if dev == self.device and part.label == 'DEMO-ONL-CONFIG':
+            if dev == self.device and part.label == 'DEMO-OS-CONFIG':
                 self.backupConfig(part.device)
 
         self.minPart = -1
@@ -1156,7 +1156,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
             self.installerDd(loaderBasename, self.rawLoaderDevice)
             return 0
 
-        dev = self.blkidParts['DEMO-ONL-BOOT']
+        dev = self.blkidParts['DEMO-OS-BOOT']
         self.log.info("Installing ONL loader %s --> %s:%s...",
                       loaderBasename, dev.device, loaderBasename)
         with MountContext(dev.device, log=self.log) as ctx:
@@ -1272,7 +1272,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
         for item in self.im.platformConf['installer']:
             partIdx, partData = list(item.items())[0]
             label, part = list(partData.items())[0]
-            if label == 'DEMO-ONL-BOOT' and part['format'] == 'raw':
+            if label == 'DEMO-OS-BOOT' and part['format'] == 'raw':
                 self.rawLoaderDevice = self.device + str(partIdx+1)
                 break
 
@@ -1286,7 +1286,7 @@ class UbootInstaller(SubprocessMixin, UBIfsCreater):
             code = self.installBootConfig()
             if code: return code
         else:
-            self.log.info("DEMO-ONL-BOOT is a raw partition (%s), skipping boot-config",
+            self.log.info("DEMO-OS-BOOT is a raw partition (%s), skipping boot-config",
                           self.rawLoaderDevice)
 
 

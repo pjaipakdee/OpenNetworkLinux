@@ -82,25 +82,25 @@ default:
   # data --> rest of disk
   # default format (as shown) is ext4
   installer:
-  - DEMO-ONL-BOOT:
+  - DEMO-OS-BOOT:
       =: 128MiB
       format: ext4
-  - DEMO-ONL-CONFIG:
+  - DEMO-OS-CONFIG:
       =: 128MiB
       format: ext4
-  - DEMO-ONL-IMAGES:
+  - DEMO-OS-IMAGES:
       =: 1GiB
       format: ext4
-  - DEMO-ONL-DATA:
+  - DEMO-OS-DATA:
       =: 100%
       format: ext4
 
   ### Sample partitioning scheme experiencing disk space pressure
   ##installer:
-  ##- DEMO-ONL-BOOT: 128MiB
-  ##- DEMO-ONL-CONFIG: 128MiB
-  ##- DEMO-ONL-IMAGES: 384MiB
-  ##- DEMO-ONL-DATA: 100%
+  ##- DEMO-OS-BOOT: 128MiB
+  ##- DEMO-OS-CONFIG: 128MiB
+  ##- DEMO-OS-IMAGES: 384MiB
+  ##- DEMO-OS-DATA: 100%
 
   network:
 

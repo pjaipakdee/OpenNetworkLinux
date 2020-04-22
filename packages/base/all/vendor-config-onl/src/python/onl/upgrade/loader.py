@@ -77,7 +77,7 @@ class LoaderUpgrade_Fit(LoaderUpgradeBase):
         if fit_image is None:
             self.abort("The FIT upgrade image is missing. Upgrade cannot continue.")
 
-        with OnlMountContextReadWrite("DEMO-ONL-BOOT", self.logger) as d:
+        with OnlMountContextReadWrite("DEMO-OS-BOOT", self.logger) as d:
             self.copyfile(fit_image, os.path.join(d.directory, "%s.itb" % (self.platform.platform())))
 
         onlPlatform = onl.platform.current.OnlPlatform()
@@ -133,7 +133,7 @@ class LoaderUpgrade_x86_64(LoaderUpgradeBase, InstallUtils.SubprocessMixin):
         X86_64_UPGRADE_DIR=sysconfig.upgrade.loader.package.dir
         X86_64_UPGRADE_KERNEL_PATTERNS = [ "kernel-*" ]
 
-        with OnlMountContextReadWrite("DEMO-ONL-BOOT", self.logger) as d:
+        with OnlMountContextReadWrite("DEMO-OS-BOOT", self.logger) as d:
             for f in os.listdir(X86_64_UPGRADE_DIR):
                 for pattern in X86_64_UPGRADE_KERNEL_PATTERNS:
                     if fnmatch.fnmatch(f, pattern):

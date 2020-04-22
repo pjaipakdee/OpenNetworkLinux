@@ -34,7 +34,7 @@ def onie_fwpkg(arguments):
         subprocess.check_call("%s/onie/tools/bin/onie-fwpkg %s" % (ob.directory, arguments), shell=True)
 
 def boot_entry_set(index):
-    with OnlMountContextReadWrite("DEMO-ONL-BOOT", logger=None) as ob:
+    with OnlMountContextReadWrite("DEMO-OS-BOOT", logger=None) as ob:
         subprocess.check_call("/usr/sbin/grub-set-default --boot-directory=%s %d" % (ob.directory, index), shell=True)
 
 def boot_onie():

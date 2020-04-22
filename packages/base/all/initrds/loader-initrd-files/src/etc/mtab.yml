@@ -1,20 +1,20 @@
 mounts:
-  DEMO-ONL-IMAGES:
+  DEMO-OS-IMAGES:
     mount: rw
     dir: /mnt/onl/images
     fsck: true
 
-  DEMO-ONL-DATA:
+  DEMO-OS-DATA:
     mount: rw
     dir: /mnt/onl/data
     fsck: true
 
-  DEMO-ONL-CONFIG:
+  DEMO-OS-CONFIG:
     mount: ro
     dir: /mnt/onl/config
     fsck: true
 
-  DEMO-ONL-BOOT:
+  DEMO-OS-BOOT:
     mount: rw
     dir: /mnt/onl/boot
     fsck: true
