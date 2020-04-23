@@ -240,7 +240,7 @@ class GrubEnv(SubprocessMixin):
                              '--label', sysconfig.installer.os_name,
                              '--disk', device,
                              '--part', '1',
-                             '--loader', '/EFI/ONL/grubx64.efi',))
+                             '--loader', '/EFI/DEMOOS/grubx64.efi',))
 
 class ChrootGrubEnv(ChrootSubprocessMixin, GrubEnv):
 
