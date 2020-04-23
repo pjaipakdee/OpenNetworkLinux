@@ -210,7 +210,7 @@ class GrubEnv(SubprocessMixin):
             grubOpts.append('--no-nvram')
             grubOpts.append('--recheck')
 
-            grubOpts.append('--bootloader-id=ONL')
+            grubOpts.append('--bootloader-id=DEMOOS')
             # All ONL-derived distros should be able to use
             # the same profile
 
@@ -405,7 +405,7 @@ class ProxyGrubEnv(SubprocessMixin):
         if self.isUEFI:
             grubOpts.append('--target=x86_64-efi')
             grubOpts.append('--no-nvram')
-            grubOpts.append('--bootloader-id=ONL')
+            grubOpts.append('--bootloader-id=DEMOOS')
             grubOpts.append('--efi-directory=/boot/efi')
             grubOpts.append('--recheck')
 
